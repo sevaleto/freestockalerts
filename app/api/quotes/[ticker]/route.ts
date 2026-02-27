@@ -6,9 +6,17 @@ interface RouteProps {
 }
 
 export async function GET(_: Request, { params }: RouteProps) {
-  const quote = await getQuote(params.ticker.toUpperCase());
-  if (!quote) {
-    return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+  try {
+    const quote = await getQuote(params.ticker.toUpperCase());
+    if (!quote) {
+      return NextResponse.json({ error: "Quote not found" }, { status: 404 });
+    }
+    return NextResponse.json({ data: quote });
+  } catch (error) {
+    console.error("GET /api/quotes/[ticker] error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch quote" },
+      { status: 500 }
+    );
   }
-  return NextResponse.json({ data: quote });
 }
