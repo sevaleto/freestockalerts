@@ -1,0 +1,152 @@
+export interface MockQuote {
+  ticker: string;
+  companyName: string;
+  price: number;
+  dayOpen: number;
+  dayHigh: number;
+  dayLow: number;
+  dayChange: number;
+  dayChangePercent: number;
+  volume: number;
+  avgVolume: number;
+  fiftyTwoWeekHigh: number;
+  fiftyTwoWeekLow: number;
+  nextEarningsDate?: string;
+}
+
+export const mockQuotes: MockQuote[] = [
+  {
+    ticker: "AAPL",
+    companyName: "Apple Inc.",
+    price: 223.45,
+    dayOpen: 221.1,
+    dayHigh: 224.2,
+    dayLow: 220.5,
+    dayChange: 2.35,
+    dayChangePercent: 1.06,
+    volume: 58900000,
+    avgVolume: 61200000,
+    fiftyTwoWeekHigh: 237.0,
+    fiftyTwoWeekLow: 164.3,
+    nextEarningsDate: "2026-04-29",
+  },
+  {
+    ticker: "MSFT",
+    companyName: "Microsoft Corp.",
+    price: 418.2,
+    dayOpen: 412.6,
+    dayHigh: 419.4,
+    dayLow: 411.9,
+    dayChange: 4.9,
+    dayChangePercent: 1.18,
+    volume: 28100000,
+    avgVolume: 26700000,
+    fiftyTwoWeekHigh: 430.0,
+    fiftyTwoWeekLow: 309.0,
+    nextEarningsDate: "2026-04-24",
+  },
+  {
+    ticker: "NVDA",
+    companyName: "NVIDIA Corp.",
+    price: 905.7,
+    dayOpen: 892.3,
+    dayHigh: 912.4,
+    dayLow: 887.5,
+    dayChange: 13.4,
+    dayChangePercent: 1.5,
+    volume: 51200000,
+    avgVolume: 46300000,
+    fiftyTwoWeekHigh: 950.0,
+    fiftyTwoWeekLow: 390.0,
+    nextEarningsDate: "2026-03-18",
+  },
+  {
+    ticker: "TSLA",
+    companyName: "Tesla Inc.",
+    price: 248.9,
+    dayOpen: 244.1,
+    dayHigh: 252.0,
+    dayLow: 242.7,
+    dayChange: 4.8,
+    dayChangePercent: 1.96,
+    volume: 113200000,
+    avgVolume: 98200000,
+    fiftyTwoWeekHigh: 299.0,
+    fiftyTwoWeekLow: 168.0,
+    nextEarningsDate: "2026-04-22",
+  },
+  {
+    ticker: "AMZN",
+    companyName: "Amazon.com Inc.",
+    price: 187.4,
+    dayOpen: 185.2,
+    dayHigh: 188.6,
+    dayLow: 184.0,
+    dayChange: 2.2,
+    dayChangePercent: 1.19,
+    volume: 52100000,
+    avgVolume: 48700000,
+    fiftyTwoWeekHigh: 205.0,
+    fiftyTwoWeekLow: 118.0,
+    nextEarningsDate: "2026-04-30",
+  },
+  {
+    ticker: "META",
+    companyName: "Meta Platforms Inc.",
+    price: 512.3,
+    dayOpen: 505.6,
+    dayHigh: 515.8,
+    dayLow: 502.1,
+    dayChange: 6.7,
+    dayChangePercent: 1.33,
+    volume: 21900000,
+    avgVolume: 20500000,
+    fiftyTwoWeekHigh: 530.0,
+    fiftyTwoWeekLow: 260.0,
+    nextEarningsDate: "2026-04-25",
+  },
+  {
+    ticker: "SPY",
+    companyName: "SPDR S&P 500 ETF Trust",
+    price: 524.8,
+    dayOpen: 520.4,
+    dayHigh: 525.3,
+    dayLow: 518.6,
+    dayChange: 4.4,
+    dayChangePercent: 0.85,
+    volume: 68200000,
+    avgVolume: 73100000,
+    fiftyTwoWeekHigh: 540.0,
+    fiftyTwoWeekLow: 410.0,
+  },
+  {
+    ticker: "VIX",
+    companyName: "CBOE Volatility Index",
+    price: 16.2,
+    dayOpen: 15.9,
+    dayHigh: 16.7,
+    dayLow: 15.7,
+    dayChange: 0.3,
+    dayChangePercent: 1.9,
+    volume: 0,
+    avgVolume: 0,
+    fiftyTwoWeekHigh: 35.0,
+    fiftyTwoWeekLow: 11.8,
+  },
+  {
+    ticker: "QQQ",
+    companyName: "Invesco QQQ Trust",
+    price: 452.1,
+    dayOpen: 448.9,
+    dayHigh: 453.7,
+    dayLow: 447.0,
+    dayChange: 3.2,
+    dayChangePercent: 0.71,
+    volume: 38100000,
+    avgVolume: 40200000,
+    fiftyTwoWeekHigh: 469.0,
+    fiftyTwoWeekLow: 338.0,
+  },
+];
+
+export const mockQuoteMap = new Map(mockQuotes.map((quote) => [quote.ticker, quote]));
