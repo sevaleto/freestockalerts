@@ -25,7 +25,7 @@ export const evaluateAlerts = async (alerts: AlertToEvaluate[]) => {
   const quoteMap = new Map(quotes.map((quote: any) => [quote.ticker, quote]));
 
   return alerts.map((alert) => {
-    const quote = quoteMap.get(alert.ticker);
+    const quote = quoteMap.get(alert.ticker) as { ticker: string; price: number; change: number; changePercent: number; volume: number } | undefined;
     if (!quote) {
       return { alertId: alert.id, triggered: false, reason: "Quote missing" };
     }
