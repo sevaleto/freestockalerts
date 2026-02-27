@@ -150,6 +150,7 @@ export default function NewAlertPage() {
           currentPrice: quote?.price,
           cooldownMinutes: Number(cooldownMinutes),
           note: note || undefined,
+          emailEnabled,
         }),
       });
 
