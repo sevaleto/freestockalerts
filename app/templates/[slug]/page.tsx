@@ -1,15 +1,21 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { mockTemplates } from "@/lib/mock/templates";
+import { prisma } from "@/lib/prisma/client";
 import { Logo } from "@/components/shared/Logo";
 import { Badge } from "@/components/ui/badge";
+import { ActivateButton } from "@/components/templates/ActivateButton";
 
 interface TemplateDetailPageProps {
   params: { slug: string };
 }
 
-export default function TemplateDetailPage({ params }: TemplateDetailPageProps) {
-  const template = mockTemplates.find((item) => item.slug === params.slug);
+export default async function TemplateDetailPage({ params }: TemplateDetailPageProps) {
+  const template = await prisma.alertTemplate.findUnique({
+    where: { slug: params.slug },
+    include: { items: { orderBy: { sortOrder: "asc" } } },
+  });
 
   if (!template) {
     return notFound();
@@ -55,7 +61,7 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
               </thead>
               <tbody>
                 {template.items.map((item) => (
-                  <tr key={`${item.ticker}-${item.alertType}`} className="border-t border-border">
+                  <tr key={item.id} className="border-t border-border">
                     <td className="px-4 py-3 font-semibold text-text-primary">{item.ticker}</td>
                     <td className="px-4 py-3 text-text-secondary">
                       {item.alertType.replace(/_/g, " ")}
@@ -68,9 +74,7 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
               </tbody>
             </table>
           </div>
-          <Link href="/login" className="inline-flex text-sm font-semibold text-primary">
-            Activate this template →
-          </Link>
+          <ActivateButton slug={template.slug} templateName={template.name} />
         </div>
       </main>
     </div>
