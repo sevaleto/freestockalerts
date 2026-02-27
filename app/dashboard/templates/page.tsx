@@ -1,13 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TemplateCard } from "@/components/dashboard/TemplateCard";
 import { mockTemplates } from "@/lib/mock/templates";
 
 export default function DashboardTemplatesPage() {
-  const [activeTemplates, setActiveTemplates] = useState(
-    new Set(mockTemplates.filter((item) => item.isFeatured).map((item) => item.id))
+  const [templates, setTemplates] = useState(mockTemplates);
+  const [activeTemplates, setActiveTemplates] = useState(new Set<string>());
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchTemplates = async () => {
+      try {
+        const res = await fetch("/api/templates");
+        if (!res.ok) return;
+        const json = await res.json();
+        if (isMounted && json?.data) {
+          setTemplates(json.data);
+        }
+      } catch (error) {
+        // fall back to mock data
+      }
+    };
+    fetchTemplates();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const featuredIds = useMemo(
+    () => new Set(templates.filter((item) => item.isFeatured).map((item) => item.id)),
+    [templates]
   );
+
+  useEffect(() => {
+    setActiveTemplates(featuredIds);
+  }, [featuredIds]);
 
   return (
     <div className="space-y-6">
@@ -18,13 +46,13 @@ export default function DashboardTemplatesPage() {
         </p>
       </div>
 
-      {mockTemplates.length === 0 ? (
+      {templates.length === 0 ? (
         <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
           No templates available yet.
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {mockTemplates.map((template) => (
+          {templates.map((template) => (
             <TemplateCard
               key={template.id}
               name={template.name}

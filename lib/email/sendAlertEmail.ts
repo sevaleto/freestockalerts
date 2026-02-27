@@ -13,11 +13,15 @@ interface SendAlertEmailInput {
 }
 
 export async function sendAlertEmail(input: SendAlertEmailInput) {
-  // TODO: Replace mock send with live Resend integration.
   const resend = new Resend(process.env.RESEND_API_KEY ?? "");
+  const from =
+    process.env.RESEND_FROM ??
+    (process.env.NODE_ENV === "production"
+      ? "FreeStockAlerts <alerts@freestockalerts.ai>"
+      : "FreeStockAlerts <onboarding@resend.dev>");
 
   return resend.emails.send({
-    from: "FreeStockAlerts <alerts@freestockalerts.ai>",
+    from,
     to: input.to,
     subject: `🔔 ${input.ticker} Alert: ${input.alertType}`,
     react: AlertEmail({

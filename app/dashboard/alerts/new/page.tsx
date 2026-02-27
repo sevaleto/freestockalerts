@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,8 +16,37 @@ import { formatPrice, formatPercent } from "@/lib/utils/formatters";
 export default function NewAlertPage() {
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<string | undefined>();
+  const [quote, setQuote] = useState(() =>
+    selectedTicker ? mockQuoteMap.get(selectedTicker) : undefined
+  );
 
-  const quote = selectedTicker ? mockQuoteMap.get(selectedTicker) : undefined;
+  useEffect(() => {
+    if (!selectedTicker) {
+      setQuote(undefined);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchQuote = async () => {
+      try {
+        const res = await fetch(`/api/quotes/${selectedTicker}`);
+        if (!res.ok) throw new Error("Quote fetch failed");
+        const json = await res.json();
+        if (isMounted) {
+          setQuote(json?.data ?? mockQuoteMap.get(selectedTicker));
+        }
+      } catch (error) {
+        if (isMounted) {
+          setQuote(mockQuoteMap.get(selectedTicker));
+        }
+      }
+    };
+
+    fetchQuote();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedTicker]);
 
   return (
     <div className="space-y-10">

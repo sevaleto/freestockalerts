@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Card } from "@/components/ui/card";
 import { mockTickers } from "@/lib/mock/tickers";
@@ -13,18 +13,81 @@ interface TickerSearchProps {
 
 export function TickerSearch({ onSelect }: TickerSearchProps) {
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState(mockTickers.slice(0, 12));
+  const [quoteLookup, setQuoteLookup] = useState<Map<string, any>>(new Map());
 
-  const results = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return mockTickers.slice(0, 12);
-    return mockTickers
-      .filter(
-        (item) =>
-          item.ticker.toLowerCase().includes(normalized) ||
-          item.companyName.toLowerCase().includes(normalized)
-      )
-      .slice(0, 12);
+  useEffect(() => {
+    const normalized = query.trim();
+    if (!normalized) {
+      setResults(mockTickers.slice(0, 12));
+      return;
+    }
+
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const fetchResults = async () => {
+      try {
+        const res = await fetch(`/api/quotes/search?query=${encodeURIComponent(normalized)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error("Search failed");
+        const json = await res.json();
+        if (isMounted && Array.isArray(json?.data)) {
+          setResults(json.data.slice(0, 12));
+        }
+      } catch (error) {
+        if (isMounted) {
+          const fallback = mockTickers
+            .filter(
+              (item) =>
+                item.ticker.toLowerCase().includes(normalized.toLowerCase()) ||
+                item.companyName.toLowerCase().includes(normalized.toLowerCase())
+            )
+            .slice(0, 12);
+          setResults(fallback);
+        }
+      }
+    };
+
+    const timeout = setTimeout(fetchResults, 150);
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearTimeout(timeout);
+    };
   }, [query]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const fetchQuotes = async () => {
+      const entries = (await Promise.all(
+        results.map(async (item): Promise<[string, any]> => {
+          try {
+            const res = await fetch(`/api/quotes/${item.ticker}`, { signal: controller.signal });
+            if (!res.ok) return [item.ticker, mockQuoteMap.get(item.ticker)];
+            const json = await res.json();
+            return [item.ticker, json?.data ?? mockQuoteMap.get(item.ticker)];
+          } catch (error) {
+            return [item.ticker, mockQuoteMap.get(item.ticker)];
+          }
+        })
+      )) as Array<[string, any]>;
+
+      if (isMounted) {
+        const filtered = entries.filter((entry): entry is [string, any] => Boolean(entry[1]));
+        setQuoteLookup(new Map(filtered));
+      }
+    };
+
+    fetchQuotes();
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [results]);
 
   return (
     <Card className="border-border p-4">
@@ -37,7 +100,7 @@ export function TickerSearch({ onSelect }: TickerSearchProps) {
         <CommandList className="max-h-64">
           <CommandGroup heading="Matching tickers">
             {results.map((item) => {
-              const quote = mockQuoteMap.get(item.ticker);
+              const quote = quoteLookup.get(item.ticker) ?? mockQuoteMap.get(item.ticker);
               return (
                 <CommandItem
                   key={item.ticker}

@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { mockTemplates } from "@/lib/mock/templates";
+import { prisma } from "@/lib/prisma/client";
 
 interface RouteProps {
   params: { slug: string };
 }
 
 export async function GET(_: Request, { params }: RouteProps) {
-  const template = mockTemplates.find((item) => item.slug === params.slug);
+  const template = await prisma.alertTemplate.findUnique({
+    where: { slug: params.slug },
+    include: { items: { orderBy: { sortOrder: "asc" } } },
+  });
   if (!template) {
     return NextResponse.json({ error: "Template not found" }, { status: 404 });
   }

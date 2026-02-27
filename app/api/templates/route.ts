@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
-import { mockTemplates } from "@/lib/mock/templates";
+import { prisma } from "@/lib/prisma/client";
 
 export async function GET() {
-  // TODO: Replace with Prisma query.
-  return NextResponse.json({ data: mockTemplates });
+  const templates = await prisma.alertTemplate.findMany({
+    where: { isActive: true },
+    include: { items: { orderBy: { sortOrder: "asc" } } },
+    orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
+  });
+  return NextResponse.json({ data: templates });
 }

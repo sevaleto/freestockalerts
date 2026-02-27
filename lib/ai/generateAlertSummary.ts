@@ -1,5 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-
 interface AlertContext {
   ticker: string;
   companyName: string;
@@ -19,35 +17,71 @@ interface AlertContext {
 }
 
 export async function generateAlertSummary(context: AlertContext): Promise<string> {
-  const client = new Anthropic();
+  // TODO: Wire up Anthropic API once credentials are available.
+  const direction = context.dayChangePercent >= 0 ? "up" : "down";
+  const changePct = Math.abs(context.dayChangePercent).toFixed(2);
+  const volumeRatio =
+    context.avgVolume > 0 ? (context.volume / context.avgVolume).toFixed(1) : "n/a";
 
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 200,
-    system: `You are a concise stock market analyst writing alert notifications for retail traders. 
-Write exactly 2-3 sentences explaining why this alert matters. Be factual, specific, and actionable. 
-Never give buy/sell recommendations. Never use phrases like "This could mean" or hedge excessively. 
-Just state what happened, add relevant context (volume, proximity to 52-week range, upcoming events), 
-and note what experienced traders typically watch for in this situation. 
-Keep it under 50 words.`,
-    messages: [
-      {
-        role: "user",
-        content: `Alert triggered for ${context.ticker} (${context.companyName}):
-- Alert type: ${context.alertType}
-- Trigger value: $${context.triggerValue}
-- Price at trigger: $${context.priceAtTrigger}
-- Today's range: $${context.dayLow} - $${context.dayHigh} (opened at $${context.dayOpen})
-- Day change: ${context.dayChangePercent > 0 ? "+" : ""}${context.dayChangePercent.toFixed(2)}%
-- Volume: ${context.volume.toLocaleString()} (avg: ${context.avgVolume.toLocaleString()})
-- 52-week range: $${context.fiftyTwoWeekLow} - $${context.fiftyTwoWeekHigh}
-${context.nextEarningsDate ? `- Next earnings: ${context.nextEarningsDate}` : ""}
+  const rangeSpan = context.fiftyTwoWeekHigh - context.fiftyTwoWeekLow;
+  const rangePosition =
+    rangeSpan > 0 ? (context.currentPrice - context.fiftyTwoWeekLow) / rangeSpan : 0.5;
+  const rangeTag =
+    rangePosition >= 0.85
+      ? "near its 52-week high"
+      : rangePosition <= 0.15
+        ? "near its 52-week low"
+        : "in the middle of its 52-week range";
 
-Write 2-3 sentences of context for this alert.`,
-      },
-    ],
-  });
+  const alertLead = (() => {
+    switch (context.alertType) {
+      case "PRICE_ABOVE":
+        return `${context.ticker} pushed above $${context.triggerValue.toFixed(2)}.`;
+      case "PRICE_BELOW":
+        return `${context.ticker} slipped below $${context.triggerValue.toFixed(2)}.`;
+      case "PERCENT_CHANGE_DAY":
+        return `${context.ticker} moved ${changePct}% ${direction} on the day.`;
+      case "VOLUME_SPIKE":
+        return `${context.ticker} volume is running about ${volumeRatio}x average.`;
+      case "RSI_OVERBOUGHT":
+        return `${context.ticker} is flashing overbought momentum at $${context.currentPrice.toFixed(
+          2
+        )}.`;
+      case "RSI_OVERSOLD":
+        return `${context.ticker} is showing oversold momentum at $${context.currentPrice.toFixed(
+          2
+        )}.`;
+      case "SMA_CROSS_ABOVE":
+        return `${context.ticker} crossed above its moving average near $${context.currentPrice.toFixed(
+          2
+        )}.`;
+      case "SMA_CROSS_BELOW":
+        return `${context.ticker} crossed below its moving average near $${context.currentPrice.toFixed(
+          2
+        )}.`;
+      case "FIFTY_TWO_WEEK_HIGH":
+        return `${context.ticker} tagged a new 52-week high around $${context.currentPrice.toFixed(
+          2
+        )}.`;
+      case "FIFTY_TWO_WEEK_LOW":
+        return `${context.ticker} tagged a new 52-week low around $${context.currentPrice.toFixed(
+          2
+        )}.`;
+      case "EARNINGS_REMINDER":
+        return `${context.ticker} earnings are approaching; alert window triggered.`;
+      case "PRICE_RECOVERY":
+        return `${context.ticker} recovered back toward $${context.currentPrice.toFixed(2)}.`;
+      default:
+        return `${context.ticker} alert triggered at $${context.currentPrice.toFixed(2)}.`;
+    }
+  })();
 
-  const textBlock = message.content.find((block) => block.type === "text");
-  return textBlock?.text ?? "Alert triggered. Check current market conditions for context.";
+  const sentenceTwo = `Price is ${direction} ${changePct}% today and ${rangeTag}. Volume is ${
+    volumeRatio === "n/a" ? "not available" : `${volumeRatio}x its average`
+  }.`;
+  const sentenceThree = context.nextEarningsDate
+    ? `Next earnings date: ${context.nextEarningsDate}.`
+    : "";
+
+  return [alertLead, sentenceTwo, sentenceThree].filter(Boolean).join(" ");
 }

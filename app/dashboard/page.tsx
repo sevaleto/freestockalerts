@@ -4,22 +4,49 @@ import { StatsRow } from "@/components/dashboard/StatsRow";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AlertTable } from "@/components/dashboard/AlertTable";
 import { mockAlertHistory, mockAlerts } from "@/lib/mock/alerts";
+import { headers } from "next/headers";
 
-export default function DashboardPage() {
-  const activeAlerts = mockAlerts.filter((alert) => alert.isActive);
+const getBaseUrl = () => {
+  const headerList = headers();
+  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+  const protocol = headerList.get("x-forwarded-proto") ?? "http";
+  if (host) return `${protocol}://${host}`;
+  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+};
+
+export default async function DashboardPage() {
+  let alerts = mockAlerts;
+  let history = mockAlertHistory;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/api/alerts?includeHistory=true`, {
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.data?.alerts) {
+        alerts = json.data.alerts;
+        history = json.data.history ?? [];
+      }
+    }
+  } catch (error) {
+    // fall back to mock data
+  }
+
+  const activeAlerts = alerts.filter((alert) => alert.isActive);
   const stats = [
     { label: "Active Alerts", value: `${activeAlerts.length} / 50` },
     { label: "Triggered Today", value: "2" },
     { label: "Templates Active", value: "3" },
-    { label: "Alerts Fired (All Time)", value: `${mockAlertHistory.length}` },
+    { label: "Alerts Fired (All Time)", value: `${history.length}` },
   ];
 
-  const recent = mockAlertHistory.slice(0, 5).map((history) => {
-    const alert = mockAlerts.find((item) => item.id === history.alertId);
+  const recent = history.slice(0, 5).map((historyItem) => {
+    const alert = alerts.find((item) => item.id === historyItem.alertId);
     return {
-      ...history,
-      companyName: alert?.companyName ?? history.ticker,
-      currentPrice: alert?.currentPrice ?? history.priceAtTrigger,
+      ...historyItem,
+      companyName: alert?.companyName ?? historyItem.ticker,
+      currentPrice: alert?.currentPrice ?? historyItem.priceAtTrigger,
     };
   });
 
@@ -80,12 +107,12 @@ export default function DashboardPage() {
             View All Alerts →
           </Link>
         </div>
-        {mockAlerts.length === 0 ? (
+        {alerts.length === 0 ? (
           <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
             You haven&apos;t created any alerts yet.
           </div>
         ) : (
-          <AlertTable alerts={mockAlerts.slice(0, 10)} />
+          <AlertTable alerts={alerts.slice(0, 10)} />
         )}
       </section>
     </div>
