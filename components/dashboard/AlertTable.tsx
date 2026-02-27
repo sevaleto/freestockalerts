@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -24,6 +27,30 @@ interface AlertTableProps {
 }
 
 export function AlertTable({ alerts }: AlertTableProps) {
+  const router = useRouter();
+
+  const handleDelete = async (alertId: string, ticker: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the ${ticker} alert?`
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/alerts/${alertId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to delete alert");
+      }
+      router.refresh();
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : "Failed to delete alert"
+      );
+    }
+  };
+
   return (
     <div className="rounded-3xl border border-border bg-white shadow-soft">
       <Table>
@@ -61,10 +88,19 @@ export function AlertTable({ alerts }: AlertTableProps) {
                 </span>
               </TableCell>
               <TableCell className="space-x-2">
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled
+                  title="Coming soon"
+                >
                   Edit
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(alert.id, alert.ticker)}
+                >
                   Delete
                 </Button>
               </TableCell>
