@@ -15,7 +15,7 @@ interface AlertRow {
   ticker: string;
   alertType: string;
   triggerValue: number;
-  currentPrice: number;
+  currentPrice: number | null;
   isActive: boolean;
 }
 
@@ -47,7 +47,7 @@ export function AlertTable({ alerts }: AlertTableProps) {
                 {alert.alertType.replace(/_/g, " ")}
               </TableCell>
               <TableCell>{formatPrice(alert.triggerValue)}</TableCell>
-              <TableCell>{formatPrice(alert.currentPrice)}</TableCell>
+              <TableCell>{formatPrice(alert.currentPrice ?? 0)}</TableCell>
               <TableCell>
                 <span
                   className={cn(

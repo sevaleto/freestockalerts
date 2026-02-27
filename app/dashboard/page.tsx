@@ -3,52 +3,66 @@ import { Button } from "@/components/ui/button";
 import { StatsRow } from "@/components/dashboard/StatsRow";
 import { AlertCard } from "@/components/dashboard/AlertCard";
 import { AlertTable } from "@/components/dashboard/AlertTable";
-import { mockAlertHistory, mockAlerts } from "@/lib/mock/alerts";
-import { headers } from "next/headers";
+import { prisma } from "@/lib/prisma/client";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-const getBaseUrl = () => {
-  const headerList = headers();
-  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
-  const protocol = headerList.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-};
+async function getUser() {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
 
 export default async function DashboardPage() {
-  let alerts = mockAlerts;
-  let history = mockAlertHistory;
+  const user = await getUser();
 
-  try {
-    const res = await fetch(`${getBaseUrl()}/api/alerts?includeHistory=true`, {
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const json = await res.json();
-      if (json?.data?.alerts) {
-        alerts = json.data.alerts;
-        history = json.data.history ?? [];
-      }
-    }
-  } catch (error) {
-    // fall back to mock data
-  }
+  const alerts = user
+    ? await prisma.alert.findMany({
+        where: { userId: user.id },
+        include: { history: { orderBy: { triggeredAt: "desc" } } },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+
+  const history = alerts.flatMap((alert) =>
+    alert.history.map((item) => ({
+      id: item.id,
+      alertId: alert.id,
+      ticker: alert.ticker,
+      companyName: alert.companyName ?? alert.ticker,
+      alertType: alert.alertType,
+      priceAtTrigger: item.priceAtTrigger,
+      currentPrice: alert.currentPrice ?? item.priceAtTrigger,
+      triggeredAt: item.triggeredAt.toISOString(),
+      aiSummary: item.aiSummary ?? "",
+    }))
+  );
 
   const activeAlerts = alerts.filter((alert) => alert.isActive);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const triggeredToday = history.filter(
+    (h) => new Date(h.triggeredAt) >= today
+  ).length;
+
   const stats = [
     { label: "Active Alerts", value: `${activeAlerts.length} / 50` },
-    { label: "Triggered Today", value: "2" },
-    { label: "Templates Active", value: "3" },
+    { label: "Triggered Today", value: `${triggeredToday}` },
     { label: "Alerts Fired (All Time)", value: `${history.length}` },
   ];
 
-  const recent = history.slice(0, 5).map((historyItem) => {
-    const alert = alerts.find((item) => item.id === historyItem.alertId);
-    return {
-      ...historyItem,
-      companyName: alert?.companyName ?? historyItem.ticker,
-      currentPrice: alert?.currentPrice ?? historyItem.priceAtTrigger,
-    };
-  });
+  const recent = history.slice(0, 5);
 
   return (
     <div className="space-y-10">

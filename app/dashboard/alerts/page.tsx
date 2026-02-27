@@ -1,29 +1,36 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AlertTable } from "@/components/dashboard/AlertTable";
-import { mockAlerts } from "@/lib/mock/alerts";
-import { headers } from "next/headers";
+import { prisma } from "@/lib/prisma/client";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-const getBaseUrl = () => {
-  const headerList = headers();
-  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
-  const protocol = headerList.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-};
+async function getUser() {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
 
 export default async function AlertsPage() {
-  let alerts = mockAlerts;
+  const user = await getUser();
 
-  try {
-    const res = await fetch(`${getBaseUrl()}/api/alerts`, { cache: "no-store" });
-    if (res.ok) {
-      const json = await res.json();
-      if (json?.data) alerts = json.data;
-    }
-  } catch (error) {
-    // fall back to mock data
-  }
+  const alerts = user
+    ? await prisma.alert.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
 
   return (
     <div className="space-y-6">
