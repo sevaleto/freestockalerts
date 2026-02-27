@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  firstName     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  emailVerified Boolean   @default(false)
+  alertsCount   Int       @default(0)
+  maxAlerts     Int       @default(50)
+  alerts        Alert[]
+  templateSubs  TemplateSubscription[]
+  preferences   UserPreferences?
+}
+
+model UserPreferences {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailAlerts         Boolean  @default(true)
+  dailyDigest         Boolean  @default(false)
+  digestTime          String   @default("08:00")
+  timezone            String   @default("America/New_York")
+  marketOpenReminder  Boolean  @default(false)
+  marketCloseReminder Boolean  @default(false)
+}
+
+model Alert {
+  id               String             @id @default(cuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticker           String
+  companyName      String?
+  alertType        AlertType
+  triggerValue     Float
+  triggerDirection TriggerDirection
+  currentPrice     Float?
+  isActive         Boolean            @default(true)
+  isTriggered      Boolean            @default(false)
+  triggeredAt      DateTime?
+  lastCheckedAt    DateTime?
+  cooldownMinutes  Int                @default(20)
+  note             String?
+  templateId       String?
+  template         AlertTemplate?     @relation(fields: [templateId], references: [id])
+  history          AlertHistory[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([userId, isActive])
+  @@index([ticker, isActive])
+  @@index([isActive, isTriggered])
+}
+
+model AlertHistory {
+  id             String   @id @default(cuid())
+  alertId        String
+  alert          Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  triggeredAt    DateTime @default(now())
+  priceAtTrigger Float
+  aiSummary      String?
+  emailSent      Boolean  @default(false)
+  emailSentAt    DateTime?
+}
+
+model AlertTemplate {
+  id              String                  @id @default(cuid())
+  name            String
+  slug            String                  @unique
+  description     String
+  longDescription String?
+  category        TemplateCategory
+  iconEmoji       String                  @default("📊")
+  isActive        Boolean                 @default(true)
+  isFeatured      Boolean                 @default(false)
+  sortOrder       Int                     @default(0)
+  alerts          Alert[]
+  items           TemplateItem[]
+  subscriptions   TemplateSubscription[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+}
+
+model TemplateItem {
+  id               String        @id @default(cuid())
+  templateId       String
+  template         AlertTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  ticker           String
+  companyName      String?
+  alertType        AlertType
+  triggerValue     Float
+  triggerDirection TriggerDirection
+  rationale        String?
+  sortOrder        Int           @default(0)
+}
+
+model TemplateSubscription {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId   String
+  template     AlertTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  isActive     Boolean       @default(true)
+  subscribedAt DateTime      @default(now())
+
+  @@unique([userId, templateId])
+}
+
+enum AlertType {
+  PRICE_ABOVE
+  PRICE_BELOW
+  PERCENT_CHANGE_DAY
+  PERCENT_CHANGE_CUSTOM
+  VOLUME_SPIKE
+  RSI_OVERBOUGHT
+  RSI_OVERSOLD
+  SMA_CROSS_ABOVE
+  SMA_CROSS_BELOW
+  FIFTY_TWO_WEEK_HIGH
+  FIFTY_TWO_WEEK_LOW
+  EARNINGS_REMINDER
+  PRICE_RECOVERY
+}
+
+enum TriggerDirection {
+  ABOVE
+  BELOW
+  BOTH
+}
+
+enum TemplateCategory {
+  EARNINGS
+  VALUE_INVESTING
+  MOMENTUM
+  DIVIDEND
+  MACRO
+  AI_PICKS
+}
