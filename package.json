@@ -44,6 +44,9 @@
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.0"
   },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/node-cron": "^3.0.11",

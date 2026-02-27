@@ -5,43 +5,97 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/Logo";
+import { createClient } from "@/lib/supabase/client";
+import { CheckCircle2 } from "lucide-react";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      setSubmitted(true);
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-surface">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <Logo />
-        <Link href="/" className="text-sm text-text-secondary">
+        <Link href="/" className="text-sm text-text-secondary hover:text-text-primary">
           ← Back to home
         </Link>
       </header>
       <main className="flex flex-1 items-center justify-center px-6 pb-16">
         <div className="w-full max-w-md rounded-3xl border border-border bg-white p-8 shadow-soft">
-          <h1 className="text-2xl font-semibold text-text-primary">
-            Welcome to FreeStockAlerts
-          </h1>
-          <p className="mt-2 text-sm text-text-secondary">
-            No password needed. We&apos;ll email you a secure login link every time.
-          </p>
-          <form
-            className="mt-6 space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSubmitted(true);
-            }}
-          >
-            <Input type="email" placeholder="you@email.com" required className="h-11" />
-            <Button type="submit" className="h-11 w-full">
-              Send Magic Link
-            </Button>
-          </form>
-          {submitted ? (
-            <p className="mt-4 rounded-2xl border border-border bg-surface px-4 py-3 text-sm text-text-secondary">
-              Check your inbox! We sent you a login link.
-            </p>
-          ) : null}
+          {!submitted ? (
+            <>
+              <h1 className="text-2xl font-bold text-text-primary">
+                Welcome to FreeStockAlerts
+              </h1>
+              <p className="mt-2 text-sm text-slate-600">
+                No password needed. We&apos;ll email you a secure login link every time.
+              </p>
+              <form onSubmit={handleLogin} className="mt-6 space-y-4">
+                <Input
+                  type="email"
+                  placeholder="you@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 border-2 text-base"
+                />
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="h-12 w-full bg-emerald-600 text-base font-semibold hover:bg-emerald-700"
+                >
+                  {loading ? "Sending..." : "Send Magic Link"}
+                </Button>
+              </form>
+              {error && (
+                <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="py-4 text-center">
+              <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+              <h2 className="mt-4 text-xl font-bold text-text-primary">Check your inbox!</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                We sent a magic link to <strong>{email}</strong>.<br />
+                Click it to access your dashboard.
+              </p>
+              <p className="mt-6 text-xs text-slate-400">
+                Didn&apos;t get it? Check spam, or{" "}
+                <button
+                  onClick={() => { setSubmitted(false); setEmail(""); }}
+                  className="font-semibold text-primary underline"
+                >
+                  try again
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </main>
     </div>
