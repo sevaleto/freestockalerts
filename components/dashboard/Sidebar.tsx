@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   LayoutDashboard,
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { createBrowserClient } from "@supabase/ssr";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -26,6 +27,16 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   const navLinks = (
     <nav className="flex flex-1 flex-col gap-1">
@@ -59,7 +70,10 @@ export function Sidebar() {
         <div className="mt-10 flex flex-1 flex-col gap-6">
           {navLinks}
           <div className="mt-auto">
-            <button className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface">
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface"
+            >
               <LogOut className="h-4 w-4" />
               Sign Out
             </button>
@@ -80,7 +94,10 @@ export function Sidebar() {
               <Logo />
             </div>
             {navLinks}
-            <button className="mt-6 flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface">
+            <button
+              onClick={handleSignOut}
+              className="mt-6 flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface"
+            >
               <LogOut className="h-4 w-4" />
               Sign Out
             </button>
