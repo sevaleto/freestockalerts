@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface ThresholdFormProps {
   alertType?: string;
   currentPrice?: number;
+  value: number;
+  onChange: (value: number) => void;
 }
 
-export function ThresholdForm({ alertType, currentPrice }: ThresholdFormProps) {
+export function ThresholdForm({ alertType, currentPrice, value, onChange }: ThresholdFormProps) {
   if (!alertType) {
     return (
       <p className="text-sm text-text-secondary">
@@ -22,14 +24,14 @@ export function ThresholdForm({ alertType, currentPrice }: ThresholdFormProps) {
     return (
       <div className="space-y-3">
         <Label>Days before earnings</Label>
-        <Select defaultValue="3">
+        <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
           <SelectTrigger>
             <SelectValue placeholder="Select days" />
           </SelectTrigger>
           <SelectContent>
-            {["1", "3", "5", "7", "14"].map((value) => (
-              <SelectItem key={value} value={value}>
-                {value} days
+            {["1", "3", "5", "7", "14"].map((v) => (
+              <SelectItem key={v} value={v}>
+                {v} days
               </SelectItem>
             ))}
           </SelectContent>
@@ -42,8 +44,13 @@ export function ThresholdForm({ alertType, currentPrice }: ThresholdFormProps) {
     return (
       <div className="space-y-3">
         <Label>Volume multiplier</Label>
-        <Input type="number" defaultValue={2} step={0.1} />
-        <p className="text-xs text-text-muted">Current average volume: 45.2M</p>
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          step={0.1}
+        />
+        <p className="text-xs text-text-muted">Alert when volume exceeds this multiple of the average.</p>
       </div>
     );
   }
@@ -52,8 +59,11 @@ export function ThresholdForm({ alertType, currentPrice }: ThresholdFormProps) {
     return (
       <div className="space-y-3">
         <Label>RSI threshold</Label>
-        <Input type="number" defaultValue={alertType === "RSI_OVERBOUGHT" ? 70 : 30} />
-        <p className="text-xs text-text-muted">Current RSI: 58</p>
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
       </div>
     );
   }
@@ -62,19 +72,18 @@ export function ThresholdForm({ alertType, currentPrice }: ThresholdFormProps) {
     return (
       <div className="space-y-3">
         <Label>SMA period</Label>
-        <Select defaultValue="50">
+        <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
           <SelectTrigger>
             <SelectValue placeholder="Select period" />
           </SelectTrigger>
           <SelectContent>
-            {["20", "50", "100", "200"].map((value) => (
-              <SelectItem key={value} value={value}>
-                {value}-day SMA
+            {["20", "50", "100", "200"].map((v) => (
+              <SelectItem key={v} value={v}>
+                {v}-day SMA
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-text-muted">Current SMA: $218.40</p>
       </div>
     );
   }
@@ -83,8 +92,12 @@ export function ThresholdForm({ alertType, currentPrice }: ThresholdFormProps) {
     return (
       <div className="space-y-3">
         <Label>Percent change threshold</Label>
-        <Input type="number" defaultValue={5} step={0.5} />
-        <p className="text-xs text-text-muted">Current change: +1.2%</p>
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          step={0.5}
+        />
       </div>
     );
   }
@@ -92,8 +105,15 @@ export function ThresholdForm({ alertType, currentPrice }: ThresholdFormProps) {
   return (
     <div className="space-y-3">
       <Label>Price threshold</Label>
-      <Input type="number" defaultValue={currentPrice ?? 0} step={0.01} />
-      <p className="text-xs text-text-muted">Current price: ${currentPrice?.toFixed(2) ?? "--"}</p>
+      <Input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        step={0.01}
+      />
+      {currentPrice ? (
+        <p className="text-xs text-text-muted">Current price: ${currentPrice.toFixed(2)}</p>
+      ) : null}
     </div>
   );
 }

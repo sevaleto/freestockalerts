@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,16 +11,83 @@ import { Switch } from "@/components/ui/switch";
 import { TickerSearch } from "@/components/dashboard/TickerSearch";
 import { AlertTypeSelector } from "@/components/dashboard/AlertTypeSelector";
 import { ThresholdForm } from "@/components/dashboard/ThresholdForm";
-import { mockQuoteMap } from "@/lib/mock/quotes";
 import { formatPrice, formatPercent } from "@/lib/utils/formatters";
+import { createBrowserClient } from "@supabase/ssr";
+
+function getDefaultThreshold(alertType: string | undefined, currentPrice?: number): number {
+  switch (alertType) {
+    case "PRICE_ABOVE":
+    case "PRICE_BELOW":
+      return currentPrice ?? 0;
+    case "PERCENT_CHANGE_DAY":
+    case "PERCENT_CHANGE_CUSTOM":
+      return 5;
+    case "VOLUME_SPIKE":
+      return 2;
+    case "RSI_OVERBOUGHT":
+      return 70;
+    case "RSI_OVERSOLD":
+      return 30;
+    case "SMA_CROSS_ABOVE":
+    case "SMA_CROSS_BELOW":
+      return 50;
+    case "FIFTY_TWO_WEEK_HIGH":
+    case "FIFTY_TWO_WEEK_LOW":
+      return 0;
+    case "EARNINGS_REMINDER":
+      return 3;
+    case "PRICE_RECOVERY":
+      return currentPrice ?? 0;
+    default:
+      return 0;
+  }
+}
+
+function getTriggerDirection(alertType: string | undefined): string {
+  switch (alertType) {
+    case "PRICE_ABOVE":
+    case "FIFTY_TWO_WEEK_HIGH":
+    case "RSI_OVERBOUGHT":
+    case "SMA_CROSS_ABOVE":
+    case "VOLUME_SPIKE":
+      return "ABOVE";
+    case "PRICE_BELOW":
+    case "FIFTY_TWO_WEEK_LOW":
+    case "RSI_OVERSOLD":
+    case "SMA_CROSS_BELOW":
+      return "BELOW";
+    default:
+      return "BOTH";
+  }
+}
 
 export default function NewAlertPage() {
+  const router = useRouter();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<string | undefined>();
-  const [quote, setQuote] = useState(() =>
-    selectedTicker ? mockQuoteMap.get(selectedTicker) : undefined
-  );
+  const [threshold, setThreshold] = useState<number>(0);
+  const [cooldownMinutes, setCooldownMinutes] = useState("20");
+  const [note, setNote] = useState("");
+  const [emailEnabled, setEmailEnabled] = useState(true);
+  const [quote, setQuote] = useState<{ ticker: string; companyName: string; price: number; dayChangePercent: number } | undefined>();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
+  // Get user on mount
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
+
+  // Fetch quote when ticker changes
   useEffect(() => {
     if (!selectedTicker) {
       setQuote(undefined);
@@ -32,21 +100,82 @@ export default function NewAlertPage() {
         const res = await fetch(`/api/quotes/${selectedTicker}`);
         if (!res.ok) throw new Error("Quote fetch failed");
         const json = await res.json();
-        if (isMounted) {
-          setQuote(json?.data ?? mockQuoteMap.get(selectedTicker));
+        if (isMounted && json?.data) {
+          setQuote(json.data);
+          setCompanyName(json.data.companyName ?? null);
         }
-      } catch (error) {
-        if (isMounted) {
-          setQuote(mockQuoteMap.get(selectedTicker));
-        }
+      } catch {
+        // silently fail — quote is nice-to-have
       }
     };
 
     fetchQuote();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [selectedTicker]);
+
+  // Reset threshold when alert type changes
+  useEffect(() => {
+    setThreshold(getDefaultThreshold(alertType, quote?.price));
+  }, [alertType, quote?.price]);
+
+  const handleSubmit = async () => {
+    setError(null);
+
+    if (!userId) {
+      setError("You must be signed in to create alerts. Please sign in first.");
+      return;
+    }
+    if (!selectedTicker) {
+      setError("Please select a ticker.");
+      return;
+    }
+    if (!alertType) {
+      setError("Please choose an alert type.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch("/api/alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          ticker: selectedTicker,
+          companyName: companyName ?? quote?.companyName,
+          alertType,
+          triggerValue: threshold,
+          triggerDirection: getTriggerDirection(alertType),
+          currentPrice: quote?.price,
+          cooldownMinutes: Number(cooldownMinutes),
+          note: note || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to create alert");
+      }
+
+      setSuccess(true);
+      setTimeout(() => router.push("/dashboard/alerts"), 1500);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <div className="text-5xl">✅</div>
+        <h2 className="text-xl font-semibold text-text-primary">Alert Created!</h2>
+        <p className="text-sm text-text-secondary">Redirecting to your alerts...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10">
@@ -99,7 +228,12 @@ export default function NewAlertPage() {
         <h2 className="text-lg font-semibold text-text-primary">Step 3: Set Threshold</h2>
         <Card className="border-border">
           <CardContent className="p-5">
-            <ThresholdForm alertType={alertType} currentPrice={quote?.price} />
+            <ThresholdForm
+              alertType={alertType}
+              currentPrice={quote?.price}
+              value={threshold}
+              onChange={setThreshold}
+            />
           </CardContent>
         </Card>
       </section>
@@ -113,11 +247,11 @@ export default function NewAlertPage() {
                 <p className="text-sm font-semibold text-text-primary">Email notification</p>
                 <p className="text-xs text-text-secondary">Receive AI-enhanced alerts.</p>
               </div>
-              <Switch defaultChecked />
+              <Switch checked={emailEnabled} onCheckedChange={setEmailEnabled} />
             </div>
             <div className="space-y-2">
               <Label>Cooldown period</Label>
-              <Select defaultValue="20">
+              <Select value={cooldownMinutes} onValueChange={setCooldownMinutes}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select cooldown" />
                 </SelectTrigger>
@@ -131,7 +265,11 @@ export default function NewAlertPage() {
             </div>
             <div className="space-y-2">
               <Label>Personal note (optional)</Label>
-              <Input placeholder="Add a note like 'Buy zone'" />
+              <Input
+                placeholder="Add a note like 'Buy zone'"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
             </div>
           </CardContent>
         </Card>
@@ -141,7 +279,7 @@ export default function NewAlertPage() {
         <h2 className="text-lg font-semibold text-text-primary">Step 5: Review & Create</h2>
         <Card className="border-border">
           <CardContent className="space-y-4 p-5">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <p className="text-xs uppercase tracking-wide text-text-muted">Ticker</p>
                 <p className="text-sm font-semibold text-text-primary">
@@ -154,8 +292,27 @@ export default function NewAlertPage() {
                   {alertType ? alertType.replace(/_/g, " ") : "Select alert type"}
                 </p>
               </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-text-muted">Threshold</p>
+                <p className="text-sm font-semibold text-text-primary">
+                  {threshold || "—"}
+                </p>
+              </div>
             </div>
-            <Button className="w-full md:w-auto">Create Alert</Button>
+
+            {error && (
+              <div className="rounded-lg bg-danger/10 p-3 text-sm text-danger">
+                {error}
+              </div>
+            )}
+
+            <Button
+              className="w-full md:w-auto"
+              onClick={handleSubmit}
+              disabled={submitting || !selectedTicker || !alertType}
+            >
+              {submitting ? "Creating..." : "Create Alert"}
+            </Button>
           </CardContent>
         </Card>
       </section>
