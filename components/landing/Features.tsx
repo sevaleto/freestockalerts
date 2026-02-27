@@ -1,28 +1,41 @@
-import { BadgeCheck, Bell, Brain, Sparkles } from "lucide-react";
+import { BarChart3, Bell, BrainCircuit, Clock, DollarSign, Layers, Shield, Zap } from "lucide-react";
 
 const features = [
   {
-    title: "125+ Alert Types",
+    title: "12 Alert Types",
     description:
-      "Price, %, SMA, EMA, RSI, MACD, Volume, Earnings, 52-week highs/lows and more.",
+      "Price limits, % moves, RSI, SMA/EMA crossovers, volume spikes, 52-week highs/lows, earnings reminders. Set the exact trigger you need.",
     icon: Bell,
   },
   {
-    title: "AI-Powered Summaries",
+    title: "AI That Reads the Tape",
     description:
-      "Every alert comes with a plain-English explanation of why it matters.",
-    icon: Brain,
+      "Every triggered alert includes a 2-sentence market context summary. Volume vs. average, proximity to 52-week range, upcoming catalysts — written in plain English.",
+    icon: BrainCircuit,
   },
   {
     title: "One-Click Templates",
     description:
-      "Pre-built alert strategies: Earnings Season, Value Investing, Momentum, Dividends, Macro.",
-    icon: Sparkles,
+      "Activate 10 pre-set alerts instantly. Earnings season, Buffett value entries, momentum breakouts, dividend yield targets, market fear signals.",
+    icon: Layers,
   },
   {
-    title: "Actually Free",
-    description: "No trials. No freemium bait. No credit card. Free forever.",
-    icon: BadgeCheck,
+    title: "60-Second Setup",
+    description:
+      "No app to download. No passwords. Enter your email, click a magic link, set your first alert. That's it.",
+    icon: Zap,
+  },
+  {
+    title: "Free. No Asterisk.",
+    description:
+      "Not a trial. Not \"freemium.\" Not 3 alerts then pay. Every feature, every alert type, every template — $0 forever.",
+    icon: DollarSign,
+  },
+  {
+    title: "Smart Cooldowns",
+    description:
+      "Set cooldown windows so you don't get flooded. Get alerted once when a level breaks, not every time it bounces around it.",
+    icon: Clock,
   },
 ];
 
@@ -30,35 +43,30 @@ export function Features() {
   return (
     <section id="features" className="bg-white py-20">
       <div className="mx-auto w-full max-w-6xl px-6">
-        <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-          <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-text-muted">
-              Why traders switch
-            </p>
-            <h2 className="text-3xl font-semibold text-text-primary md:text-4xl">
-              Smarter alerts without the price tag
-            </h2>
-            <p className="text-base text-text-secondary">
-              We built FreeStockAlerts.AI to remove the friction from setting alerts and add context
-              that explains what happened and what professionals watch next.
-            </p>
-          </div>
-          <div className="rounded-3xl border border-border bg-surface p-6 shadow-soft">
-            <p className="text-sm font-semibold text-text-secondary">What you get</p>
-            <div className="mt-4 space-y-4">
-              {features.map((feature) => (
-                <div key={feature.title} className="flex gap-4">
-                  <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary">
-                    <feature.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-text-primary">{feature.title}</h3>
-                    <p className="text-sm text-text-secondary">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
+        <div className="max-w-2xl space-y-3">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+            Features
+          </p>
+          <h2 className="text-3xl font-bold text-text-primary md:text-4xl">
+            Everything StockAlarm charges for. Free.
+          </h2>
+          <p className="text-base leading-relaxed text-slate-600">
+            Plus AI-powered context they don&apos;t offer at any price.
+          </p>
+        </div>
+        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => (
+            <div
+              key={feature.title}
+              className="rounded-2xl border border-slate-100 bg-white p-6 transition hover:border-slate-200 hover:shadow-soft"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <feature.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-bold text-text-primary">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{feature.description}</p>
             </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>
