@@ -18,28 +18,34 @@ export default function DashboardTemplatesPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {mockTemplates.map((template) => (
-          <TemplateCard
-            key={template.id}
-            name={template.name}
-            description={template.description}
-            iconEmoji={template.iconEmoji}
-            alertsCount={template.items.length}
-            subscribers={1250}
-            isActive={activeTemplates.has(template.id)}
-            href={`/templates/${template.slug}`}
-            onToggle={(value) => {
-              setActiveTemplates((prev) => {
-                const next = new Set(prev);
-                if (value) next.add(template.id);
-                else next.delete(template.id);
-                return next;
-              });
-            }}
-          />
-        ))}
-      </div>
+      {mockTemplates.length === 0 ? (
+        <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+          No templates available yet.
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {mockTemplates.map((template) => (
+            <TemplateCard
+              key={template.id}
+              name={template.name}
+              description={template.description}
+              iconEmoji={template.iconEmoji}
+              alertsCount={template.items.length}
+              subscribers={1250}
+              isActive={activeTemplates.has(template.id)}
+              href={`/templates/${template.slug}`}
+              onToggle={(value) => {
+                setActiveTemplates((prev) => {
+                  const next = new Set(prev);
+                  if (value) next.add(template.id);
+                  else next.delete(template.id);
+                  return next;
+                });
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

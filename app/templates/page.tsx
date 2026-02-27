@@ -21,28 +21,34 @@ export default function TemplatesPage() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {mockTemplates.map((template) => (
-            <Link
-              key={template.id}
-              href={`/templates/${template.slug}`}
-              className="group rounded-3xl border border-border bg-white p-6 shadow-soft transition hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-3xl">{template.iconEmoji}</span>
-                <span className="text-xs text-text-muted">{template.category}</span>
-              </div>
-              <h3 className="mt-6 text-lg font-semibold text-text-primary group-hover:text-primary">
-                {template.name}
-              </h3>
-              <p className="mt-2 text-sm text-text-secondary">{template.description}</p>
-              <div className="mt-6 flex items-center justify-between text-xs text-text-muted">
-                <span>{template.items.length} alerts</span>
-                <span className="text-primary">Preview →</span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {mockTemplates.length === 0 ? (
+          <div className="mt-10 rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+            Templates are coming soon.
+          </div>
+        ) : (
+          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {mockTemplates.map((template) => (
+              <Link
+                key={template.id}
+                href={`/templates/${template.slug}`}
+                className="group rounded-3xl border border-border bg-white p-6 shadow-soft transition hover:-translate-y-1"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl">{template.iconEmoji}</span>
+                  <span className="text-xs text-text-muted">{template.category}</span>
+                </div>
+                <h3 className="mt-6 text-lg font-semibold text-text-primary group-hover:text-primary">
+                  {template.name}
+                </h3>
+                <p className="mt-2 text-sm text-text-secondary">{template.description}</p>
+                <div className="mt-6 flex items-center justify-between text-xs text-text-muted">
+                  <span>{template.items.length} alerts</span>
+                  <span className="text-primary">Preview →</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

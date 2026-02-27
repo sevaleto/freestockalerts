@@ -51,20 +51,26 @@ export default function DashboardPage() {
             View All →
           </Link>
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          {recent.map((item) => (
-            <AlertCard
-              key={item.id}
-              ticker={item.ticker}
-              companyName={item.companyName}
-              alertType={item.alertType}
-              triggerPrice={item.priceAtTrigger}
-              currentPrice={item.currentPrice}
-              triggeredAt={item.triggeredAt}
-              aiSummary={item.aiSummary}
-            />
-          ))}
-        </div>
+        {recent.length === 0 ? (
+          <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+            No alerts have triggered yet. Create your first alert to start tracking moves.
+          </div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {recent.map((item) => (
+              <AlertCard
+                key={item.id}
+                ticker={item.ticker}
+                companyName={item.companyName}
+                alertType={item.alertType}
+                triggerPrice={item.priceAtTrigger}
+                currentPrice={item.currentPrice}
+                triggeredAt={item.triggeredAt}
+                aiSummary={item.aiSummary}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="space-y-4">
@@ -74,7 +80,13 @@ export default function DashboardPage() {
             View All Alerts →
           </Link>
         </div>
-        <AlertTable alerts={mockAlerts.slice(0, 10)} />
+        {mockAlerts.length === 0 ? (
+          <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+            You haven&apos;t created any alerts yet.
+          </div>
+        ) : (
+          <AlertTable alerts={mockAlerts.slice(0, 10)} />
+        )}
       </section>
     </div>
   );

@@ -29,11 +29,17 @@ export default function AlertHistoryPage() {
         <Input type="date" />
       </div>
 
-      <div className="space-y-4">
-        {mockAlertHistory.map((item) => (
-          <AlertHistoryItem key={item.id} {...item} />
-        ))}
-      </div>
+      {mockAlertHistory.length === 0 ? (
+        <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+          No alert history yet. Triggered alerts will appear here.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {mockAlertHistory.map((item) => (
+            <AlertHistoryItem key={item.id} {...item} />
+          ))}
+        </div>
+      )}
 
       <div className="flex items-center justify-between text-sm text-text-secondary">
         <span>Showing 1-20 of {mockAlertHistory.length}</span>

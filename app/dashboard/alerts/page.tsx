@@ -18,7 +18,13 @@ export default function AlertsPage() {
         </Button>
       </div>
 
-      <AlertTable alerts={mockAlerts} />
+      {mockAlerts.length === 0 ? (
+        <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+          No alerts yet. Create one to start monitoring prices.
+        </div>
+      ) : (
+        <AlertTable alerts={mockAlerts} />
+      )}
     </div>
   );
 }
