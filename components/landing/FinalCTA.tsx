@@ -4,10 +4,36 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export function FinalCTA() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      setSubmitted(true);
+      setLoading(false);
+    }
+  };
 
   return (
     <section className="bg-slate-900 py-20 text-white">
@@ -39,7 +65,7 @@ export function FinalCTA() {
 
           <div className="rounded-2xl bg-slate-800 p-8">
             {!submitted ? (
-              <form onSubmit={(e) => { e.preventDefault(); if (email) setSubmitted(true); }} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <p className="text-lg font-semibold">Get your first alert free</p>
                 <Input
                   type="email"
@@ -51,10 +77,14 @@ export function FinalCTA() {
                 />
                 <Button
                   type="submit"
+                  disabled={loading}
                   className="h-13 w-full bg-emerald-600 text-base font-semibold shadow-lg hover:bg-emerald-700"
                 >
-                  Get Your First Alert →
+                  {loading ? "Sending..." : "Get Your First Alert →"}
                 </Button>
+                {error && (
+                  <p className="text-sm text-red-400">{error}</p>
+                )}
                 <p className="text-center text-xs text-slate-500">
                   Free forever. Unsubscribe anytime.
                 </p>

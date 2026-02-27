@@ -6,10 +6,36 @@ import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export function TemplatePreview() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      setSubmitted(true);
+      setLoading(false);
+    }
+  };
 
   return (
     <section id="templates" className="bg-surface py-20">
@@ -94,7 +120,7 @@ export function TemplatePreview() {
             </div>
             {!submitted ? (
               <form
-                onSubmit={(e) => { e.preventDefault(); if (email) setSubmitted(true); }}
+                onSubmit={handleSignup}
                 className="flex flex-col gap-3 sm:flex-row"
               >
                 <Input
@@ -107,10 +133,12 @@ export function TemplatePreview() {
                 />
                 <Button
                   type="submit"
+                  disabled={loading}
                   className="h-12 whitespace-nowrap bg-emerald-600 px-6 font-semibold shadow-lg hover:bg-emerald-700"
                 >
-                  Get Started Free →
+                  {loading ? "Sending..." : "Get Started Free →"}
                 </Button>
+                {error && <p className="text-sm text-red-200">{error}</p>}
               </form>
             ) : (
               <div className="rounded-xl bg-white/10 p-4 text-center font-semibold">

@@ -5,14 +5,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/Logo";
 import { CheckCircle2, Zap, Shield, TrendingUp } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export function Hero() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) setSubmitted(true);
+    if (!email) return;
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      setSubmitted(true);
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,11 +87,15 @@ export function Hero() {
                   />
                   <Button
                     type="submit"
+                    disabled={loading}
                     className="h-13 bg-emerald-600 px-8 text-base font-semibold shadow-lg hover:bg-emerald-700"
                   >
-                    Get Your First Alert →
+                    {loading ? "Sending..." : "Get Your First Alert →"}
                   </Button>
                 </div>
+                {error && (
+                  <p className="text-sm text-red-600">{error}</p>
+                )}
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500">
                   <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> No credit card</span>
                   <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> No paid tiers, ever</span>
