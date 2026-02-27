@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma/client";
 
+export const dynamic = "force-dynamic";
+
 interface RouteProps {
   params: { id: string };
 }

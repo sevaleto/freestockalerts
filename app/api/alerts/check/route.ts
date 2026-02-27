@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { evaluateAlerts } from "@/lib/alerts/evaluator";
 import { prisma } from "@/lib/prisma/client";
 
+export const dynamic = "force-dynamic";
+
 export async function POST() {
   const alerts = await prisma.alert.findMany({
     where: { isActive: true },
