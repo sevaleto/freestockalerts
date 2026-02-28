@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma/client";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -27,8 +28,27 @@ export async function GET(request: Request) {
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Upsert User record in Prisma so FK constraints work
+      if (data.user) {
+        try {
+          await prisma.user.upsert({
+            where: { id: data.user.id },
+            create: {
+              id: data.user.id,
+              email: data.user.email ?? "",
+              emailVerified: !!data.user.email_confirmed_at,
+            },
+            update: {
+              email: data.user.email ?? "",
+              emailVerified: !!data.user.email_confirmed_at,
+            },
+          });
+        } catch (e) {
+          console.error("Failed to upsert user record:", e);
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

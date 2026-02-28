@@ -43,7 +43,16 @@ async function generateSummary(
   }
 }
 
+// Vercel crons send GET requests
+export async function GET() {
+  return runAlertCheck();
+}
+
 export async function POST() {
+  return runAlertCheck();
+}
+
+async function runAlertCheck() {
   const alerts = await prisma.alert.findMany({
     where: { isActive: true },
     select: {
