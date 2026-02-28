@@ -15,6 +15,19 @@ function LoginForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // If already logged in, redirect straight to dashboard
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user && !searchParams.get("error")) {
+        window.location.href = "/dashboard";
+      } else {
+        setCheckingSession(false);
+      }
+    });
+  }, [searchParams]);
 
   // Show error from URL params (e.g., expired magic link)
   useEffect(() => {
@@ -55,6 +68,17 @@ function LoginForm() {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="w-full max-w-md rounded-3xl border border-border bg-white p-8 shadow-soft">
+        <div className="flex flex-col items-center py-8 space-y-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-text-secondary">Checking your session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md rounded-3xl border border-border bg-white p-8 shadow-soft">

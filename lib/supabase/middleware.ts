@@ -31,12 +31,20 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect dashboard routes — redirect unauthenticated users to /login
   const pathname = request.nextUrl.pathname;
+
+  // Protect dashboard routes — redirect unauthenticated users to /login
   if (pathname.startsWith("/dashboard") && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
+  }
+
+  // If logged in and visiting /login (without an error), redirect to dashboard
+  if (pathname === "/login" && user && !request.nextUrl.searchParams.get("error")) {
+    const dashUrl = request.nextUrl.clone();
+    dashUrl.pathname = "/dashboard";
+    return NextResponse.redirect(dashUrl);
   }
 
   return response;
