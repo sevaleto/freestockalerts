@@ -66,7 +66,7 @@ function LoginForm() {
       setError(error.message);
       setLoading(false);
     } else {
-      trackLead("email");
+      trackLead("email", email);
       setSubmitted(true);
       setLoading(false);
     }
