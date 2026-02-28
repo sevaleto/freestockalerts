@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { CookieConsentProvider } from "@/lib/cookies/CookieConsentContext";
+import { CookieConsent } from "@/components/shared/CookieConsent";
+import { TrackingScripts } from "@/components/shared/TrackingScripts";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -43,8 +46,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen bg-white text-text-primary antialiased">
-        {children}
-        <Toaster />
+        <CookieConsentProvider>
+          {children}
+          <TrackingScripts />
+          <CookieConsent />
+          <Toaster />
+        </CookieConsentProvider>
       </body>
     </html>
   );
