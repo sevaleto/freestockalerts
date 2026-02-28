@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export function FinalCTA() {
   const [email, setEmail] = useState("");
@@ -65,30 +66,38 @@ export function FinalCTA() {
 
           <div className="rounded-2xl bg-slate-800 p-8">
             {!submitted ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-4">
                 <p className="text-lg font-semibold">Get your first alert free</p>
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-13 border-slate-600 bg-slate-700 text-base text-white placeholder:text-slate-400"
-                  required
-                />
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="h-13 w-full bg-emerald-600 text-base font-semibold shadow-lg hover:bg-emerald-700"
-                >
-                  {loading ? "Sending..." : "Get Your First Alert →"}
-                </Button>
-                {error && (
-                  <p className="text-sm text-red-400">{error}</p>
-                )}
+                <GoogleSignInButton label="Sign up with Google" dark />
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-slate-600" />
+                  <span className="text-xs text-slate-500">or use email</span>
+                  <div className="h-px flex-1 bg-slate-600" />
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-13 border-slate-600 bg-slate-700 text-base text-white placeholder:text-slate-400"
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="h-13 w-full bg-emerald-600 text-base font-semibold shadow-lg hover:bg-emerald-700"
+                  >
+                    {loading ? "Sending..." : "Get Your First Alert →"}
+                  </Button>
+                  {error && (
+                    <p className="text-sm text-red-400">{error}</p>
+                  )}
+                </form>
                 <p className="text-center text-xs text-slate-500">
                   Free forever. Unsubscribe anytime.
                 </p>
-              </form>
+              </div>
             ) : (
               <div className="py-6 text-center">
                 <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/Logo";
 import { CheckCircle2, Zap, Shield, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export function Hero() {
   const [email, setEmail] = useState("");
@@ -75,33 +76,47 @@ export function Hero() {
 
             {/* Signup */}
             {!submitted ? (
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-13 border-2 border-slate-300 bg-white text-base shadow-sm focus:border-primary sm:max-w-sm"
-                    required
-                  />
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="h-13 bg-emerald-600 px-8 text-base font-semibold shadow-lg hover:bg-emerald-700"
-                  >
-                    {loading ? "Sending..." : "Get Your First Alert →"}
-                  </Button>
+              <div className="space-y-3">
+                {/* Google OAuth — primary CTA */}
+                <GoogleSignInButton
+                  label="Sign up with Google"
+                  className="sm:max-w-sm shadow-lg"
+                />
+
+                <div className="flex items-center gap-3 sm:max-w-sm">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <span className="text-xs text-slate-400">or use email</span>
+                  <div className="h-px flex-1 bg-slate-200" />
                 </div>
-                {error && (
-                  <p className="text-sm text-red-600">{error}</p>
-                )}
+
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-13 border-2 border-slate-300 bg-white text-base shadow-sm focus:border-primary sm:max-w-sm"
+                      required
+                    />
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="h-13 bg-emerald-600 px-8 text-base font-semibold shadow-lg hover:bg-emerald-700"
+                    >
+                      {loading ? "Sending..." : "Get Your First Alert →"}
+                    </Button>
+                  </div>
+                  {error && (
+                    <p className="text-sm text-red-600">{error}</p>
+                  )}
+                </form>
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500">
                   <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> No credit card</span>
                   <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> No paid tiers, ever</span>
                   <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Unsubscribe anytime</span>
                 </div>
-              </form>
+              </div>
             ) : (
               <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6">
                 <div className="flex items-start gap-3">

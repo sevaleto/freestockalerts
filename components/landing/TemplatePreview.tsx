@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export function TemplatePreview() {
   const [email, setEmail] = useState("");
@@ -119,27 +120,38 @@ export function TemplatePreview() {
               </p>
             </div>
             {!submitted ? (
-              <form
-                onSubmit={handleSignup}
-                className="flex flex-col gap-3 sm:flex-row"
-              >
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 border-0 bg-white text-text-primary shadow-lg"
-                  required
+              <div className="space-y-3">
+                <GoogleSignInButton
+                  label="Sign up with Google"
+                  className="border-white/20 bg-white/10 text-white hover:bg-white/20"
                 />
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="h-12 whitespace-nowrap bg-emerald-600 px-6 font-semibold shadow-lg hover:bg-emerald-700"
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-white/20" />
+                  <span className="text-xs text-white/50">or</span>
+                  <div className="h-px flex-1 bg-white/20" />
+                </div>
+                <form
+                  onSubmit={handleSignup}
+                  className="flex flex-col gap-3 sm:flex-row"
                 >
-                  {loading ? "Sending..." : "Get Started Free →"}
-                </Button>
-                {error && <p className="text-sm text-red-200">{error}</p>}
-              </form>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-12 border-0 bg-white text-text-primary shadow-lg"
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="h-12 whitespace-nowrap bg-emerald-600 px-6 font-semibold shadow-lg hover:bg-emerald-700"
+                  >
+                    {loading ? "Sending..." : "Get Started Free →"}
+                  </Button>
+                  {error && <p className="text-sm text-red-200">{error}</p>}
+                </form>
+              </div>
             ) : (
               <div className="rounded-xl bg-white/10 p-4 text-center font-semibold">
                 ✅ Check your inbox for a magic link!

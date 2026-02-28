@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle2 } from "lucide-react";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -95,7 +96,21 @@ function LoginForm() {
               {error}
             </p>
           )}
-          <form onSubmit={handleLogin} className="mt-6 space-y-4">
+          {/* Google OAuth */}
+          <div className="mt-6">
+            <GoogleSignInButton label="Sign in with Google" />
+          </div>
+
+          <div className="relative mt-5 mb-1">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-slate-400">or</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleLogin} className="mt-4 space-y-4">
             <Input
               type="email"
               placeholder="you@email.com"
