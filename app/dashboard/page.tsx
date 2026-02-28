@@ -8,6 +8,7 @@ import { AlertTable } from "@/components/dashboard/AlertTable";
 import { prisma } from "@/lib/prisma/client";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { TrackRegistration } from "@/components/shared/TrackRegistration";
 
 async function getUser() {
   const cookieStore = cookies();
@@ -68,6 +69,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-10">
+      <TrackRegistration />
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-text-primary">Dashboard</h1>

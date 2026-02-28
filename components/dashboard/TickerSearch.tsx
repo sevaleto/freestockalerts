@@ -1,19 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Card } from "@/components/ui/card";
 import { mockTickers } from "@/lib/mock/tickers";
 import { mockQuoteMap } from "@/lib/mock/quotes";
 import { formatPrice, formatPercent } from "@/lib/utils/formatters";
+import { trackSearch } from "@/lib/tracking/events";
 
 interface TickerSearchProps {
   onSelect: (ticker: string) => void;
 }
 
+/** Fire search event when user submits a meaningful query (3+ chars, debounced) */
+function useTrackSearch(query: string) {
+  const lastTracked = useRef("");
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2 || trimmed === lastTracked.current) return;
+    const timer = setTimeout(() => {
+      trackSearch(trimmed);
+      lastTracked.current = trimmed;
+    }, 1500); // debounce — only fires after 1.5s of no typing
+    return () => clearTimeout(timer);
+  }, [query]);
+}
+
 export function TickerSearch({ onSelect }: TickerSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(mockTickers.slice(0, 12));
+  useTrackSearch(query);
   const [quoteLookup, setQuoteLookup] = useState<Map<string, any>>(new Map());
 
   useEffect(() => {

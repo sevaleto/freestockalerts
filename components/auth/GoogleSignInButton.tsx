@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { trackLead } from "@/lib/tracking/events";
 
 interface GoogleSignInButtonProps {
   /** Label text — defaults to "Continue with Google" */
@@ -21,6 +22,7 @@ export function GoogleSignInButton({
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    trackLead("google");
     const supabase = createClient();
     const siteUrl =
       process.env.NEXT_PUBLIC_APP_URL || window.location.origin;

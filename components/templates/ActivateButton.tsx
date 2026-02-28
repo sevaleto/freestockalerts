@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createBrowserClient } from "@supabase/ssr";
+import { trackSubscribe } from "@/lib/tracking/events";
 
 interface ActivateButtonProps {
   slug: string;
@@ -73,6 +74,7 @@ export function ActivateButton({ slug, templateName }: ActivateButtonProps) {
         });
       }
 
+      trackSubscribe(templateName, items.length);
       setActivated(true);
       setTimeout(() => router.push("/dashboard/alerts"), 2000);
     } catch (err: unknown) {

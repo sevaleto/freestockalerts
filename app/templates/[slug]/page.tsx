@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma/client";
 import { Logo } from "@/components/shared/Logo";
 import { Badge } from "@/components/ui/badge";
 import { ActivateButton } from "@/components/templates/ActivateButton";
+import { TrackViewContent } from "@/components/shared/TrackViewContent";
 
 interface TemplateDetailPageProps {
   params: { slug: string };
@@ -31,6 +32,7 @@ export default async function TemplateDetailPage({ params }: TemplateDetailPageP
       </header>
 
       <main className="mx-auto w-full max-w-5xl px-6 pb-20">
+        <TrackViewContent name={template.name} slug={template.slug} />
         <div className="rounded-3xl border border-border bg-surface p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>

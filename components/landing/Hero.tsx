@@ -7,6 +7,7 @@ import { Logo } from "@/components/shared/Logo";
 import { CheckCircle2, Zap, Shield, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { trackLead } from "@/lib/tracking/events";
 
 export function Hero() {
   const [email, setEmail] = useState("");
@@ -32,6 +33,7 @@ export function Hero() {
       setError(error.message);
       setLoading(false);
     } else {
+      trackLead("email");
       setSubmitted(true);
       setLoading(false);
     }

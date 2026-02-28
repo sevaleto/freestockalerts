@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { trackLead } from "@/lib/tracking/events";
 
 export function FinalCTA() {
   const [email, setEmail] = useState("");
@@ -31,6 +32,7 @@ export function FinalCTA() {
       setError(error.message);
       setLoading(false);
     } else {
+      trackLead("email");
       setSubmitted(true);
       setLoading(false);
     }

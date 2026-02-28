@@ -9,6 +9,7 @@ import { Logo } from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle2 } from "lucide-react";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { trackLead } from "@/lib/tracking/events";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -65,6 +66,7 @@ function LoginForm() {
       setError(error.message);
       setLoading(false);
     } else {
+      trackLead("email");
       setSubmitted(true);
       setLoading(false);
     }
