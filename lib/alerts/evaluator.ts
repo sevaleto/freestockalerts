@@ -219,7 +219,8 @@ export const evaluateAlerts = async (
   alerts: AlertToEvaluate[]
 ): Promise<AlertEvaluationResult[]> => {
   const tickers = Array.from(new Set(alerts.map((alert) => alert.ticker)));
-  const quotes = await getBatchQuotes(tickers);
+  // skipMock: true — never evaluate alerts against stale mock/fallback data
+  const quotes = await getBatchQuotes(tickers, { skipMock: true });
   const quoteMap = new Map(
     quotes.map((quote: any) => [quote.ticker, quote])
   );

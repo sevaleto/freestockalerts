@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma/client";
+import { addContactToAudience } from "@/lib/email/audience";
 import {
   sendCAPIEvent,
   extractFbCookies,
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
       // Upsert User record in Prisma so FK constraints work
       if (data.user) {
         try {
-          await prisma.user.upsert({
+          const user = await prisma.user.upsert({
             where: { id: data.user.id },
             create: {
               id: data.user.id,
@@ -50,6 +51,22 @@ export async function GET(request: Request) {
               emailVerified: !!data.user.email_confirmed_at,
             },
           });
+
+          // Sync to Resend broadcast audience (async, don't block)
+          if (!user.resendContactId && !user.unsubscribedFromBlasts) {
+            addContactToAudience(user.email, user.firstName)
+              .then(async (contactId) => {
+                if (contactId) {
+                  await prisma.user.update({
+                    where: { id: user.id },
+                    data: { resendContactId: contactId },
+                  });
+                }
+              })
+              .catch((err) =>
+                console.error("[Audience] Sync on signup failed:", err)
+              );
+          }
         } catch (e) {
           console.error("Failed to upsert user record:", e);
         }

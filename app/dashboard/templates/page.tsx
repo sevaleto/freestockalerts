@@ -143,7 +143,6 @@ export default function DashboardTemplatesPage() {
               description={template.description}
               iconEmoji={template.iconEmoji}
               alertsCount={template.items.length}
-              subscribers={1250}
               isActive={activeTemplates.has(template.id)}
               href={`/templates/${template.slug}`}
               onToggle={(value) => handleToggle(template, value)}

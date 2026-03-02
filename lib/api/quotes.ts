@@ -72,7 +72,7 @@ export const getQuote = async (ticker: string) => {
   return quote;
 };
 
-export const getBatchQuotes = async (tickers: string[]) => {
+export const getBatchQuotes = async (tickers: string[], options?: { skipMock?: boolean }) => {
   const cacheKey = `batch:${tickers.sort().join(",")}`;
   const cached = cacheGet(cacheKey);
   if (cached) return cached;
@@ -87,7 +87,7 @@ export const getBatchQuotes = async (tickers: string[]) => {
     quotes = [];
   }
 
-  if (quotes.length === 0) {
+  if (quotes.length === 0 && !options?.skipMock) {
     quotes = tickers
       .map((ticker) => mockQuoteMap.get(ticker))
       .filter(Boolean) as any[];

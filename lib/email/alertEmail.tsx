@@ -70,7 +70,7 @@ export function AlertEmail({
           </Section>
           <Section style={{ marginTop: "20px" }}>
             <Link
-              href={`${appUrl}/dashboard/history`}
+              href={`${appUrl}/dashboard/alerts`}
               style={{
                 display: "inline-block",
                 padding: "12px 18px",
@@ -88,9 +88,15 @@ export function AlertEmail({
           <Text style={{ fontSize: "12px", color: "#64748B" }}>
             You&apos;re receiving this because you set an alert for {ticker} on
             FreeStockAlerts.AI. Manage your alerts:{" "}
-            <Link href={`${appUrl}/dashboard/history`} style={{ color: "#2563EB" }}>
-              {appUrl}/dashboard/history
+            <Link href={`${appUrl}/dashboard/alerts`} style={{ color: "#2563EB" }}>
+              {appUrl}/dashboard/alerts
             </Link>
+          </Text>
+          <Text style={{ fontSize: "11px", color: "#94A3B8", marginTop: "16px", lineHeight: "16px" }}>
+            Just so we&apos;re clear — we&apos;re not financial advisors or broker-dealers, and nothing we share should be taken as personal investment advice. We do our best to provide useful information, but we can&apos;t guarantee that everything is perfectly accurate or complete. Always do your own research and talk to a qualified professional before making any investment decisions.
+          </Text>
+          <Text style={{ fontSize: "11px", color: "#94A3B8", marginTop: "8px", lineHeight: "16px" }}>
+            Wealthpire, Inc. 400 Continental Blvd. 6th Floor El Segundo, CA 90245
           </Text>
         </Container>
       </Body>

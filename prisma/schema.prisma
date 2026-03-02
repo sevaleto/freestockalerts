@@ -9,17 +9,19 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  firstName     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  emailVerified Boolean   @default(false)
-  alertsCount   Int       @default(0)
-  maxAlerts     Int       @default(50)
-  alerts        Alert[]
-  templateSubs  TemplateSubscription[]
-  preferences   UserPreferences?
+  id                     String    @id @default(cuid())
+  email                  String    @unique
+  firstName              String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  emailVerified          Boolean   @default(false)
+  alertsCount            Int       @default(0)
+  maxAlerts              Int       @default(50)
+  unsubscribedFromBlasts Boolean   @default(false)
+  resendContactId        String?
+  alerts                 Alert[]
+  templateSubs           TemplateSubscription[]
+  preferences            UserPreferences?
 }
 
 model UserPreferences {
