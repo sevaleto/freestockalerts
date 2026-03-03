@@ -32,7 +32,7 @@ async function sendRateLimitAlert() {
 }
 
 const cache = new Map<string, { data: any; expiresAt: number }>();
-const CACHE_TTL_MS = 300_000; // 5 minutes — conserve FMP 250 calls/day limit
+const CACHE_TTL_MS = 60_000; // 1 minute — FMP Premium has generous limits
 
 const cacheGet = (key: string) => {
   const entry = cache.get(key);
