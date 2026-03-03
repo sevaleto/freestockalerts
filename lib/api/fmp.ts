@@ -1,5 +1,6 @@
-const FMP_BASE_URL = "https://financialmodelingprep.com/api/v3";
+const FMP_BASE_URL = "https://financialmodelingprep.com/stable";
 const CACHE_TTL_MS = 300_000; // 5 minutes — conserve FMP 250 calls/day limit
+const MAX_CONCURRENCY = 5; // max parallel single-ticker fetches (rate limit safety)
 
 export class FmpError extends Error {
   status?: number;
@@ -21,11 +22,17 @@ type FmpQuoteResponse = {
   dayHigh?: number;
   dayLow?: number;
   change?: number;
-  changesPercentage?: number;
+  changePercentage?: number;
   volume?: number;
   avgVolume?: number;
   yearHigh?: number;
   yearLow?: number;
+  marketCap?: number;
+  priceAvg50?: number;
+  priceAvg200?: number;
+  exchange?: string;
+  previousClose?: number;
+  timestamp?: number;
   earningsAnnouncement?: string;
 };
 
@@ -61,7 +68,7 @@ const toNumber = (value: unknown) => {
 
 const mapFmpQuote = (quote: FmpQuoteResponse) => {
   const dayChange = toNumber(quote.change) ?? 0;
-  const dayChangePercent = toNumber(quote.changesPercentage) ?? 0;
+  const dayChangePercent = toNumber(quote.changePercentage) ?? 0;
   return {
     ticker: quote.symbol,
     companyName: quote.name ?? quote.symbol,
@@ -77,6 +84,8 @@ const mapFmpQuote = (quote: FmpQuoteResponse) => {
     avgVolume: toNumber(quote.avgVolume) ?? 0,
     fiftyTwoWeekHigh: toNumber(quote.yearHigh) ?? 0,
     fiftyTwoWeekLow: toNumber(quote.yearLow) ?? 0,
+    previousClose: toNumber(quote.previousClose) ?? 0,
+    marketCap: toNumber(quote.marketCap) ?? 0,
     nextEarningsDate: quote.earningsAnnouncement
       ? quote.earningsAnnouncement.split("T")[0]
       : undefined,
@@ -91,8 +100,14 @@ const getApiKey = () => {
   return key;
 };
 
+/**
+ * Fetch from the FMP /stable/ API.
+ * The new stable API uses query params: /endpoint?symbol=X&apikey=KEY
+ * For endpoints that don't use `symbol` (like search), pass the full query string.
+ */
 const fmpFetch = async (path: string) => {
-  const url = `${FMP_BASE_URL}${path}${path.includes("?") ? "&" : "?"}apikey=${getApiKey()}`;
+  const separator = path.includes("?") ? "&" : "?";
+  const url = `${FMP_BASE_URL}${path}${separator}apikey=${getApiKey()}`;
   const response = await fetch(url);
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -112,7 +127,9 @@ export const fetchFmpQuote = async (ticker: string) => {
   const cached = cacheGet(cacheKey);
   if (cached) return cached;
 
-  const data = (await fmpFetch(`/quote/${encodeURIComponent(normalized)}`)) as FmpQuoteResponse[];
+  const data = (await fmpFetch(
+    `/quote?symbol=${encodeURIComponent(normalized)}`
+  )) as FmpQuoteResponse[];
   const quote = data?.[0];
   if (!quote) return null;
   const mapped = mapFmpQuote(quote);
@@ -120,6 +137,11 @@ export const fetchFmpQuote = async (ticker: string) => {
   return mapped;
 };
 
+/**
+ * Fetch quotes for multiple tickers.
+ * Batch (comma-separated) requires FMP premium, so we fetch one-at-a-time
+ * with concurrency limited to MAX_CONCURRENCY to respect rate limits.
+ */
 export const fetchFmpBatchQuotes = async (tickers: string[]) => {
   const normalized = Array.from(
     new Set(tickers.map((ticker) => ticker.trim().toUpperCase()).filter(Boolean))
@@ -135,13 +157,17 @@ export const fetchFmpBatchQuotes = async (tickers: string[]) => {
     else missing.push(ticker);
   }
 
-  if (missing.length > 0) {
-    const data = (await fmpFetch(`/quote/${missing.join(",")}`)) as FmpQuoteResponse[];
-    const mapped = Array.isArray(data) ? data.map(mapFmpQuote) : [];
-    for (const quote of mapped) {
-      cacheSet(`quote:${quote.ticker}`, quote);
+  // Fetch missing tickers in batches of MAX_CONCURRENCY
+  for (let i = 0; i < missing.length; i += MAX_CONCURRENCY) {
+    const batch = missing.slice(i, i + MAX_CONCURRENCY);
+    const batchResults = await Promise.allSettled(
+      batch.map((ticker) => fetchFmpQuote(ticker))
+    );
+    for (const result of batchResults) {
+      if (result.status === "fulfilled" && result.value) {
+        results.push(result.value);
+      }
     }
-    results.push(...mapped);
   }
 
   const resultMap = new Map(results.map((quote) => [quote.ticker, quote]));
@@ -152,7 +178,7 @@ export const searchFmpTickers = async (query: string) => {
   const normalized = query.trim();
   if (!normalized) return [];
   const data = (await fmpFetch(
-    `/search?query=${encodeURIComponent(normalized)}&limit=10`
+    `/search-symbol?query=${encodeURIComponent(normalized)}&limit=10`
   )) as Array<{ symbol: string; name?: string }>;
   return (Array.isArray(data) ? data : []).map((item) => ({
     ticker: item.symbol,
