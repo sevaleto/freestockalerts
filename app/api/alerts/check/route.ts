@@ -52,7 +52,28 @@ export async function POST() {
   return runAlertCheck();
 }
 
+function isMarketOpen(): boolean {
+  const now = new Date();
+  const day = now.getUTCDay();
+  // Skip weekends
+  if (day === 0 || day === 6) return false;
+
+  // Convert to ET (handles DST automatically)
+  const etTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  const hours = etTime.getHours();
+  const minutes = etTime.getMinutes();
+  const totalMinutes = hours * 60 + minutes;
+
+  // Market hours: 9:30 AM - 4:00 PM ET
+  return totalMinutes >= 570 && totalMinutes < 960;
+}
+
 async function runAlertCheck() {
+  if (!isMarketOpen()) {
+    console.log(`[alert-check] Outside market hours — skipping`);
+    return NextResponse.json({ message: "Outside market hours", results: [], updates: 0 });
+  }
+
   const alerts = await prisma.alert.findMany({
     where: { isActive: true },
     select: {
