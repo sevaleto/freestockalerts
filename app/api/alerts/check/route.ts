@@ -67,6 +67,8 @@ async function runAlertCheck() {
     },
   });
 
+  console.log(`[alert-check] Starting alert check at ${new Date().toISOString()} — ${alerts.length} active alerts`);
+
   if (alerts.length === 0) {
     return NextResponse.json({ message: "No active alerts", results: [], updates: 0 });
   }
@@ -84,10 +86,21 @@ async function runAlertCheck() {
     }))
   );
 
-  // Get quotes for email data
+  // Get quotes for email data (skipMock: true to avoid fake prices in emails)
   const tickers = Array.from(new Set(alerts.map((a) => a.ticker)));
-  const quotes = await getBatchQuotes(tickers);
+  const quotes = await getBatchQuotes(tickers, { skipMock: true });
   const quoteMap = new Map(quotes.map((q: any) => [q.ticker, q]));
+
+  console.log(`[alert-check] Fetched ${quotes.length} quotes for ${tickers.length} tickers: ${tickers.join(", ")}`);
+  for (const q of quotes as any[]) {
+    console.log(`[alert-check] ${q.ticker}: $${q.price} (change: ${q.change})`);
+  }
+
+  const triggeredCount = results.filter(r => r.triggered).length;
+  console.log(`[alert-check] Evaluation complete: ${triggeredCount}/${results.length} triggered`);
+  for (const r of results.filter(r => r.triggered)) {
+    console.log(`[alert-check] TRIGGERED: alertId=${r.alertId} price=$${r.priceAtTrigger} reason="${r.reason}"`);
+  }
 
   const normalizedResults = results.map((result) => {
     const alert = alerts.find((item) => item.id === result.alertId);

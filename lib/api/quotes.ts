@@ -63,9 +63,8 @@ export const getQuote = async (ticker: string) => {
   }
 
   if (!quote) {
-    const fallback = mockQuoteMap.get(ticker) ?? mockQuotes[0];
-    cacheSet(`quote:${ticker}`, fallback);
-    return fallback;
+    console.warn(`[getQuote] No real quote available for ${ticker} — returning null (no mock fallback)`);
+    return null;
   }
 
   cacheSet(`quote:${ticker}`, quote);
