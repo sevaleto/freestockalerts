@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -88,13 +89,8 @@ export function AlertTable({ alerts }: AlertTableProps) {
                 </span>
               </TableCell>
               <TableCell className="space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled
-                  title="Coming soon"
-                >
-                  Edit
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={`/dashboard/alerts/${alert.id}/edit`}>Edit</Link>
                 </Button>
                 <Button
                   variant="ghost"
