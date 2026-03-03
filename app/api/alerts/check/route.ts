@@ -184,9 +184,13 @@ async function runAlertCheck() {
         ]);
       }
 
+      const latestPrice = (quoteMap.get(alert.ticker) as any)?.price;
       return prisma.alert.update({
         where: { id: alert.id },
-        data: { lastCheckedAt: now },
+        data: {
+          lastCheckedAt: now,
+          ...(latestPrice != null ? { currentPrice: latestPrice } : {}),
+        },
       });
     })
   );

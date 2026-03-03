@@ -1,5 +1,5 @@
 const FMP_BASE_URL = "https://financialmodelingprep.com/api/v3";
-const CACHE_TTL_MS = 60 * 1000;
+const CACHE_TTL_MS = 300_000; // 5 minutes — conserve FMP 250 calls/day limit
 
 export class FmpError extends Error {
   status?: number;

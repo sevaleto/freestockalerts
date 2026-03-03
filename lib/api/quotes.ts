@@ -32,7 +32,7 @@ async function sendRateLimitAlert() {
 }
 
 const cache = new Map<string, { data: any; expiresAt: number }>();
-const CACHE_TTL_MS = 60 * 1000;
+const CACHE_TTL_MS = 300_000; // 5 minutes — conserve FMP 250 calls/day limit
 
 const cacheGet = (key: string) => {
   const entry = cache.get(key);
@@ -84,6 +84,23 @@ export const getBatchQuotes = async (tickers: string[], options?: { skipMock?: b
       sendRateLimitAlert(); // fire-and-forget
     }
     quotes = [];
+  }
+
+  // Fallback: if FMP batch returned nothing, try Alpha Vantage individually
+  if (quotes.length === 0) {
+    console.warn(`[getBatchQuotes] FMP batch empty — falling back to Alpha Vantage for ${tickers.length} tickers`);
+    const AV_CONCURRENCY = 5;
+    const avResults: any[] = [];
+    for (let i = 0; i < tickers.length; i += AV_CONCURRENCY) {
+      const batch = tickers.slice(i, i + AV_CONCURRENCY);
+      const settled = await Promise.allSettled(
+        batch.map((t) => fetchAlphaVantageQuote(t))
+      );
+      for (const r of settled) {
+        if (r.status === "fulfilled" && r.value) avResults.push(r.value);
+      }
+    }
+    quotes = avResults;
   }
 
   if (quotes.length === 0 && !options?.skipMock) {
