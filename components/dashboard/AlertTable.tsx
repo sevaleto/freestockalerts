@@ -89,9 +89,12 @@ export function AlertTable({ alerts }: AlertTableProps) {
                 </span>
               </TableCell>
               <TableCell className="space-x-2">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/dashboard/alerts/${alert.id}/edit`}>Edit</Link>
-                </Button>
+                <Link
+                  href={`/dashboard/alerts/${alert.id}/edit`}
+                  className="inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+                >
+                  Edit
+                </Link>
                 <Button
                   variant="ghost"
                   size="sm"
