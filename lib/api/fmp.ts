@@ -1,5 +1,6 @@
 const FMP_BASE_URL = "https://financialmodelingprep.com/stable";
 const CACHE_TTL_MS = 60_000; // 1 minute — FMP Premium has generous limits
+const MAX_CONCURRENCY = 5; // max parallel single-ticker fetches
 
 export class FmpError extends Error {
   status?: number;
@@ -137,8 +138,9 @@ export const fetchFmpQuote = async (ticker: string) => {
 };
 
 /**
- * Fetch quotes for multiple tickers in a single batch call.
- * FMP Premium supports comma-separated symbols.
+ * Fetch quotes for multiple tickers.
+ * FMP /stable/ does NOT support batch (comma-separated) — returns [].
+ * Fetch one-at-a-time with concurrency cap.
  */
 export const fetchFmpBatchQuotes = async (tickers: string[]) => {
   const normalized = Array.from(
@@ -155,15 +157,17 @@ export const fetchFmpBatchQuotes = async (tickers: string[]) => {
     else missing.push(ticker);
   }
 
-  if (missing.length > 0) {
-    const data = (await fmpFetch(
-      `/quote?symbol=${missing.join(",")}`
-    )) as FmpQuoteResponse[];
-    const mapped = Array.isArray(data) ? data.map(mapFmpQuote) : [];
-    for (const quote of mapped) {
-      cacheSet(`quote:${quote.ticker}`, quote);
+  // Fetch missing tickers in batches of MAX_CONCURRENCY
+  for (let i = 0; i < missing.length; i += MAX_CONCURRENCY) {
+    const batch = missing.slice(i, i + MAX_CONCURRENCY);
+    const batchResults = await Promise.allSettled(
+      batch.map((ticker) => fetchFmpQuote(ticker))
+    );
+    for (const result of batchResults) {
+      if (result.status === "fulfilled" && result.value) {
+        results.push(result.value);
+      }
     }
-    results.push(...mapped);
   }
 
   const resultMap = new Map(results.map((quote) => [quote.ticker, quote]));
