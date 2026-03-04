@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Ad production assets (too large for git)
+ad-production/clips/
+ad-production/final/
+ad-production/images/
+ad-production/vo/

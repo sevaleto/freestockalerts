@@ -184,6 +184,15 @@ async function runAlertCheck() {
           }
         }
 
+        // Price-threshold alerts are ONE-SHOT: deactivate after triggering
+        // so they don't fire repeatedly while the condition stays true.
+        // User can re-enable or create a new alert if they want another notification.
+        const ONE_SHOT_TYPES = [
+          "PRICE_ABOVE", "PRICE_BELOW", "PRICE_RECOVERY",
+          "FIFTY_TWO_WEEK_HIGH", "FIFTY_TWO_WEEK_LOW",
+        ];
+        const shouldDeactivate = ONE_SHOT_TYPES.includes(alert.alertType);
+
         // Update DB
         return prisma.$transaction([
           prisma.alert.update({
@@ -193,6 +202,7 @@ async function runAlertCheck() {
               triggeredAt: now,
               currentPrice: result.priceAtTrigger,
               lastCheckedAt: now,
+              ...(shouldDeactivate ? { isActive: false } : {}),
             },
           }),
           prisma.alertHistory.create({
