@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/Logo";
@@ -8,12 +8,20 @@ import { CheckCircle2, Zap, Shield, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { trackLead } from "@/lib/tracking/events";
+import { ACTIVE_TESTS, HERO_HEADLINES } from "@/lib/ab/variants";
+import { assignVariant } from "@/lib/ab/assign";
 
 export function Hero() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [variant, setVariant] = useState<string>("A");
+
+  useEffect(() => {
+    const v = assignVariant(ACTIVE_TESTS.hero_headline);
+    setVariant(v);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +75,11 @@ export function Hero() {
 
             <div className="space-y-4">
               <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-text-primary md:text-[3.5rem]">
-                Stop missing trades.<br />
-                <span className="text-primary">Start getting context.</span>
+                {HERO_HEADLINES[variant].line1}<br />
+                <span className="text-primary">{HERO_HEADLINES[variant].line2}</span>
               </h1>
               <p className="max-w-xl text-lg leading-relaxed text-slate-600 md:text-xl">
-                Every alert tells you <strong>what happened</strong> and <strong>what pros watch next</strong> — 
-                not just a price ping. Set up in 60 seconds, free forever.
+                {HERO_HEADLINES[variant].sub}
               </p>
             </div>
 

@@ -45,6 +45,11 @@ function tt(event: string, params?: Record<string, any>) {
 export function trackLead(method: "google" | "email" = "google", email?: string) {
   const eventId = generateEventId();
 
+  // Capture A/B variant for attribution
+  const abVariant = typeof document !== "undefined"
+    ? document.cookie.split("; ").find((c) => c.startsWith("ab_hero_headline="))?.split("=")[1] ?? null
+    : null;
+
   // Browser pixel (with event_id for dedup)
   fbWithId("Lead", eventId, { content_name: "signup", method });
   tt("SubmitForm", { content_name: "signup", method });
@@ -54,7 +59,7 @@ export function trackLead(method: "google" | "email" = "google", email?: string)
     fetch("/api/tracking/lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event_id: eventId, email, method }),
+      body: JSON.stringify({ event_id: eventId, email, method, ab_variant: abVariant }),
       keepalive: true, // survives page navigation (OAuth redirect)
     }).catch(() => {}); // silent fail
   }

@@ -19,6 +19,7 @@ model User {
   maxAlerts              Int       @default(50)
   unsubscribedFromBlasts Boolean   @default(false)
   resendContactId        String?
+  signupVariant          String?   // A/B test variant at signup (e.g. "hero_headline:A")
   alerts                 Alert[]
   templateSubs           TemplateSubscription[]
   preferences            UserPreferences?

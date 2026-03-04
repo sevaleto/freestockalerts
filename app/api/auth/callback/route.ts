@@ -39,16 +39,23 @@ export async function GET(request: Request) {
       // Upsert User record in Prisma so FK constraints work
       if (data.user) {
         try {
+          // Capture A/B variant from cookie
+          const abVariant = cookieStore.get("ab_hero_headline")?.value ?? null;
+          const variantTag = abVariant ? `hero_headline:${abVariant}` : null;
+
           const user = await prisma.user.upsert({
             where: { id: data.user.id },
             create: {
               id: data.user.id,
               email: data.user.email ?? "",
               emailVerified: !!data.user.email_confirmed_at,
+              signupVariant: variantTag,
             },
             update: {
               email: data.user.email ?? "",
               emailVerified: !!data.user.email_confirmed_at,
+              // Only set variant if not already set (don't overwrite on re-login)
+              ...(variantTag ? { signupVariant: variantTag } : {}),
             },
           });
 
