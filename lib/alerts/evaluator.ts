@@ -46,25 +46,7 @@ export interface IndicatorData {
   nextEarningsDate?: string | null;
 }
 
-/**
- * Alert types that describe a single event (a threshold cross, an indicator
- * crossing a level, an upcoming earnings date). These deactivate after they
- * fire so the user gets one notification, not one every cooldown window.
- * Recurring-condition types (daily % move, volume spike) stay active and are
- * throttled by cooldownMinutes instead.
- */
-export const ONE_SHOT_ALERT_TYPES = [
-  "PRICE_ABOVE",
-  "PRICE_BELOW",
-  "PRICE_RECOVERY",
-  "FIFTY_TWO_WEEK_HIGH",
-  "FIFTY_TWO_WEEK_LOW",
-  "RSI_OVERBOUGHT",
-  "RSI_OVERSOLD",
-  "SMA_CROSS_ABOVE",
-  "SMA_CROSS_BELOW",
-  "EARNINGS_REMINDER",
-] as const;
+export { ONE_SHOT_ALERT_TYPES } from "@/lib/alerts/frequency";
 
 const RSI_TYPES = new Set(["RSI_OVERBOUGHT", "RSI_OVERSOLD"]);
 const SMA_TYPES = new Set(["SMA_CROSS_ABOVE", "SMA_CROSS_BELOW"]);

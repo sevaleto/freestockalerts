@@ -32,9 +32,9 @@ const features = [
     icon: DollarSign,
   },
   {
-    title: "Smart Cooldowns",
+    title: "No Alert Spam",
     description:
-      "Set cooldown windows so you don't get flooded. Get alerted once when a level breaks, not every time it bounces around it.",
+      "Get alerted once when a level breaks, not every time it bounces around it. Daily-move and volume alerts email you at most once a day.",
     icon: Clock,
   },
 ];

@@ -39,3 +39,18 @@ export const getNextMarketClose = (date = new Date()) => {
 };
 
 export const MARKET_TIMEZONE_LABEL = MARKET_TIMEZONE;
+
+/**
+ * Calendar-day key (YYYY-MM-DD) in US market time. Two timestamps with the
+ * same key fall on the same trading day in New York.
+ */
+export const marketDayKey = (date = new Date()) => {
+  const et = toZonedTime(date, MARKET_TIMEZONE);
+  const y = et.getFullYear();
+  const m = String(et.getMonth() + 1).padStart(2, "0");
+  const d = String(et.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+export const isSameMarketDay = (a: Date, b: Date) =>
+  marketDayKey(a) === marketDayKey(b);
