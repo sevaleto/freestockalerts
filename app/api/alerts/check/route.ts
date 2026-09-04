@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { evaluateAlerts } from "@/lib/alerts/evaluator";
+import { evaluateAlerts, ONE_SHOT_ALERT_TYPES } from "@/lib/alerts/evaluator";
 import { getBatchQuotes } from "@/lib/api/quotes";
 import { prisma } from "@/lib/prisma/client";
 import { sendAlertEmail } from "@/lib/email/sendAlertEmail";
@@ -44,12 +44,24 @@ async function generateSummary(
 }
 
 // Vercel crons send GET requests
-export async function GET() {
-  return runAlertCheck();
+export async function GET(request: Request) {
+  return runAlertCheck(request);
 }
 
-export async function POST() {
-  return runAlertCheck();
+export async function POST(request: Request) {
+  return runAlertCheck(request);
+}
+
+/**
+ * When CRON_SECRET is set in the environment, only requests carrying
+ * `Authorization: Bearer <CRON_SECRET>` are accepted. Vercel attaches that
+ * header to cron invocations automatically. When it is unset the route stays
+ * open (legacy behaviour) so an unconfigured deploy keeps working.
+ */
+function isAuthorized(request: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return true;
+  return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
 function isMarketOpen(): boolean {
@@ -68,8 +80,17 @@ function isMarketOpen(): boolean {
   return totalMinutes >= 570 && totalMinutes < 960;
 }
 
-async function runAlertCheck() {
-  if (!isMarketOpen()) {
+async function runAlertCheck(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ?dryRun=1 — evaluate every active alert and report what WOULD fire,
+  // without sending email, calling OpenAI, or writing to the database.
+  // Also bypasses the market-hours gate so it can be used any time.
+  const dryRun = new URL(request.url).searchParams.get("dryRun") === "1";
+
+  if (!isMarketOpen() && !dryRun) {
     console.log(`[alert-check] Outside market hours — skipping`);
     return NextResponse.json({ message: "Outside market hours", results: [], updates: 0 });
   }
@@ -88,7 +109,7 @@ async function runAlertCheck() {
     },
   });
 
-  console.log(`[alert-check] Starting alert check at ${new Date().toISOString()} — ${alerts.length} active alerts`);
+  console.log(`[alert-check] Starting alert check at ${new Date().toISOString()} — ${alerts.length} active alerts${dryRun ? " (DRY RUN)" : ""}`);
 
   if (alerts.length === 0) {
     return NextResponse.json({ message: "No active alerts", results: [], updates: 0 });
@@ -140,6 +161,8 @@ async function runAlertCheck() {
   });
 
   let emailsSent = 0;
+  let emailsSkippedByPreference = 0;
+  let emailsFailed = 0;
 
   const operations = await Promise.all(
     normalizedResults.map(async (result) => {
@@ -148,6 +171,21 @@ async function runAlertCheck() {
 
       if (result.triggered && result.priceAtTrigger !== undefined) {
         const quote = quoteMap.get(alert.ticker) as any;
+
+        // Get user email + notification preference
+        const user = await prisma.user.findUnique({
+          where: { id: alert.userId },
+          select: {
+            email: true,
+            preferences: { select: { emailAlerts: true } },
+          },
+        });
+        const emailAllowed =
+          !!user?.email && user.preferences?.emailAlerts !== false;
+
+        if (dryRun) {
+          return { dryRun: true, alertId: alert.id, wouldEmail: emailAllowed };
+        }
 
         // Generate AI summary
         const aiSummary = await generateSummary(
@@ -159,17 +197,14 @@ async function runAlertCheck() {
           quote?.changePercent
         );
 
-        // Get user email for notification
-        const user = await prisma.user.findUnique({
-          where: { id: alert.userId },
-          select: { email: true },
-        });
-
-        // Send email notification
-        if (user?.email) {
+        // Send email notification (Resend returns { data, error } — it does
+        // not throw on API errors, so check `error` explicitly).
+        let emailSent = false;
+        let emailSentAt: Date | null = null;
+        if (emailAllowed) {
           try {
-            await sendAlertEmail({
-              to: user.email,
+            const { error } = await sendAlertEmail({
+              to: user!.email,
               ticker: alert.ticker,
               alertType: alert.alertType,
               currentPrice: `$${result.priceAtTrigger.toFixed(2)}`,
@@ -178,20 +213,29 @@ async function runAlertCheck() {
               volume: quote?.volume?.toLocaleString() ?? "N/A",
               aiSummary,
             });
-            emailsSent++;
+            if (error) {
+              emailsFailed++;
+              console.error(`[alert-check] Resend rejected email for alert ${alert.id}:`, error);
+            } else {
+              emailSent = true;
+              emailSentAt = new Date();
+              emailsSent++;
+            }
           } catch (err) {
-            console.error(`Failed to send email for alert ${alert.id}:`, err);
+            emailsFailed++;
+            console.error(`[alert-check] Failed to send email for alert ${alert.id}:`, err);
           }
+        } else if (user?.email) {
+          emailsSkippedByPreference++;
+          console.log(`[alert-check] Email alerts disabled by user — skipping email for alert ${alert.id}`);
         }
 
-        // Price-threshold alerts are ONE-SHOT: deactivate after triggering
-        // so they don't fire repeatedly while the condition stays true.
-        // User can re-enable or create a new alert if they want another notification.
-        const ONE_SHOT_TYPES = [
-          "PRICE_ABOVE", "PRICE_BELOW", "PRICE_RECOVERY",
-          "FIFTY_TWO_WEEK_HIGH", "FIFTY_TWO_WEEK_LOW",
-        ];
-        const shouldDeactivate = ONE_SHOT_TYPES.includes(alert.alertType);
+        // Event-style alerts are ONE-SHOT: deactivate after triggering so
+        // they don't fire repeatedly while the condition stays true.
+        // User can re-enable (or edit) the alert for another notification.
+        const shouldDeactivate = (ONE_SHOT_ALERT_TYPES as readonly string[]).includes(
+          alert.alertType
+        );
 
         // Update DB
         return prisma.$transaction([
@@ -210,10 +254,14 @@ async function runAlertCheck() {
               alertId: alert.id,
               priceAtTrigger: result.priceAtTrigger,
               aiSummary,
+              emailSent,
+              emailSentAt,
             },
           }),
         ]);
       }
+
+      if (dryRun) return null;
 
       const latestPrice = (quoteMap.get(alert.ticker) as any)?.price;
       return prisma.alert.update({
@@ -228,10 +276,36 @@ async function runAlertCheck() {
 
   const completed = operations.filter(Boolean).length;
 
+  if (dryRun) {
+    const wouldFire = normalizedResults.filter((r) => r.triggered);
+    console.log(`[alert-check] DRY RUN complete: ${wouldFire.length} alert(s) would fire`);
+    return NextResponse.json({
+      message: "Dry run completed — nothing was sent or written",
+      dryRun: true,
+      checked: alerts.length,
+      wouldFire: wouldFire.map((r) => {
+        const alert = alerts.find((a) => a.id === r.alertId);
+        return {
+          alertId: r.alertId,
+          ticker: alert?.ticker,
+          alertType: alert?.alertType,
+          triggerValue: alert?.triggerValue,
+          priceAtTrigger: r.priceAtTrigger,
+          reason: r.reason,
+        };
+      }),
+      results: normalizedResults,
+    });
+  }
+
+  console.log(`[alert-check] Done: ${completed} updates, ${emailsSent} emails sent, ${emailsFailed} failed, ${emailsSkippedByPreference} skipped by preference`);
+
   return NextResponse.json({
     message: "Alert check completed",
     results: normalizedResults,
     updates: completed,
     emailsSent,
+    emailsFailed,
+    emailsSkippedByPreference,
   });
 }
