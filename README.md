@@ -28,8 +28,9 @@ Google), create alerts on any ticker, and get an email when the alert fires.
    is on), an `AlertHistory` row with `emailSent`/`emailSentAt`, and a cooldown.
 5. **One-shot types** (price above/below, 52-week high/low, RSI, SMA cross, earnings
    reminder) deactivate after firing. Editing the trigger re-arms them.
-   **Recurring types** (daily % change, volume spike) stay active and re-fire after
-   `cooldownMinutes` (default 20) while the condition holds.
+   **Recurring types** (daily % change, volume spike) stay active but notify at most
+   once per trading day (US market time). `cooldownMinutes` is still honoured but is
+   no longer exposed in the UI.
 
 ### Alert type support
 

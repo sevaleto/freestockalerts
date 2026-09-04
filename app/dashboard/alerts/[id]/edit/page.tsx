@@ -6,18 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { AlertTypeSelector } from "@/components/dashboard/AlertTypeSelector";
 import { ThresholdForm } from "@/components/dashboard/ThresholdForm";
 import { formatPrice, formatPercent } from "@/lib/utils/formatters";
 import { createBrowserClient } from "@supabase/ssr";
+import { notificationFrequencyCopy } from "@/lib/alerts/frequency";
 
 function getTriggerDirection(alertType: string | undefined): string {
   switch (alertType) {
@@ -288,19 +282,11 @@ export default function EditAlertPage() {
               </div>
               <Switch checked={emailEnabled} onCheckedChange={setEmailEnabled} />
             </div>
-            <div className="space-y-2">
-              <Label>Cooldown period</Label>
-              <Select value={cooldownMinutes} onValueChange={setCooldownMinutes}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select cooldown" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="20">20 minutes</SelectItem>
-                  <SelectItem value="60">1 hour</SelectItem>
-                  <SelectItem value="240">4 hours</SelectItem>
-                  <SelectItem value="1440">1 day</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-1">
+              <Label>Notification frequency</Label>
+              <p className="text-xs text-text-secondary">
+                {notificationFrequencyCopy(alertType)}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Personal note (optional)</Label>

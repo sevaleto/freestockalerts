@@ -3,6 +3,7 @@ import { evaluateAlerts, ONE_SHOT_ALERT_TYPES } from "@/lib/alerts/evaluator";
 import { getBatchQuotes } from "@/lib/api/quotes";
 import { prisma } from "@/lib/prisma/client";
 import { sendAlertEmail } from "@/lib/email/sendAlertEmail";
+import { isSameMarketDay } from "@/lib/utils/marketHours";
 import OpenAI from "openai";
 
 export const dynamic = "force-dynamic";
@@ -148,12 +149,20 @@ async function runAlertCheck(request: Request) {
     const alert = alerts.find((item) => item.id === result.alertId);
     if (!alert) return result;
 
+    if (!result.triggered || !alert.triggeredAt) return result;
+
+    // Recurring alerts (daily % move, volume spike) notify at most ONCE per
+    // trading day. A stock that is up 2% stays up 2% all afternoon; the user
+    // wants to hear about it once, not every five minutes.
+    if (isSameMarketDay(alert.triggeredAt, now)) {
+      return { ...result, triggered: false, reason: "Already notified today" };
+    }
+
+    // Belt-and-braces: honour any explicit cooldown as well.
     const cooldownActive =
-      alert.triggeredAt &&
       alert.cooldownMinutes > 0 &&
       now.getTime() - alert.triggeredAt.getTime() < alert.cooldownMinutes * 60 * 1000;
-
-    if (cooldownActive && result.triggered) {
+    if (cooldownActive) {
       return { ...result, triggered: false, reason: "Cooldown active" };
     }
 
