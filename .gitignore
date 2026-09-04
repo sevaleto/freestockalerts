@@ -45,3 +45,7 @@ ad-production/clips/
 ad-production/final/
 ad-production/images/
 ad-production/vo/
+.env*.local
+
+# keep the template even though .env* is ignored
+!.env.example

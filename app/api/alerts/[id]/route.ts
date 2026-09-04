@@ -77,6 +77,19 @@ export async function PATCH(request: Request, { params }: RouteProps) {
     if (payload.note !== undefined) data.note = payload.note;
     if (payload.templateId !== undefined) data.templateId = payload.templateId;
 
+    // Editing what the alert watches re-arms it: a one-shot alert that already
+    // fired would otherwise stay deactivated with its new trigger ignored.
+    // Explicit isActive / isTriggered / triggeredAt in the payload still win.
+    const triggerFields = ["ticker", "alertType", "triggerValue", "triggerDirection"] as const;
+    const triggerChanged = triggerFields.some(
+      (key) => key in data && data[key] !== (existing as Record<string, unknown>)[key]
+    );
+    if (triggerChanged) {
+      if (data.isActive === undefined) data.isActive = true;
+      if (data.isTriggered === undefined) data.isTriggered = false;
+      if (data.triggeredAt === undefined) data.triggeredAt = null;
+    }
+
     const updated = await prisma.alert.update({
       where: { id: params.id },
       data,

@@ -86,6 +86,8 @@ const mapFmpQuote = (quote: FmpQuoteResponse) => {
     fiftyTwoWeekLow: toNumber(quote.yearLow) ?? 0,
     previousClose: toNumber(quote.previousClose) ?? 0,
     marketCap: toNumber(quote.marketCap) ?? 0,
+    sma50: toNumber(quote.priceAvg50),
+    sma200: toNumber(quote.priceAvg200),
     nextEarningsDate: quote.earningsAnnouncement
       ? quote.earningsAnnouncement.split("T")[0]
       : undefined,
@@ -184,4 +186,160 @@ export const searchFmpTickers = async (query: string) => {
     ticker: item.symbol,
     companyName: item.name ?? item.symbol,
   }));
+};
+
+// ---------------------------------------------------------------------------
+// Technical indicators + earnings calendar
+// Daily-timeframe data changes at most once per trading day, so cache longer.
+// ---------------------------------------------------------------------------
+
+const INDICATOR_CACHE_TTL_MS = 5 * 60_000; // 5 minutes
+
+const indicatorCacheGet = (key: string) => {
+  const entry = quoteCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    quoteCache.delete(key);
+    return null;
+  }
+  return entry.data;
+};
+
+const indicatorCacheSet = (key: string, data: any) => {
+  quoteCache.set(key, { data, expiresAt: Date.now() + INDICATOR_CACHE_TTL_MS });
+};
+
+type FmpIndicatorRow = {
+  date: string;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
+  volume?: number;
+  rsi?: number;
+  sma?: number;
+};
+
+export interface RsiSnapshot {
+  ticker: string;
+  period: number;
+  /** Most recent RSI value (today, computed on the latest close/price FMP has). */
+  rsi: number;
+  /** Previous trading day's RSI, if available. */
+  previousRsi?: number;
+  date: string;
+}
+
+export interface SmaSnapshot {
+  ticker: string;
+  period: number;
+  /** Most recent SMA value. */
+  sma: number;
+  /** Close used for the most recent row. */
+  close: number;
+  /** Previous trading day's SMA and close, used to detect a cross. */
+  previousSma?: number;
+  previousClose?: number;
+  date: string;
+}
+
+/**
+ * Latest 14-period (default) daily RSI for a ticker.
+ * Returns null when FMP has no data for the symbol.
+ */
+export const fetchFmpRsi = async (
+  ticker: string,
+  period = 14
+): Promise<RsiSnapshot | null> => {
+  const normalized = ticker.trim().toUpperCase();
+  const cacheKey = `rsi:${normalized}:${period}`;
+  const cached = indicatorCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const data = (await fmpFetch(
+    `/technical-indicators/rsi?symbol=${encodeURIComponent(normalized)}&periodLength=${period}&timeframe=1day`
+  )) as FmpIndicatorRow[];
+  const rows = Array.isArray(data) ? data : [];
+  const latest = rows[0];
+  const rsi = toNumber(latest?.rsi);
+  if (!latest || rsi === undefined) return null;
+
+  const snapshot: RsiSnapshot = {
+    ticker: normalized,
+    period,
+    rsi,
+    previousRsi: toNumber(rows[1]?.rsi),
+    date: latest.date,
+  };
+  indicatorCacheSet(cacheKey, snapshot);
+  return snapshot;
+};
+
+/**
+ * Latest daily SMA for a ticker/period, plus the prior day's values so the
+ * caller can detect a price/SMA cross rather than a standing condition.
+ */
+export const fetchFmpSma = async (
+  ticker: string,
+  period: number
+): Promise<SmaSnapshot | null> => {
+  const normalized = ticker.trim().toUpperCase();
+  const cacheKey = `sma:${normalized}:${period}`;
+  const cached = indicatorCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const data = (await fmpFetch(
+    `/technical-indicators/sma?symbol=${encodeURIComponent(normalized)}&periodLength=${period}&timeframe=1day`
+  )) as FmpIndicatorRow[];
+  const rows = Array.isArray(data) ? data : [];
+  const latest = rows[0];
+  const sma = toNumber(latest?.sma);
+  const close = toNumber(latest?.close);
+  if (!latest || sma === undefined || close === undefined) return null;
+
+  const snapshot: SmaSnapshot = {
+    ticker: normalized,
+    period,
+    sma,
+    close,
+    previousSma: toNumber(rows[1]?.sma),
+    previousClose: toNumber(rows[1]?.close),
+    date: latest.date,
+  };
+  indicatorCacheSet(cacheKey, snapshot);
+  return snapshot;
+};
+
+type FmpEarningsRow = {
+  symbol: string;
+  date: string; // YYYY-MM-DD
+  epsActual?: number | null;
+  epsEstimated?: number | null;
+};
+
+/**
+ * Next scheduled earnings date (YYYY-MM-DD) for a ticker, or null if FMP has
+ * no upcoming date on the calendar.
+ */
+export const fetchFmpNextEarningsDate = async (
+  ticker: string,
+  today = new Date()
+): Promise<string | null> => {
+  const normalized = ticker.trim().toUpperCase();
+  const cacheKey = `earnings:${normalized}`;
+  const cached = indicatorCacheGet(cacheKey);
+  if (cached !== null && cached !== undefined) return cached || null;
+
+  const data = (await fmpFetch(
+    `/earnings?symbol=${encodeURIComponent(normalized)}&limit=8`
+  )) as FmpEarningsRow[];
+  const rows = Array.isArray(data) ? data : [];
+  const todayKey = today.toISOString().slice(0, 10);
+  const upcoming = rows
+    .map((row) => row.date)
+    .filter((date) => typeof date === "string" && date >= todayKey)
+    .sort();
+  const next = upcoming[0] ?? "";
+  indicatorCacheSet(cacheKey, next);
+  return next || null;
 };
