@@ -66,7 +66,7 @@ export function CheckInboxCard({
     e.preventDefault();
     setVerifying(true);
     setCodeError(null);
-    const r = await verifyCode(email, code);
+    const r = await verifyCode(email, code, next);
     if (r.ok) {
       window.location.assign(r.redirectTo);
       return;
@@ -100,7 +100,11 @@ export function CheckInboxCard({
             We sent your {purpose === "signup" ? "activation" : "login"} link to{" "}
             <strong className="break-all">{email}</strong>.
             {" "}Click the button in the email to{" "}
-            {purpose === "signup" ? "activate your account and set your first alert" : "open your dashboard"}.
+            {next?.startsWith("/welcome/")
+              ? "activate your alerts"
+              : purpose === "signup"
+                ? "activate your account and set your first alert"
+                : "open your dashboard"}.
           </p>
           <EmailSuggestion
             email={email}

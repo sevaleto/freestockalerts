@@ -1,6 +1,7 @@
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma/client";
 import { addContactToAudience } from "@/lib/email/audience";
+import { isLpSlug, type LpSlug } from "@/lib/lp/pages";
 
 export type SignupSource =
   | "hero"
@@ -8,7 +9,8 @@ export type SignupSource =
   | "template-preview"
   | "login"
   | "google"
-  | "unknown";
+  | "unknown"
+  | `lp:${LpSlug}`;
 
 export const SIGNUP_SOURCES: readonly SignupSource[] = [
   "hero",
@@ -19,10 +21,13 @@ export const SIGNUP_SOURCES: readonly SignupSource[] = [
   "unknown",
 ];
 
-export const toSignupSource = (value: unknown): SignupSource =>
-  (SIGNUP_SOURCES as readonly string[]).includes(String(value))
-    ? (value as SignupSource)
-    : "unknown";
+export const toSignupSource = (value: unknown): SignupSource => {
+  if (typeof value !== "string") return "unknown";
+  if ((SIGNUP_SOURCES as readonly string[]).includes(value)) return value as SignupSource;
+  // Ad landing pages: "lp:<slug>" for a slug defined in lib/lp/pages.ts
+  if (value.startsWith("lp:") && isLpSlug(value.slice(3))) return value as SignupSource;
+  return "unknown";
+};
 
 interface UpsertInput {
   authUser: Pick<AuthUser, "id" | "email" | "email_confirmed_at" | "app_metadata">;

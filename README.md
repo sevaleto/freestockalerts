@@ -44,6 +44,34 @@ Site URL `https://www.freestockalerts.ai`; Redirect URLs include
 Resend webhook (`/api/webhooks/resend`) must be subscribed to `email.bounced` and
 `email.complained` so bad addresses are suppressed from broadcasts.
 
+## Facebook ad landing pages (`/go/<slug>`)
+
+One page per ad angle, each backed by an alert template. Defined in `lib/lp/pages.ts`;
+adding a page is one config entry (copy + template slug). Pages have no site navigation,
+show the template's alerts as proof, and send signups to `/welcome/<template-slug>`,
+which activates the template on arrival so the visitor lands with the alerts live.
+
+Live pages: `/go/breakouts`, `/go/radar`, `/go/turnarounds`, `/go/oversold`, `/go/sectors`.
+
+Attribution: `User.signupSource` is `lp:<slug>` for email signups and (via the `fsa_src`
+cookie) Google signups from a page. Meta pixel `ViewContent` and `Lead` carry
+`content_name = lp_<slug>`. Per-page signups:
+
+```sql
+SELECT "signupSource", count(*) FROM "User" GROUP BY 1 ORDER BY 2 DESC;
+```
+
+**Templates** live in `lib/mock/templates.ts` and are pushed to the database with
+`npm run prisma:seed` (idempotent by slug; items are replaced on every run). Two templates
+are screened from market data and should be refreshed quarterly:
+
+```bash
+set -a; source .env.local; set +a; npm run screen:templates
+```
+
+It prints ranked candidates for Under-the-Radar Breakouts and Turnaround Signals; hand-pick
+10, edit the template, re-run the seed.
+
 ## How the alert loop works
 
 1. `vercel.json` schedules `GET /api/alerts/check` every 5 minutes, 13:00–21:59 UTC, Mon–Fri.
@@ -65,7 +93,7 @@ Resend webhook (`/api/webhooks/resend`) must be subscribed to `email.bounced` an
 |---|---|---|
 | PRICE_ABOVE / PRICE_BELOW / PRICE_RECOVERY | FMP quote | price vs threshold |
 | PERCENT_CHANGE_DAY / _CUSTOM | FMP quote | abs(day change %) ≥ threshold |
-| VOLUME_SPIKE | FMP quote | volume / avgVolume ≥ multiplier (skips if avgVolume missing) |
+| VOLUME_SPIKE | FMP quote + 30-session average from `historical-price-eod/light` | volume / avgVolume ≥ multiplier |
 | FIFTY_TWO_WEEK_HIGH / _LOW | FMP quote | price ≥ yearHigh / ≤ yearLow |
 | RSI_OVERBOUGHT / RSI_OVERSOLD | FMP `technical-indicators/rsi` (14, 1day) | RSI ≥ / ≤ threshold |
 | SMA_CROSS_ABOVE / _BELOW | FMP `technical-indicators/sma` (period = triggerValue) | prior close on the other side of SMA and price now across it |

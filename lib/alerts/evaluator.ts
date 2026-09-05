@@ -1,5 +1,6 @@
 import { getBatchQuotes } from "@/lib/api/quotes";
 import {
+  fetchFmpAvgVolume,
   fetchFmpNextEarningsDate,
   fetchFmpRsi,
   fetchFmpSma,
@@ -44,6 +45,8 @@ export interface IndicatorData {
   rsi?: RsiSnapshot | null;
   sma: Map<number, SmaSnapshot | null>;
   nextEarningsDate?: string | null;
+  /** 30-session average volume, fetched only for tickers with VOLUME_SPIKE alerts. */
+  avgVolume?: number | null;
 }
 
 export { ONE_SHOT_ALERT_TYPES } from "@/lib/alerts/frequency";
@@ -51,6 +54,7 @@ export { ONE_SHOT_ALERT_TYPES } from "@/lib/alerts/frequency";
 const RSI_TYPES = new Set(["RSI_OVERBOUGHT", "RSI_OVERSOLD"]);
 const SMA_TYPES = new Set(["SMA_CROSS_ABOVE", "SMA_CROSS_BELOW"]);
 const EARNINGS_TYPES = new Set(["EARNINGS_REMINDER"]);
+const VOLUME_TYPES = new Set(["VOLUME_SPIKE"]);
 
 const RSI_PERIOD = 14;
 const INDICATOR_CONCURRENCY = 5;
@@ -132,7 +136,8 @@ function evaluateSingleAlert(
 
     case "VOLUME_SPIKE": {
       const volume = quote.volume ?? 0;
-      const avgVolume = quote.avgVolume ?? 0;
+      // The quote feed has no average volume; use the fetched 30-session average.
+      const avgVolume = quote.avgVolume || indicators.avgVolume || 0;
       if (avgVolume === 0) {
         return {
           alertId: alert.id,
@@ -360,6 +365,7 @@ export async function loadIndicators(
   const rsiTickers = new Set<string>();
   const smaNeeds = new Map<string, Set<number>>();
   const earningsTickers = new Set<string>();
+  const volumeTickers = new Set<string>();
 
   for (const alert of alerts) {
     const ticker = alert.ticker.trim().toUpperCase();
@@ -372,6 +378,7 @@ export async function loadIndicators(
       }
     }
     if (EARNINGS_TYPES.has(alert.alertType)) earningsTickers.add(ticker);
+    if (VOLUME_TYPES.has(alert.alertType)) volumeTickers.add(ticker);
   }
 
   const rsiList = Array.from(rsiTickers);
@@ -401,6 +408,14 @@ export async function loadIndicators(
   );
   earningsList.forEach((t, i) => {
     get(t).nextEarningsDate = earningsResults[i] ?? null;
+  });
+
+  const volumeList = Array.from(volumeTickers);
+  const volumeResults = await mapWithConcurrency(volumeList, INDICATOR_CONCURRENCY, (t) =>
+    fetchFmpAvgVolume(t)
+  );
+  volumeList.forEach((t, i) => {
+    get(t).avgVolume = volumeResults[i] ?? null;
   });
 
   return indicators;

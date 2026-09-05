@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma/client";
+import { getAuthUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -7,13 +8,14 @@ interface RouteProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function POST(request: Request, props: RouteProps) {
+export async function POST(_: Request, props: RouteProps) {
   const params = await props.params;
-  const payload = await request.json().catch(() => ({}));
-  const userId = payload?.userId as string | undefined;
-  if (!userId) {
-    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+  // The session decides who is subscribing; a body userId is ignored.
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = user.id;
 
   const template = await prisma.alertTemplate.findUnique({
     where: { slug: params.slug },

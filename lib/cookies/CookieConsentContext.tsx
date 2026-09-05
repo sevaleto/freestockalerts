@@ -37,6 +37,11 @@ interface CookieConsentContextValue {
 
 const CookieConsentContext = createContext<CookieConsentContextValue | null>(null);
 
+/** Pages where consent is implied and the banner is suppressed. */
+const OPT_OUT_PREFIXES = ["/go/"];
+const isOptOutPage = () =>
+  typeof window !== "undefined" && OPT_OUT_PREFIXES.some((p) => window.location.pathname.startsWith(p));
+
 export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<ConsentPreferences | null>(null);
   const [showBanner, setShowBanner] = useState(false);
@@ -47,6 +52,14 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     const stored = getConsent();
     if (stored) {
       setPreferences(stored);
+      setShowBanner(false);
+    } else if (isOptOutPage()) {
+      // Ad landing pages (/go/*) serve US traffic under an opt-out model:
+      // no banner, tracking on by default, "Cookie Settings" in the footer
+      // opens this same banner to opt out.
+      const prefs = acceptAllPreferences();
+      setConsent(prefs);
+      setPreferences(prefs);
       setShowBanner(false);
     } else {
       setShowBanner(true);

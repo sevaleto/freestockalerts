@@ -49,3 +49,4 @@ ad-production/vo/
 
 # keep the template even though .env* is ignored
 !.env.example
+.gstack/

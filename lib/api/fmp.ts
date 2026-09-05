@@ -343,3 +343,31 @@ export const fetchFmpNextEarningsDate = async (
   indicatorCacheSet(cacheKey, next);
   return next || null;
 };
+
+// ---------------------------------------------------------------------------
+// Average volume
+// The /stable/quote endpoint returns no avgVolume, which left every
+// VOLUME_SPIKE alert unevaluable. Compute a 30-session average from the
+// lightweight historical endpoint instead. Changes once a day, so cache long.
+// ---------------------------------------------------------------------------
+
+const AVG_VOLUME_TTL_MS = 6 * 60 * 60_000; // 6 hours
+const AVG_VOLUME_SESSIONS = 30;
+
+export const fetchFmpAvgVolume = async (ticker: string): Promise<number | null> => {
+  const normalized = ticker.trim().toUpperCase();
+  const cacheKey = `avgvol:${normalized}`;
+  const entry = quoteCache.get(cacheKey);
+  if (entry && Date.now() <= entry.expiresAt) return entry.data;
+
+  const data = (await fmpFetch(
+    `/historical-price-eod/light?symbol=${encodeURIComponent(normalized)}`
+  )) as Array<{ date: string; volume?: number }>;
+  const rows = (Array.isArray(data) ? data : []).slice(0, AVG_VOLUME_SESSIONS);
+  const volumes = rows.map((r) => toNumber(r.volume)).filter((v): v is number => v !== undefined && v > 0);
+  if (volumes.length === 0) return null;
+
+  const avg = Math.round(volumes.reduce((a, b) => a + b, 0) / volumes.length);
+  quoteCache.set(cacheKey, { data: avg, expiresAt: Date.now() + AVG_VOLUME_TTL_MS });
+  return avg;
+};

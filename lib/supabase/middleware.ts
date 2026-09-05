@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/auth/safeNext";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } });
@@ -34,17 +35,21 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Protect dashboard routes — redirect unauthenticated users to /login
-  if (pathname.startsWith("/dashboard") && !user) {
+  if ((pathname.startsWith("/dashboard") || pathname.startsWith("/welcome")) && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    loginUrl.searchParams.set("next", pathname + request.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 
-  // If logged in and visiting /login (without an error), redirect to dashboard
+  // If logged in and visiting /login (without an error), go to the destination
   if (pathname === "/login" && user && !request.nextUrl.searchParams.get("error")) {
-    const dashUrl = request.nextUrl.clone();
-    dashUrl.pathname = "/dashboard";
-    return NextResponse.redirect(dashUrl);
+    const destUrl = request.nextUrl.clone();
+    const dest = new URL(safeNext(request.nextUrl.searchParams.get("next")), request.nextUrl.origin);
+    destUrl.pathname = dest.pathname;
+    destUrl.search = dest.search;
+    return NextResponse.redirect(destUrl);
   }
 
   return response;

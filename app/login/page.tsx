@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/client";
-import { sendMagicLink } from "@/lib/auth/magicLink";
+import { sendMagicLink, clientSafeNext } from "@/lib/auth/magicLink";
 import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
 import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
@@ -32,18 +32,19 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
+  const next = clientSafeNext(searchParams.get("next"));
 
-  // If already logged in, redirect straight to dashboard
+  // If already logged in, go straight to the destination
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user && !searchParams.get("error")) {
-        window.location.href = "/dashboard";
+        window.location.href = next;
       } else {
         setCheckingSession(false);
       }
     });
-  }, [searchParams]);
+  }, [searchParams, next]);
 
   // Show error from URL params (e.g., expired magic link)
   useEffect(() => {
@@ -70,7 +71,7 @@ function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const result = await sendMagicLink(email, "login");
+    const result = await sendMagicLink(email, "login", next);
     if (!result.ok) {
       setError(result.message);
     } else {
@@ -108,7 +109,7 @@ function LoginForm() {
           )}
           {/* Google OAuth */}
           <div className="mt-6">
-            <GoogleSignInButton label="Sign in with Google" />
+            <GoogleSignInButton label="Sign in with Google" next={next} />
           </div>
 
           <div className="relative mt-5 mb-1">
@@ -145,6 +146,7 @@ function LoginForm() {
           source="login"
           variant="light"
           purpose="login"
+          next={next}
           onChangeEmail={() => { setSubmitted(false); setError(null); }}
           onUseSuggestion={(fixed) => { setEmail(fixed); setSubmitted(false); setError(null); }}
         />
