@@ -39,16 +39,16 @@ export function FinalCTA() {
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
             <h2 className="font-serif text-3xl leading-tight md:text-[2.75rem]">
-              Your next trade shouldn&apos;t catch you off guard.
+              Know when the market moves—without watching it all day.
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-white/75">
-              Set your alerts tonight. Wake up to AI-powered market context tomorrow.
-              No credit card. No commitment. Just better information.
+              Set your alerts in minutes. When one fires, you&apos;ll get the trigger, the relevant market data, and
+              plain-English context in your inbox.
             </p>
             <ul className="mt-6 flex flex-col gap-3 text-[15px] text-white/85">
               {[
                 "12 alert types including RSI, SMA, volume, and earnings",
-                "AI summary with every triggered alert",
+                "One email per trigger, never a flood",
                 "9 one-click templates, screened from market data",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2.5">
@@ -62,7 +62,7 @@ export function FinalCTA() {
           <div className="rounded-[20px] border border-white/10 bg-white/5 p-6 md:p-8">
             {!submitted ? (
               <div className="space-y-3">
-                <p className="text-lg font-semibold">Get your first alert free</p>
+                <p className="text-lg font-semibold">Where should we send your alerts?</p>
                 <form onSubmit={handleSubmit} className="space-y-3" noValidate>
                   <label htmlFor={inputId} className="sr-only">Email address</label>
                   <div className="relative">
@@ -87,7 +87,7 @@ export function FinalCTA() {
                     className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-lp-teal text-lg font-semibold text-white transition-colors hover:bg-lp-teal-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lp-mint disabled:opacity-70"
                   >
                     <Mail className="h-5 w-5" aria-hidden />
-                    {loading ? "Sending…" : "Get my first alert"}
+                    {loading ? "Sending…" : "Set my first free alert"}
                   </button>
                   {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
                 </form>
@@ -97,7 +97,7 @@ export function FinalCTA() {
                   source="final-cta"
                   contentName="home_final_cta"
                 />
-                <p className="text-center text-xs text-white/60">Free forever. Unsubscribe anytime.</p>
+                <p className="text-center text-xs text-white/60">Free forever. No credit card. Unsubscribe anytime.</p>
               </div>
             ) : (
               <CheckInboxCard

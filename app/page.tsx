@@ -18,7 +18,7 @@ export default function HomePage() {
       <TemplatePreview />
       <Features />
       <Testimonials />
-      <HonestAnswer ctaLabel="Get my first alert" />
+      <HonestAnswer ctaLabel="Set my first free alert" />
       <FinalCTA />
       <Footer />
       <StickyCta />

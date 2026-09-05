@@ -14,7 +14,7 @@ type Props = {
   lp: Pick<LandingPage, "slug" | "templateSlug" | "source" | "metaContentName" | "ctaLabel" | "googleLabel">;
 };
 
-const REASSURANCE = ["Free forever", "No credit card", "Unsubscribe anytime"];
+const REASSURANCE = ["Free forever", "Up to 50 alerts", "No credit card"];
 
 export function LandingSignup({ lp }: Props) {
   const [email, setEmail] = useState("");

@@ -13,9 +13,9 @@ export function TemplatePreview() {
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl space-y-3">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Alert templates</p>
-            <h2 className="font-serif text-3xl text-lp-navy md:text-4xl">Pick a strategy. We set up all 10 alerts.</h2>
+            <h2 className="font-serif text-3xl text-lp-navy md:text-4xl">Pick a strategy. Activate a full watchlist.</h2>
             <p className="text-base leading-relaxed text-lp-navy/75">
-              Choose one below and it&apos;s live the moment you confirm your email. Six more strategies wait on your dashboard.
+              Choose a ready-made template and add an entire set of alerts to your account in one click. Six more strategies wait on your dashboard.
             </p>
           </div>
           <Link href="/templates" className="inline-flex items-center gap-2 text-sm font-semibold text-lp-teal hover:text-lp-teal-dark">
@@ -60,9 +60,9 @@ export function TemplatePreview() {
         <div className="mt-12 rounded-[20px] border border-lp-teal/20 bg-lp-mint p-8 md:p-10">
           <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
             <div>
-              <h3 className="font-serif text-2xl text-lp-navy md:text-3xl">Activate 10 alerts in under 2 minutes</h3>
+              <h3 className="font-serif text-2xl text-lp-navy md:text-3xl">Activate an entire watchlist in one click</h3>
               <p className="mt-2 text-base text-lp-navy/75">
-                Sign up, pick a template, and you&apos;re covered. Every alert includes AI context so you always know why it fired.
+                Sign up, pick a template, and every alert in it goes live at once. Edit or pause any of them from your dashboard.
               </p>
             </div>
             <div className="flex md:justify-end">
@@ -70,7 +70,7 @@ export function TemplatePreview() {
                 href="#signup"
                 className="inline-flex h-12 items-center justify-center rounded-xl bg-lp-teal px-8 text-base font-semibold text-white shadow-sm transition-colors hover:bg-lp-teal-dark"
               >
-                Get my first alert
+                Set my first free alert
               </Link>
             </div>
           </div>

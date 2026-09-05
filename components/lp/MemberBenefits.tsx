@@ -17,7 +17,7 @@ const BENEFITS = [
   {
     icon: BellPlus,
     title: "Set up any alert you want",
-    body: "Price levels, % moves, RSI, moving-average crosses, 52-week highs and lows, volume spikes, earnings reminders. Twelve alert types on any US stock or ETF, up to 50 alerts of your own.",
+    body: "Price targets, % moves, RSI, moving-average crosses, 52-week highs and lows, volume spikes, earnings reminders. Twelve alert types on any US stock or ETF, up to 50 alerts of your own.",
   },
   {
     icon: LayoutGrid,
@@ -26,7 +26,7 @@ const BENEFITS = [
   },
   {
     icon: Sparkles,
-    title: "AI context on every alert",
+    title: "Plain-English context on every alert",
     body: "Each email tells you what happened, why the level matters, and what traders typically watch next. Not just a price ping.",
   },
   {
@@ -36,7 +36,7 @@ const BENEFITS = [
   },
   {
     icon: ShieldCheck,
-    title: "No alert spam",
+    title: "One alert—not a flood",
     body: "Each alert fires once, then pauses. Daily-move and volume alerts email you at most once a day. You control what's on and off.",
   },
   {

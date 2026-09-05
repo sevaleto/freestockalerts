@@ -19,7 +19,7 @@ interface EmailSignupFormProps {
 }
 
 /** The email-only signup used by mid-page bands. Same handlers as the hero. */
-export function EmailSignupForm({ source, contentName, ctaLabel = "Get my first alert", next, inline = false, className = "" }: EmailSignupFormProps) {
+export function EmailSignupForm({ source, contentName, ctaLabel = "Set my first free alert", next, inline = false, className = "" }: EmailSignupFormProps) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);

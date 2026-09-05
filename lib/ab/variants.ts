@@ -24,17 +24,17 @@ export const HERO_HEADLINES: Record<string, { line1: string; line2: string; sub:
   A: {
     line1: "Stop missing trades.",
     line2: "Start getting context.",
-    sub: "Every alert tells you what happened and what pros watch next — not just a price ping. Set up in 60 seconds, free forever.",
+    sub: "Set price, RSI, moving-average, volume, or earnings alerts. When one fires, you'll get the trigger, key market data, and plain-English context in your inbox.",
   },
   B: {
     line1: "Price alerts tell you what moved.",
     line2: "We tell you what it means.",
-    sub: "Every alert includes AI-powered context — what happened, why it matters, and what to watch next. Free forever.",
+    sub: "Set price, RSI, moving-average, volume, or earnings alerts. When one fires, you'll get the trigger, key market data, and plain-English context in your inbox.",
   },
   // Category-first: names the product before the differentiator, for cold traffic.
   C: {
     line1: "Free stock alerts that",
     line2: "explain themselves.",
-    sub: "Set a price, RSI, or volume trigger on any ticker. When it fires, you get an email that tells you what happened and what traders typically watch next — not just a number. 12 alert types, 9 one-click templates, $0 forever.",
+    sub: "Set price, RSI, moving-average, volume, or earnings alerts. When one fires, you'll get the trigger, key market data, and plain-English context in your inbox.",
   },
 };
