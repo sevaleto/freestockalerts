@@ -22,6 +22,9 @@ export function Footer() {
           <button type="button" onClick={openBanner} className="text-text-secondary transition-colors hover:text-text-primary">
             Cookie Settings
           </button>
+          <button type="button" onClick={openBanner} className="text-text-secondary transition-colors hover:text-text-primary">
+            Do Not Sell or Share My Personal Information
+          </button>
         </nav>
       </div>
       <div className="mx-auto mt-6 w-full max-w-[1440px] space-y-1 px-5 text-xs text-text-muted sm:px-8 lg:px-12">

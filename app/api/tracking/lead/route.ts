@@ -6,6 +6,7 @@ import {
   sendCAPIEvent,
   extractFbCookies,
 } from "@/lib/tracking/meta-capi";
+import { marketingAllowed } from "@/lib/cookies/serverConsent";
 
 /**
  * POST /api/tracking/lead
@@ -14,6 +15,9 @@ import {
  * The browser pixel fires Lead simultaneously (deduped via event_id).
  *
  * Body: { event_id: string, email?: string, method: "google" | "email" }
+ *
+ * Respects the visitor's marketing consent (explicit choice, GPC signal, or
+ * region default; see lib/cookies/serverConsent.ts). Declined → 200, no send.
  */
 export async function POST(request: Request) {
   try {
@@ -26,6 +30,12 @@ export async function POST(request: Request) {
 
     if (!event_id) {
       return NextResponse.json({ error: "event_id required" }, { status: 400 });
+    }
+
+    const consent = marketingAllowed(request);
+    if (!consent.allowed) {
+      console.log(`[/api/tracking/lead] CAPI skipped (${consent.reason})`);
+      return NextResponse.json({ ok: true, skipped: consent.reason });
     }
 
     const headersList = await headers();

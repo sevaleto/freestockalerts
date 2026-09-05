@@ -158,6 +158,25 @@ session-mode pooler (same host as `DATABASE_URL`, port 5432, no `pgbouncer` para
 IPv4 and works for `db push`. Push additive changes **before** merging code that depends
 on them.
 
+## Cookie consent by region
+
+No banner for US traffic. The middleware stamps a `fsa_region` cookie from Cloudflare's
+`cf-ipcountry` (fallback `x-vercel-ip-country`): `optin` for the EEA, UK, and Switzerland,
+`optout` for everyone else, and `optin` when the country is unknown (local dev, Tor).
+
+- `optin`: the banner shows until the visitor chooses; no analytics or marketing tags
+  before that. Reject and Accept carry equal weight.
+- `optout`: no banner. Analytics and marketing are on by default and **no cookie is
+  written** until the visitor changes something from the footer ("Cookie Settings" or
+  "Do Not Sell or Share My Personal Information"). A Global Privacy Control signal
+  (`navigator.globalPrivacyControl`, `Sec-GPC: 1`) turns marketing off automatically.
+- Server-side Meta CAPI sends (`/api/tracking/lead`, sign-in) go through
+  `marketingAllowed()` in `lib/cookies/serverConsent.ts` and use the same precedence:
+  explicit choice → GPC → region default.
+
+Country lists and helpers live in `lib/cookies/region.ts`. To test the other regime
+locally: `document.cookie = "fsa_region=optin; path=/"` (or `optout`), then reload.
+
 ## Email verification and lead gating
 
 Signup stays passwordless, but every address gets a deliverability verdict

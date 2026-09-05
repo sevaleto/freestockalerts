@@ -165,6 +165,9 @@ export default function PrivacyPage() {
             <li><strong>Advertising cookies</strong> that show you ads, send you marketing messages, and personalize content based on your activities. Advertising cookies may share your information with third parties, including advertisers and social networks.</li>
           </ul>
           <p>
+            You can change your choices at any time using the &quot;Cookie Settings&quot; and &quot;Do Not Sell or Share My Personal Information&quot; links in the footer of every page, which let you turn analytics and advertising cookies off for this browser. Visitors in the European Economic Area, the United Kingdom, and Switzerland are asked before any non-essential cookies are set.
+          </p>
+          <p>
             Most web browsers are set to accept cookies by default. You can usually choose to set your browser to disable or reject cookies. Be aware that disabling or rejecting cookies could affect the availability and functionality of the website. Please note that we may still use information we&apos;ve collected from cookies prior to you disabling them; however, we will not collect any further information from the disabled cookies.
           </p>
 

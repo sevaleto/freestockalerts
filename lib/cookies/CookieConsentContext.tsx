@@ -11,16 +11,27 @@ import {
 import {
   type ConsentCategory,
   type ConsentPreferences,
-  DEFAULT_PREFERENCES,
   acceptAllPreferences,
   rejectAllPreferences,
+  effectivePreferences,
   getConsent,
+  hasGpc,
+  readRegionCookie,
   setConsent,
 } from "./consent";
+import type { ConsentRegion } from "./region";
+
+export type ConsentMode = ConsentRegion;
 
 interface CookieConsentContextValue {
-  /** Current preferences (null = hasn't decided yet) */
+  /** Stored choice (null = the visitor hasn't chosen; region defaults apply) */
   preferences: ConsentPreferences | null;
+  /** What applies right now: stored choice, else the region default */
+  effective: ConsentPreferences;
+  /** "optin" (EEA/UK/CH: banner until a choice) or "optout" (no banner, on by default) */
+  mode: ConsentMode;
+  /** Browser sent a Global Privacy Control signal */
+  gpc: boolean;
   /** Whether the banner should show */
   showBanner: boolean;
   /** Check consent for a category */
@@ -37,35 +48,36 @@ interface CookieConsentContextValue {
 
 const CookieConsentContext = createContext<CookieConsentContextValue | null>(null);
 
-/** Pages where consent is implied and the banner is suppressed. */
+/**
+ * Ad landing pages are bought for US traffic; when the region cookie is
+ * missing (unknown geo) they still run under the opt-out model.
+ */
 const OPT_OUT_PREFIXES = ["/go/"];
 const isOptOutPage = () =>
   typeof window !== "undefined" && OPT_OUT_PREFIXES.some((p) => window.location.pathname.startsWith(p));
 
 export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState<ConsentPreferences | null>(null);
+  const [mode, setMode] = useState<ConsentMode>("optin");
+  const [gpc, setGpc] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Read cookie on mount
+  // Read the stored choice, the region stamped by the middleware, and GPC on mount.
   useEffect(() => {
     const stored = getConsent();
-    if (stored) {
-      setPreferences(stored);
-      setShowBanner(false);
-    } else if (isOptOutPage()) {
-      // Ad landing pages (/go/*) serve US traffic under an opt-out model:
-      // no banner, tracking on by default, "Cookie Settings" in the footer
-      // opens this same banner to opt out.
-      const prefs = acceptAllPreferences();
-      setConsent(prefs);
-      setPreferences(prefs);
-      setShowBanner(false);
-    } else {
-      setShowBanner(true);
-    }
+    const region = readRegionCookie();
+    const nextMode: ConsentMode = region === "optout" || (region === null && isOptOutPage()) ? "optout" : "optin";
+    setMode(nextMode);
+    setGpc(hasGpc());
+    setPreferences(stored);
+    // Opt-in regions see the banner until they choose. Opt-out regions never
+    // see it unprompted; defaults apply without writing a cookie.
+    setShowBanner(!stored && nextMode === "optin");
     setLoaded(true);
   }, []);
+
+  const effective = effectivePreferences(preferences, mode, gpc);
 
   const acceptAll = useCallback(() => {
     const prefs = acceptAllPreferences();
@@ -103,16 +115,19 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const checkConsent = useCallback(
     (category: ConsentCategory) => {
       if (category === "essential") return true;
-      if (!preferences) return false;
-      return preferences[category] === true;
+      if (!loaded) return false; // nothing loads before we know the region
+      return effective[category] === true;
     },
-    [preferences]
+    [effective, loaded]
   );
 
   return (
     <CookieConsentContext.Provider
       value={{
         preferences,
+        effective,
+        mode,
+        gpc,
         showBanner: loaded && showBanner,
         hasConsent: checkConsent,
         acceptAll,
