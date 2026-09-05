@@ -30,11 +30,7 @@ export async function POST(request: Request) {
   const source = toSignupSource(body?.source);
   const next = safeNext(typeof body?.next === "string" ? body.next : null);
 
-  if (!EMAIL_RE.test(email) || email.length > 254) {
-    return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
-  }
-
-  // Per-IP rate limit (real client IP from Cloudflare), then the bot check.
+  // Per-IP rate limit first (real client IP from Cloudflare) so junk floods count too.
   const ip = clientIp(request);
   const limit = await checkSignupRateLimit(ip);
   if (!limit.allowed) {
@@ -43,6 +39,10 @@ export async function POST(request: Request) {
       { error: "Too many requests from your network. Please wait a minute and try again.", retryAfterSec: limit.retryAfterSec },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec) } }
     );
+  }
+
+  if (!EMAIL_RE.test(email) || email.length > 254) {
+    return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
 
   // Bot check (no-op until TURNSTILE_SECRET_KEY is configured)
