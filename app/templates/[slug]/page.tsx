@@ -9,10 +9,11 @@ import { ActivateButton } from "@/components/templates/ActivateButton";
 import { TrackViewContent } from "@/components/shared/TrackViewContent";
 
 interface TemplateDetailPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export default async function TemplateDetailPage({ params }: TemplateDetailPageProps) {
+export default async function TemplateDetailPage(props: TemplateDetailPageProps) {
+  const params = await props.params;
   const template = await prisma.alertTemplate.findUnique({
     where: { slug: params.slug },
     include: { items: { orderBy: { sortOrder: "asc" } } },

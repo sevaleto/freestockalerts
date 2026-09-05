@@ -5,10 +5,11 @@ import { getAuthUser } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 interface RouteProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export async function GET(_: Request, { params }: RouteProps) {
+export async function GET(_: Request, props: RouteProps) {
+  const params = await props.params;
   const user = await getAuthUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -35,7 +36,8 @@ export async function GET(_: Request, { params }: RouteProps) {
   }
 }
 
-export async function PATCH(request: Request, { params }: RouteProps) {
+export async function PATCH(request: Request, props: RouteProps) {
+  const params = await props.params;
   const user = await getAuthUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -104,7 +106,8 @@ export async function PATCH(request: Request, { params }: RouteProps) {
   }
 }
 
-export async function DELETE(_: Request, { params }: RouteProps) {
+export async function DELETE(_: Request, props: RouteProps) {
+  const params = await props.params;
   const user = await getAuthUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

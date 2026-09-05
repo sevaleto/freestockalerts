@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "event_id required" }, { status: 400 });
     }
 
-    const headersList = headers();
+    const headersList = await headers();
     const ip =
       headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       headersList.get("x-real-ip") ||

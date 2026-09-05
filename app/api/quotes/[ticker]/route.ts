@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getQuote } from "@/lib/api/quotes";
 
 interface RouteProps {
-  params: { ticker: string };
+  params: Promise<{ ticker: string }>;
 }
 
-export async function GET(_: Request, { params }: RouteProps) {
+export async function GET(_: Request, props: RouteProps) {
+  const params = await props.params;
   try {
     const quote = await getQuote(params.ticker.toUpperCase());
     if (!quote) {

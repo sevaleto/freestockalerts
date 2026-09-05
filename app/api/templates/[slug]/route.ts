@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma/client";
 export const dynamic = "force-dynamic";
 
 interface RouteProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export async function GET(_: Request, { params }: RouteProps) {
+export async function GET(_: Request, props: RouteProps) {
+  const params = await props.params;
   const template = await prisma.alertTemplate.findUnique({
     where: { slug: params.slug },
     include: { items: { orderBy: { sortOrder: "asc" } } },
