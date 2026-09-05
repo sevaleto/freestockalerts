@@ -1,0 +1,2264 @@
+{
+  "generatedAt": "2026-09-05T20:17:36.949Z",
+  "strategies": {
+    "post-earnings-strength-radar": {
+      "refreshedAt": "2026-09-05T20:17:25.971Z",
+      "universeSize": 876,
+      "qualifiedCount": 97,
+      "constituents": [
+        {
+          "ticker": "IOVA",
+          "companyName": "Iovance Biotherapeutics, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 6: EPS −$0.11 vs −$0.13 estimate, revenue +13.1% vs estimate. +43.1% on 4.7× volume on the reaction day; earnings-day high $6.39.",
+          "sortOrder": 1,
+          "snapshot": {
+            "symbol": "IOVA",
+            "companyName": "Iovance Biotherapeutics, Inc.",
+            "sector": "Healthcare",
+            "marketCap": 3924752580,
+            "avgVolume": 16181280,
+            "price": 8.79,
+            "sma50": 5.8982,
+            "sma200": 3.9284,
+            "yearHigh": 9.36,
+            "yearLow": 1.76,
+            "earnings": {
+              "date": "2026-08-06",
+              "epsActual": -0.11,
+              "epsEstimated": -0.13346,
+              "revenueActual": 99313000,
+              "revenueEstimated": 87832820,
+              "reactionDate": "2026-08-06",
+              "reactionPct": 0.4308755760368663,
+              "reactionVolumeRatio": 4.661202213403376,
+              "reactionHigh": 6.39,
+              "preReportClose": 4.34
+            }
+          }
+        },
+        {
+          "ticker": "HTFL",
+          "companyName": "Heartflow, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 13: EPS −$0.07 vs −$0.13 estimate, revenue +13.1% vs estimate. +35.7% on 9.0× volume on the reaction day; earnings-day high $43.00.",
+          "sortOrder": 2,
+          "snapshot": {
+            "symbol": "HTFL",
+            "companyName": "Heartflow, Inc.",
+            "sector": "Healthcare",
+            "marketCap": 4218038897,
+            "avgVolume": 1841495,
+            "price": 48.91,
+            "sma50": 33.6399,
+            "sma200": 29.8178,
+            "yearHigh": 51.778,
+            "yearLow": 20.13,
+            "earnings": {
+              "date": "2026-08-13",
+              "epsActual": -0.07,
+              "epsEstimated": -0.13369,
+              "revenueActual": 64082000,
+              "revenueEstimated": 56635180,
+              "reactionDate": "2026-08-14",
+              "reactionPct": 0.35698161883263446,
+              "reactionVolumeRatio": 9.011758755433997,
+              "reactionHigh": 43,
+              "preReportClose": 31.01
+            }
+          }
+        },
+        {
+          "ticker": "ANF",
+          "companyName": "Abercrombie & Fitch Co.",
+          "alertType": "PRICE_ABOVE",
+          "triggerValue": 154.58,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 26: EPS $4.17 vs $1.99 estimate, revenue +1.5% vs estimate. +35.7% on 16.7× volume on the reaction day; earnings-day high $154.58.",
+          "sortOrder": 3,
+          "snapshot": {
+            "symbol": "ANF",
+            "companyName": "Abercrombie & Fitch Co.",
+            "sector": "Consumer Cyclical",
+            "marketCap": 6650094036,
+            "avgVolume": 1531873,
+            "price": 149.67,
+            "sma50": 107.4388,
+            "sma200": 97.06375,
+            "yearHigh": 154.58,
+            "yearLow": 65.45,
+            "earnings": {
+              "date": "2026-08-26",
+              "epsActual": 4.17,
+              "epsEstimated": 1.99,
+              "revenueActual": 1266689000,
+              "revenueEstimated": 1247933000,
+              "reactionDate": "2026-08-26",
+              "reactionPct": 0.3567493112947657,
+              "reactionVolumeRatio": 16.734920779170654,
+              "reactionHigh": 154.58,
+              "preReportClose": 108.9
+            }
+          }
+        },
+        {
+          "ticker": "W",
+          "companyName": "Wayfair Inc.",
+          "alertType": "PRICE_ABOVE",
+          "triggerValue": 118.31,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 4: EPS $0.95 vs $0.90 estimate, revenue +1.4% vs estimate. +30.1% on 4.5× volume on the reaction day; earnings-day high $118.31.",
+          "sortOrder": 4,
+          "snapshot": {
+            "symbol": "W",
+            "companyName": "Wayfair Inc.",
+            "sector": "Consumer Cyclical",
+            "marketCap": 13618734206,
+            "avgVolume": 3263952,
+            "price": 99.43,
+            "sma50": 96.1342,
+            "sma200": 88.1608,
+            "yearHigh": 119.98,
+            "yearLow": 55.6,
+            "earnings": {
+              "date": "2026-08-04",
+              "epsActual": 0.95,
+              "epsEstimated": 0.904,
+              "revenueActual": 3519000000,
+              "revenueEstimated": 3469468000,
+              "reactionDate": "2026-08-04",
+              "reactionPct": 0.3007619901389511,
+              "reactionVolumeRatio": 4.531811101548237,
+              "reactionHigh": 118.31,
+              "preReportClose": 89.24
+            }
+          }
+        },
+        {
+          "ticker": "PLTR",
+          "companyName": "Palantir Technologies Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 3: EPS $0.41 vs $0.34 estimate, revenue +6.8% vs estimate. +29.5% on 4.3× volume on the reaction day; earnings-day high $164.52.",
+          "sortOrder": 5,
+          "snapshot": {
+            "symbol": "PLTR",
+            "companyName": "Palantir Technologies Inc.",
+            "sector": "Technology",
+            "marketCap": 400273883100,
+            "avgVolume": 40826409,
+            "price": 174.33,
+            "sma50": 149.889,
+            "sma200": 151.3719,
+            "yearHigh": 207.52,
+            "yearLow": 106.37,
+            "earnings": {
+              "date": "2026-08-03",
+              "epsActual": 0.41,
+              "epsEstimated": 0.3446,
+              "revenueActual": 1935464000,
+              "revenueEstimated": 1812280000,
+              "reactionDate": "2026-08-04",
+              "reactionPct": 0.2945483485873457,
+              "reactionVolumeRatio": 4.261193748195393,
+              "reactionHigh": 164.52,
+              "preReportClose": 125.65
+            }
+          }
+        },
+        {
+          "ticker": "OKTA",
+          "companyName": "Okta, Inc.",
+          "alertType": "PRICE_ABOVE",
+          "triggerValue": 174.85,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 26: EPS $1.05 vs $0.96 estimate, revenue +1.5% vs estimate. +28.6% on 5.9× volume on the reaction day; earnings-day high $174.85.",
+          "sortOrder": 6,
+          "snapshot": {
+            "symbol": "OKTA",
+            "companyName": "Okta, Inc.",
+            "sector": "Technology",
+            "marketCap": 28340072000,
+            "avgVolume": 3343882,
+            "price": 170.6,
+            "sma50": 145.9426,
+            "sma200": 101.85125,
+            "yearHigh": 174.85,
+            "yearLow": 62.66,
+            "earnings": {
+              "date": "2026-08-26",
+              "epsActual": 1.05,
+              "epsEstimated": 0.965,
+              "revenueActual": 805000000,
+              "revenueEstimated": 793000800,
+              "reactionDate": "2026-08-27",
+              "reactionPct": 0.286341318256212,
+              "reactionVolumeRatio": 5.92263097754299,
+              "reactionHigh": 174.85,
+              "preReportClose": 134.42
+            }
+          }
+        },
+        {
+          "ticker": "FIGS",
+          "companyName": "FIGS, Inc.",
+          "alertType": "PRICE_ABOVE",
+          "triggerValue": 16.38,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 6: EPS $0.11 vs $0.07 estimate, revenue +5.6% vs estimate. +26.9% on 3.5× volume on the reaction day; earnings-day high $16.38.",
+          "sortOrder": 7,
+          "snapshot": {
+            "symbol": "FIGS",
+            "companyName": "FIGS, Inc.",
+            "sector": "Consumer Cyclical",
+            "marketCap": 2408821244,
+            "avgVolume": 3029777,
+            "price": 14.42,
+            "sma50": 12.1042,
+            "sma200": 12.49065,
+            "yearHigh": 17.48,
+            "yearLow": 6.5,
+            "earnings": {
+              "date": "2026-08-06",
+              "epsActual": 0.11,
+              "epsEstimated": 0.06725,
+              "revenueActual": 196619000,
+              "revenueEstimated": 186172900,
+              "reactionDate": "2026-08-07",
+              "reactionPct": 0.2686832740213523,
+              "reactionVolumeRatio": 3.4790668713782793,
+              "reactionHigh": 16.38,
+              "preReportClose": 11.24
+            }
+          }
+        },
+        {
+          "ticker": "RNG",
+          "companyName": "RingCentral, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Jul 23: EPS $1.22 vs $1.16 estimate, revenue +1.0% vs estimate. +25.1% on 5.4× volume on the reaction day; earnings-day high $50.14.",
+          "sortOrder": 8,
+          "snapshot": {
+            "symbol": "RNG",
+            "companyName": "RingCentral, Inc.",
+            "sector": "Technology",
+            "marketCap": 6328248041,
+            "avgVolume": 1856644,
+            "price": 73.39,
+            "sma50": 54.8358,
+            "sma200": 39.83215,
+            "yearHigh": 77.95,
+            "yearLow": 24.14,
+            "earnings": {
+              "date": "2026-07-23",
+              "epsActual": 1.22,
+              "epsEstimated": 1.16,
+              "revenueActual": 657011000,
+              "revenueEstimated": 650529900,
+              "reactionDate": "2026-07-24",
+              "reactionPct": 0.2509062661833248,
+              "reactionVolumeRatio": 5.366257428919958,
+              "reactionHigh": 50.14,
+              "preReportClose": 38.62
+            }
+          }
+        },
+        {
+          "ticker": "TWLO",
+          "companyName": "Twilio Inc.",
+          "alertType": "PRICE_ABOVE",
+          "triggerValue": 254.5,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 6: EPS $1.47 vs $1.32 estimate, revenue +4.8% vs estimate. +24.9% on 4.3× volume on the reaction day; earnings-day high $254.50.",
+          "sortOrder": 9,
+          "snapshot": {
+            "symbol": "TWLO",
+            "companyName": "Twilio Inc.",
+            "sector": "Technology",
+            "marketCap": 35360273903,
+            "avgVolume": 2131796,
+            "price": 232.98,
+            "sma50": 215.555,
+            "sma200": 163.24185,
+            "yearHigh": 258.353,
+            "yearLow": 98.44,
+            "earnings": {
+              "date": "2026-08-06",
+              "epsActual": 1.47,
+              "epsEstimated": 1.32,
+              "revenueActual": 1499089000,
+              "revenueEstimated": 1430958000,
+              "reactionDate": "2026-08-07",
+              "reactionPct": 0.24886128364389237,
+              "reactionVolumeRatio": 4.289641811820893,
+              "reactionHigh": 254.5,
+              "preReportClose": 193.2
+            }
+          }
+        },
+        {
+          "ticker": "AVAH",
+          "companyName": "Aveanna Healthcare Holdings Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "Reported Aug 13: EPS $0.22 vs $0.17 estimate, revenue +5.0% vs estimate. +24.8% on 4.9× volume on the reaction day; earnings-day high $11.54.",
+          "sortOrder": 10,
+          "snapshot": {
+            "symbol": "AVAH",
+            "companyName": "Aveanna Healthcare Holdings Inc.",
+            "sector": "Healthcare",
+            "marketCap": 2957115657,
+            "avgVolume": 2676147,
+            "price": 13.58,
+            "sma50": 10.6848,
+            "sma200": 8.41853,
+            "yearHigh": 14,
+            "yearLow": 5.93,
+            "earnings": {
+              "date": "2026-08-13",
+              "epsActual": 0.22,
+              "epsEstimated": 0.1683,
+              "revenueActual": 670483000,
+              "revenueEstimated": 638608900,
+              "reactionDate": "2026-08-13",
+              "reactionPct": 0.24751381215469603,
+              "reactionVolumeRatio": 4.941415655228957,
+              "reactionHigh": 11.54,
+              "preReportClose": 9.05
+            }
+          }
+        }
+      ]
+    },
+    "quality-breakout-radar": {
+      "refreshedAt": "2026-09-05T20:17:26.048Z",
+      "universeSize": 675,
+      "qualifiedCount": 53,
+      "constituents": [
+        {
+          "ticker": "TECH",
+          "companyName": "Bio-Techne Corporation",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "0.3% below its 52-week high and above both moving averages. FCF yield 2.3%, net income +147.8% in FY2026, net debt 0.1× EBITDA.",
+          "sortOrder": 1,
+          "snapshot": {
+            "symbol": "TECH",
+            "companyName": "Bio-Techne Corporation",
+            "sector": "Healthcare",
+            "marketCap": 11340292670,
+            "avgVolume": 4715380,
+            "price": 72.43,
+            "sma50": 71.8462,
+            "sma200": 61.00305,
+            "yearHigh": 72.62,
+            "yearLow": 43.2,
+            "fundamentals": {
+              "fcfYield": 0.023211305709625922,
+              "netDebtToEbitda": 0.07097226913266792,
+              "currentRatio": 4.547348808796579,
+              "netProfitMargin": 0.14967585402608477,
+              "interestCoverage": 46.60314523589269,
+              "payoutRatio": 0.27447185228359966,
+              "revenueGrowth": -0.0037683405281088195,
+              "netIncomeGrowth": 1.477683923705722,
+              "growthFiscalYear": "2026"
+            }
+          }
+        },
+        {
+          "ticker": "HPQ",
+          "companyName": "HP Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "0.4% below its 52-week high and above both moving averages. FCF yield 13.0%, revenue +3.2% in FY2025, net debt 1.6× EBITDA.",
+          "sortOrder": 2,
+          "snapshot": {
+            "symbol": "HPQ",
+            "companyName": "HP Inc.",
+            "sector": "Technology",
+            "marketCap": 29850030720,
+            "avgVolume": 15623482,
+            "price": 32.64,
+            "sma50": 27.0136,
+            "sma200": 22.81625,
+            "yearHigh": 32.78,
+            "yearLow": 17.56,
+            "fundamentals": {
+              "fcfYield": 0.13001661661271482,
+              "netDebtToEbitda": 1.641830761043108,
+              "currentRatio": 0.7875040485233931,
+              "netProfitMargin": 0.04142861972211893,
+              "interestCoverage": 7.8936170212765955,
+              "payoutRatio": 0.4467564259485924,
+              "revenueGrowth": 0.032412853115256074,
+              "netIncomeGrowth": -0.08864864864864865,
+              "growthFiscalYear": "2025"
+            }
+          }
+        },
+        {
+          "ticker": "BNY",
+          "companyName": "Bank of New York Mellon Corp",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "0.6% below its 52-week high and above both moving averages. FCF yield 0.4%, revenue +2.2% in FY2025.",
+          "sortOrder": 3,
+          "snapshot": {
+            "symbol": "BNY",
+            "companyName": "Bank of New York Mellon Corp",
+            "sector": "Financial Services",
+            "marketCap": 113142714360,
+            "avgVolume": 3475166,
+            "price": 164.84,
+            "sma50": 156.9912,
+            "sma200": 132.6194,
+            "yearHigh": 165.83,
+            "yearLow": 102.63,
+            "fundamentals": {
+              "fcfYield": 0.004180560831296641,
+              "netDebtToEbitda": -21.382404563405004,
+              "currentRatio": 0.8518744115163223,
+              "netProfitMargin": 0.15600214101503576,
+              "interestCoverage": 0.4181892001624036,
+              "payoutRatio": 0.29008109794135994,
+              "revenueGrowth": 0.02245088868101029,
+              "netIncomeGrowth": 0.2249448123620309,
+              "growthFiscalYear": "2025"
+            }
+          }
+        },
+        {
+          "ticker": "UNM",
+          "companyName": "Unum Group",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "1.0% below its 52-week high and above both moving averages. FCF yield 4.6%, revenue +2.1% in FY2025.",
+          "sortOrder": 4,
+          "snapshot": {
+            "symbol": "UNM",
+            "companyName": "Unum Group",
+            "sector": "Financial Services",
+            "marketCap": 15173725950,
+            "avgVolume": 1496068,
+            "price": 95.85,
+            "sma50": 89.7868,
+            "sma200": 81.0349,
+            "yearHigh": 96.77,
+            "yearLow": 69.02,
+            "fundamentals": {
+              "fcfYield": 0.045671050227449245,
+              "netDebtToEbitda": 2.9437608390453383,
+              "currentRatio": 17.968565815324165,
+              "netProfitMargin": 0.05304917629206867,
+              "interestCoverage": 4.285511363636363,
+              "payoutRatio": 0.43759783753749515,
+              "revenueGrowth": 0.020664420137450058,
+              "netIncomeGrowth": -0.5849024787814063,
+              "growthFiscalYear": "2025"
+            }
+          }
+        },
+        {
+          "ticker": "CRBG",
+          "companyName": "Corebridge Financial, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "1.0% below its 52-week high and above both moving averages. FCF yield 12.1%, revenue +7.9% in FY2025.",
+          "sortOrder": 5,
+          "snapshot": {
+            "symbol": "CRBG",
+            "companyName": "Corebridge Financial, Inc.",
+            "sector": "Financial Services",
+            "marketCap": 15365644331,
+            "avgVolume": 4505730,
+            "price": 34.47,
+            "sma50": 31.7854,
+            "sma200": 28.9497,
+            "yearHigh": 34.82,
+            "yearLow": 22.19,
+            "fundamentals": {
+              "fcfYield": 0.12052862607678694,
+              "netDebtToEbitda": 4.394901796907647,
+              "currentRatio": 6.2536,
+              "netProfitMargin": 0.09649962761995957,
+              "interestCoverage": 2.0378071833648392,
+              "payoutRatio": 0.5413450937155457,
+              "revenueGrowth": 0.07879014189693802,
+              "netIncomeGrowth": -1.1641255605381167,
+              "growthFiscalYear": "2025"
+            }
+          }
+        },
+        {
+          "ticker": "PAA",
+          "companyName": "Plains All American Pipeline, L.P.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "1.0% below its 52-week high and above both moving averages. FCF yield 13.1%, net income +85.9% in FY2025, net debt 2.5× EBITDA.",
+          "sortOrder": 6,
+          "snapshot": {
+            "symbol": "PAA",
+            "companyName": "Plains All American Pipeline, L.P.",
+            "sector": "Energy",
+            "marketCap": 18132172400,
+            "avgVolume": 2433252,
+            "price": 25.7,
+            "sma50": 23.9674,
+            "sma200": 21.3821,
+            "yearHigh": 25.97,
+            "yearLow": 15.69,
+            "fundamentals": {
+              "fcfYield": 0.13098265048483657,
+              "netDebtToEbitda": 2.4605391360831437,
+              "currentRatio": 1.1157194060419866,
+              "netProfitMargin": 0.0529521037210104,
+              "interestCoverage": 2.4446254071661238,
+              "payoutRatio": 0.4835443037974684,
+              "revenueGrowth": -0.11605056617338685,
+              "netIncomeGrowth": 0.8588082901554405,
+              "growthFiscalYear": "2025"
+            }
+          }
+        },
+        {
+          "ticker": "BBY",
+          "companyName": "Best Buy Co., Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "1.1% below its 52-week high and above both moving averages. FCF yield 9.3%, revenue +0.4% in FY2026, net debt 0.7× EBITDA.",
+          "sortOrder": 7,
+          "snapshot": {
+            "symbol": "BBY",
+            "companyName": "Best Buy Co., Inc.",
+            "sector": "Consumer Cyclical",
+            "marketCap": 19025937090,
+            "avgVolume": 3813924,
+            "price": 90.27,
+            "sma50": 83.7546,
+            "sma200": 71.39055,
+            "yearHigh": 91.27,
+            "yearLow": 55.1,
+            "fundamentals": {
+              "fcfYield": 0.09292577767059147,
+              "netDebtToEbitda": 0.727906976744186,
+              "currentRatio": 1.1169427036705462,
+              "netProfitMargin": 0.030141465842041658,
+              "interestCoverage": 40.86666666666667,
+              "payoutRatio": 0.6312893081761006,
+              "revenueGrowth": 0.003925062608360624,
+              "netIncomeGrowth": 0.15318230852211434,
+              "growthFiscalYear": "2026"
+            }
+          }
+        },
+        {
+          "ticker": "EXEL",
+          "companyName": "Exelixis, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "1.2% below its 52-week high and above both moving averages. FCF yield 8.0%, revenue +7.0% in FY2025, net cash.",
+          "sortOrder": 8,
+          "snapshot": {
+            "symbol": "EXEL",
+            "companyName": "Exelixis, Inc.",
+            "sector": "Healthcare",
+            "marketCap": 14832463448,
+            "avgVolume": 2556574,
+            "price": 59.01,
+            "sma50": 54.93,
+            "sma200": 47.56925,
+            "yearHigh": 59.72,
+            "yearLow": 33.76,
+            "fundamentals": {
+              "fcfYield": 0.07960808426325272,
+              "netDebtToEbitda": -0.11107553432486798,
+              "currentRatio": 3.4560063217168104,
+              "netProfitMargin": 0.35330511675260273,
+              "interestCoverage": 0,
+              "payoutRatio": 0,
+              "revenueGrowth": 0.06982290320334615,
+              "netIncomeGrowth": 0.5012843705816789,
+              "growthFiscalYear": "2025"
+            }
+          }
+        },
+        {
+          "ticker": "IVZ",
+          "companyName": "Invesco Ltd.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "1.8% below its 52-week high and above both moving averages. FCF yield 13.4%, revenue +5.1% in FY2025.",
+          "sortOrder": 9,
+          "snapshot": {
+            "symbol": "IVZ",
+            "companyName": "Invesco Ltd.",
+            "sector": "Financial Services",
+            "marketCap": 14659831790,
+            "avgVolume": 4812806,
+            "price": 33.07,
+            "sma50": 30.4278,
+            "sma200": 27.23925,
+            "yearHigh": 33.66,
+            "yearLow": 20.67,
+            "fundamentals": {
+              "fcfYield": 0.13406702260667616,
+              "netDebtToEbitda": 0.47656197457798105,
+              "currentRatio": 0.708422525934464,
+              "netProfitMargin": -0.009344440420137632,
+              "interestCoverage": -5.070393374741201,
+              "payoutRatio": -8.46046511627907,
+              "revenueGrowth": 0.05111257623207516,
+              "netIncomeGrowth": -1.3635776974703149,
+              "growthFiscalYear": "2025"
+            }
+          }
+        },
+        {
+          "ticker": "DELL",
+          "companyName": "Dell Technologies Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "2.0% below its 52-week high and above both moving averages. FCF yield 2.5%, revenue +18.8% in FY2026, net debt 1.3× EBITDA.",
+          "sortOrder": 10,
+          "snapshot": {
+            "symbol": "DELL",
+            "companyName": "Dell Technologies Inc.",
+            "sector": "Technology",
+            "marketCap": 348067494132,
+            "avgVolume": 7647492,
+            "price": 524,
+            "sma50": 437.1586,
+            "sma200": 251.4429,
+            "yearHigh": 534.96,
+            "yearLow": 110.22,
+            "fundamentals": {
+              "fcfYield": 0.02459293138345672,
+              "netDebtToEbitda": 1.3040779132019593,
+              "currentRatio": 0.9622952582344719,
+              "netProfitMargin": 0.0752528158627486,
+              "interestCoverage": 9.885674931129477,
+              "payoutRatio": 0.13763403058534013,
+              "revenueGrowth": 0.1880460828528676,
+              "netIncomeGrowth": 0.2926829268292683,
+              "growthFiscalYear": "2026"
+            }
+          }
+        }
+      ]
+    },
+    "under-the-radar-breakouts": {
+      "refreshedAt": "2026-09-05T20:17:26.065Z",
+      "universeSize": 344,
+      "qualifiedCount": 24,
+      "constituents": [
+        {
+          "ticker": "DBRG",
+          "companyName": "DigitalBridge Group, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$2.9B financial-services company, 0.3% below its 52-week high and 78% above its low. FCF yield 6.1%, net margin 38.9%.",
+          "sortOrder": 1,
+          "snapshot": {
+            "symbol": "DBRG",
+            "companyName": "DigitalBridge Group, Inc.",
+            "sector": "Financial Services",
+            "marketCap": 2942764559,
+            "avgVolume": 3338328,
+            "price": 15.93,
+            "sma50": 15.863,
+            "sma200": 15.1172,
+            "yearHigh": 15.98,
+            "yearLow": 8.94,
+            "fundamentals": {
+              "fcfYield": 0.06072113362025847,
+              "netDebtToEbitda": -0.6326967418058704,
+              "currentRatio": 3.8923855768641626,
+              "netProfitMargin": 0.3893266017288808,
+              "interestCoverage": 5.974777158982136,
+              "payoutRatio": 0.19177659806559522
+            }
+          }
+        },
+        {
+          "ticker": "NOV",
+          "companyName": "NOV Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$7.6B energy company, 2.2% below its 52-week high and 74% above its low. FCF yield 7.4%, net margin 1.1%, net debt 1.5× EBITDA.",
+          "sortOrder": 2,
+          "snapshot": {
+            "symbol": "NOV",
+            "companyName": "NOV Inc.",
+            "sector": "Energy",
+            "marketCap": 7625067094,
+            "avgVolume": 3714228,
+            "price": 21.39,
+            "sma50": 19.9112,
+            "sma200": 18.95505,
+            "yearHigh": 21.86,
+            "yearLow": 12.29,
+            "fundamentals": {
+              "fcfYield": 0.07370426949321214,
+              "netDebtToEbitda": 1.485933503836317,
+              "currentRatio": 2.4221757322175734,
+              "netProfitMargin": 0.011112397268202338,
+              "interestCoverage": 5.850574712643678,
+              "payoutRatio": 1.5833333333333333
+            }
+          }
+        },
+        {
+          "ticker": "CLBK",
+          "companyName": "Columbia Financial, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$2.6B financial-services company, 2.5% below its 52-week high and 88% above its low. FCF yield 2.6%, net margin 11.5%.",
+          "sortOrder": 3,
+          "snapshot": {
+            "symbol": "CLBK",
+            "companyName": "Columbia Financial, Inc.",
+            "sector": "Financial Services",
+            "marketCap": 2614186949,
+            "avgVolume": 4955501,
+            "price": 11.7,
+            "sma50": 10.79609,
+            "sma200": 8.77099,
+            "yearHigh": 12,
+            "yearLow": 6.20909,
+            "fundamentals": {
+              "fcfYield": 0.026298807752176565,
+              "netDebtToEbitda": 1.6203631516736665,
+              "currentRatio": 435.7055427251732,
+              "netProfitMargin": 0.115286014239744,
+              "interestCoverage": 0.35166847851774824,
+              "payoutRatio": 0
+            }
+          }
+        },
+        {
+          "ticker": "DINO",
+          "companyName": "HF Sinclair Corporation",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$18.7B energy company, 2.6% below its 52-week high and 131% above its low. FCF yield 13.6%, net margin 6.1%, net debt 0.2× EBITDA.",
+          "sortOrder": 4,
+          "snapshot": {
+            "symbol": "DINO",
+            "companyName": "HF Sinclair Corporation",
+            "sector": "Energy",
+            "marketCap": 18740211440,
+            "avgVolume": 2640393,
+            "price": 105.41,
+            "sma50": 87.5188,
+            "sma200": 65.3839,
+            "yearHigh": 108.25,
+            "yearLow": 45.71,
+            "fundamentals": {
+              "fcfYield": 0.13628448153731185,
+              "netDebtToEbitda": 0.16524137931034483,
+              "currentRatio": 1.9709178228388473,
+              "netProfitMargin": 0.061323171512744974,
+              "interestCoverage": 14.201058201058201,
+              "payoutRatio": 0.2898172323759791
+            }
+          }
+        },
+        {
+          "ticker": "PR",
+          "companyName": "Permian Resources Corporation",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$19.6B energy company, 3.0% below its 52-week high and 96% above its low. FCF yield 8.3%, net margin 21.5%, net debt 0.8× EBITDA.",
+          "sortOrder": 5,
+          "snapshot": {
+            "symbol": "PR",
+            "companyName": "Permian Resources Corporation",
+            "sector": "Energy",
+            "marketCap": 19559050577,
+            "avgVolume": 9939853,
+            "price": 23.36,
+            "sma50": 21.0176,
+            "sma200": 18.61065,
+            "yearHigh": 24.09,
+            "yearLow": 11.92,
+            "fundamentals": {
+              "fcfYield": 0.08256407915315551,
+              "netDebtToEbitda": 0.8094447465891591,
+              "currentRatio": 0.6242106661684839,
+              "netProfitMargin": 0.2152255093601657,
+              "interestCoverage": 8.27223341280625,
+              "payoutRatio": 0.40902218374617255
+            }
+          }
+        },
+        {
+          "ticker": "CART",
+          "companyName": "Maplebear Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$12.0B technology company, 3.1% below its 52-week high and 56% above its low. FCF yield 9.8%, net margin 12.0%, net cash.",
+          "sortOrder": 6,
+          "snapshot": {
+            "symbol": "CART",
+            "companyName": "Maplebear Inc.",
+            "sector": "Technology",
+            "marketCap": 12002972601,
+            "avgVolume": 4184601,
+            "price": 51.07,
+            "sma50": 47.7696,
+            "sma200": 42.2959,
+            "yearHigh": 52.68,
+            "yearLow": 32.73,
+            "fundamentals": {
+              "fcfYield": 0.09789241707525914,
+              "netDebtToEbitda": -0.9757085020242915,
+              "currentRatio": 2.278794402583423,
+              "netProfitMargin": 0.12021036814425244,
+              "interestCoverage": 0,
+              "payoutRatio": 0
+            }
+          }
+        },
+        {
+          "ticker": "BOX",
+          "companyName": "Box, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$4.9B technology company, 3.2% below its 52-week high and 65% above its low. FCF yield 7.8%, net margin 9.4%, net cash.",
+          "sortOrder": 7,
+          "snapshot": {
+            "symbol": "BOX",
+            "companyName": "Box, Inc.",
+            "sector": "Technology",
+            "marketCap": 4874976270,
+            "avgVolume": 2760866,
+            "price": 35.19,
+            "sma50": 31.3796,
+            "sma200": 27.39455,
+            "yearHigh": 36.34,
+            "yearLow": 21.34,
+            "fundamentals": {
+              "fcfYield": 0.07786232772780245,
+              "netDebtToEbitda": -1.6539367181751288,
+              "currentRatio": 1.0588089011087267,
+              "netProfitMargin": 0.09449788099540544,
+              "interestCoverage": 11.489088575096277,
+              "payoutRatio": 0.12862618657657116
+            }
+          }
+        },
+        {
+          "ticker": "GNW",
+          "companyName": "Genworth Financial, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$4.0B financial-services company, 3.2% below its 52-week high and 32% above its low. FCF yield 10.8%, net margin 3.0%.",
+          "sortOrder": 8,
+          "snapshot": {
+            "symbol": "GNW",
+            "companyName": "Genworth Financial, Inc.",
+            "sector": "Financial Services",
+            "marketCap": 3964145800,
+            "avgVolume": 2967049,
+            "price": 10.35,
+            "sma50": 9.84,
+            "sma200": 8.98675,
+            "yearHigh": 10.69,
+            "yearLow": 7.84,
+            "fundamentals": {
+              "fcfYield": 0.10847229685648797,
+              "netDebtToEbitda": -0.8663101604278075,
+              "currentRatio": 3.3807956496851745,
+              "netProfitMargin": 0.03032904148783977,
+              "interestCoverage": 3.8653846153846154,
+              "payoutRatio": 0
+            }
+          }
+        },
+        {
+          "ticker": "LFST",
+          "companyName": "LifeStance Health Group, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$4.9B healthcare company, 3.2% below its 52-week high and 167% above its low. FCF yield 4.3%, net margin 3.2%, net cash.",
+          "sortOrder": 9,
+          "snapshot": {
+            "symbol": "LFST",
+            "companyName": "LifeStance Health Group, Inc.",
+            "sector": "Healthcare",
+            "marketCap": 4937126820,
+            "avgVolume": 3857501,
+            "price": 12.73,
+            "sma50": 11.4709,
+            "sma200": 8.23355,
+            "yearHigh": 13.15,
+            "yearLow": 4.77,
+            "fundamentals": {
+              "fcfYield": 0.042540936795299904,
+              "netDebtToEbitda": -0.19203426904848706,
+              "currentRatio": 1.3756574086543185,
+              "netProfitMargin": 0.03192763406135911,
+              "interestCoverage": 7.754696460351988,
+              "payoutRatio": 0
+            }
+          }
+        },
+        {
+          "ticker": "MTCH",
+          "companyName": "Match Group, Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$9.8B communication services company, 3.7% below its 52-week high and 45% above its low. FCF yield 11.7%, net margin 20.2%, net debt 2.6× EBITDA.",
+          "sortOrder": 10,
+          "snapshot": {
+            "symbol": "MTCH",
+            "companyName": "Match Group, Inc.",
+            "sector": "Communication Services",
+            "marketCap": 9764556620,
+            "avgVolume": 3316336,
+            "price": 41.86,
+            "sma50": 39.2256,
+            "sma200": 34.671,
+            "yearHigh": 43.47,
+            "yearLow": 28.81,
+            "fundamentals": {
+              "fcfYield": 0.11689767835049944,
+              "netDebtToEbitda": 2.6140075993042915,
+              "currentRatio": 1.7238853526246805,
+              "netProfitMargin": 0.20168608163404877,
+              "interestCoverage": 5.985670227398041,
+              "payoutRatio": 0.2574468656265144
+            }
+          }
+        }
+      ]
+    },
+    "quality-compounders-on-pullback": {
+      "refreshedAt": "2026-09-05T20:17:26.105Z",
+      "universeSize": 361,
+      "qualifiedCount": 33,
+      "constituents": [
+        {
+          "ticker": "WRB",
+          "companyName": "W. R. Berkley Corporation",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "12.4% below its 52-week high and 2.7% under its 50-day average. FCF yield 13.6%, revenue +7.8% in FY2025, profitable three straight years.",
+          "sortOrder": 1,
+          "snapshot": {
+            "symbol": "WRB",
+            "companyName": "W. R. Berkley Corporation",
+            "sector": "Financial Services",
+            "marketCap": 25739231780,
+            "avgVolume": 1904695,
+            "price": 69.14,
+            "sma50": 71.0796,
+            "sma200": 69.2561,
+            "yearHigh": 78.96,
+            "yearLow": 62.87,
+            "fundamentals": {
+              "fcfYield": 0.13593688537039936,
+              "netDebtToEbitda": 0.22498497692713088,
+              "currentRatio": 1.3680075887640126,
+              "netProfitMargin": 0.10706956689643254,
+              "interestCoverage": 19.437220084526587,
+              "payoutRatio": 0.24885530233088868,
+              "revenueGrowth": 0.07821668727461281,
+              "netIncomeGrowth": 0.013260521093436364,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.17592592592592587
+          }
+        },
+        {
+          "ticker": "SUNB",
+          "companyName": "Sunbelt Rentals Holdings Inc",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "20.9% below its 52-week high and 8.6% under its 50-day average. FCF yield 12.2%, revenue +3.4% in FY2026, profitable three straight years, net debt 2.4× EBITDA.",
+          "sortOrder": 2,
+          "snapshot": {
+            "symbol": "SUNB",
+            "companyName": "Sunbelt Rentals Holdings Inc",
+            "sector": "Industrials",
+            "marketCap": 28118302866,
+            "avgVolume": 4362837,
+            "price": 68.59,
+            "sma50": 75.0556,
+            "sma200": 74.22377,
+            "yearHigh": 86.68,
+            "yearLow": 61.03,
+            "fundamentals": {
+              "fcfYield": 0.12205573061629886,
+              "netDebtToEbitda": 2.4116260801256875,
+              "currentRatio": 0.901453957996769,
+              "netProfitMargin": 0.11803625540155278,
+              "interestCoverage": 5.065317791950736,
+              "payoutRatio": 0.3524229074889868,
+              "revenueGrowth": 0.03357209707460363,
+              "netIncomeGrowth": -0.12280701754385964,
+              "growthFiscalYear": "2026",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": -0.00671140939597316
+          }
+        },
+        {
+          "ticker": "DAL",
+          "companyName": "Delta Air Lines, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "16.2% below its 52-week high and 7.7% under its 50-day average. FCF yield 11.5%, revenue +2.8% in FY2025, profitable three straight years, net debt 1.8× EBITDA.",
+          "sortOrder": 3,
+          "snapshot": {
+            "symbol": "DAL",
+            "companyName": "Delta Air Lines, Inc.",
+            "sector": "Industrials",
+            "marketCap": 52721635910,
+            "avgVolume": 6523374,
+            "price": 80.17,
+            "sma50": 86.8124,
+            "sma200": 74.07255,
+            "yearHigh": 95.68,
+            "yearLow": 55.03,
+            "fundamentals": {
+              "fcfYield": 0.1150760953312763,
+              "netDebtToEbitda": 1.819790924210026,
+              "currentRatio": 0.42364004285204143,
+              "netProfitMargin": 0.05785874324542006,
+              "interestCoverage": 8.853932584269662,
+              "payoutRatio": 0.12705644140723868,
+              "revenueGrowth": 0.027918822899599304,
+              "netIncomeGrowth": 0.4477870986404397,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.046979865771812124
+          }
+        },
+        {
+          "ticker": "HBAN",
+          "companyName": "Huntington Bancshares Incorporated",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "12.5% below its 52-week high and 2.8% under its 50-day average. FCF yield 8.6%, revenue +4.4% in FY2025, profitable three straight years.",
+          "sortOrder": 4,
+          "snapshot": {
+            "symbol": "HBAN",
+            "companyName": "Huntington Bancshares Incorporated",
+            "sector": "Financial Services",
+            "marketCap": 34407667075,
+            "avgVolume": 23279692,
+            "price": 17.03,
+            "sma50": 17.5148,
+            "sma200": 16.98745,
+            "yearHigh": 19.46,
+            "yearLow": 14.89,
+            "fundamentals": {
+              "fcfYield": 0.08594014797790529,
+              "netDebtToEbitda": 5.306303724928367,
+              "currentRatio": 12.387013821922212,
+              "netProfitMargin": 0.166412213740458,
+              "interestCoverage": 0.6253196930946292,
+              "payoutRatio": 0.4824854045037531,
+              "revenueGrowth": 0.04380904606638241,
+              "netIncomeGrowth": 0.13969072164948454,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": -0.07975460122699375
+          }
+        },
+        {
+          "ticker": "UAL",
+          "companyName": "United Airlines Holdings, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "19.7% below its 52-week high and 8.4% under its 50-day average. FCF yield 7.0%, revenue +3.5% in FY2025, profitable three straight years, net debt 2.8× EBITDA.",
+          "sortOrder": 5,
+          "snapshot": {
+            "symbol": "UAL",
+            "companyName": "United Airlines Holdings, Inc.",
+            "sector": "Industrials",
+            "marketCap": 36150576305,
+            "avgVolume": 4383207,
+            "price": 111.38,
+            "sma50": 121.601,
+            "sma200": 108.2878,
+            "yearHigh": 138.77,
+            "yearLow": 84.64,
+            "fundamentals": {
+              "fcfYield": 0.07037232210453415,
+              "netDebtToEbitda": 2.8135999042260265,
+              "currentRatio": 0.7802910243480766,
+              "netProfitMargin": 0.05559441671171028,
+              "interestCoverage": 3.8317610062893084,
+              "payoutRatio": 0,
+              "revenueGrowth": 0.03517165238420693,
+              "netIncomeGrowth": 0.06478247062559543,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.0585106382978724
+          }
+        },
+        {
+          "ticker": "AXP",
+          "companyName": "American Express Company",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "15.8% below its 52-week high and 4.6% under its 50-day average. FCF yield 6.8%, revenue +8.4% in FY2025, profitable three straight years.",
+          "sortOrder": 6,
+          "snapshot": {
+            "symbol": "AXP",
+            "companyName": "American Express Company",
+            "sector": "Financial Services",
+            "marketCap": 220259109600,
+            "avgVolume": 2867987,
+            "price": 326.16,
+            "sma50": 341.7672,
+            "sma200": 337.18805,
+            "yearHigh": 387.49,
+            "yearLow": 290.97,
+            "fundamentals": {
+              "fcfYield": 0.06833769566822948,
+              "netDebtToEbitda": 0.558404788869115,
+              "currentRatio": 1.551305274984809,
+              "netProfitMargin": 0.13613169507451858,
+              "interestCoverage": 2.8134695887712384,
+              "payoutRatio": 0.2111839231105286,
+              "revenueGrowth": 0.08440587054082829,
+              "netIncomeGrowth": 0.06950340606180275,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.02721088435374152
+          }
+        },
+        {
+          "ticker": "UNH",
+          "companyName": "UnitedHealth Group Incorporated",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "14.0% below its 52-week high and 3.5% under its 50-day average. FCF yield 6.5%, revenue +11.8% in FY2025, profitable three straight years, net debt 1.7× EBITDA.",
+          "sortOrder": 7,
+          "snapshot": {
+            "symbol": "UNH",
+            "companyName": "UnitedHealth Group Incorporated",
+            "sector": "Healthcare",
+            "marketCap": 360660468605,
+            "avgVolume": 5349722,
+            "price": 397.14,
+            "sma50": 411.7384,
+            "sma200": 351.49054,
+            "yearHigh": 461.62,
+            "yearLow": 255.97,
+            "fundamentals": {
+              "fcfYield": 0.06548264103173904,
+              "netDebtToEbitda": 1.7367154446298956,
+              "currentRatio": 1.2405220197862339,
+              "netProfitMargin": 0.03137322856336739,
+              "interestCoverage": 5.566512583461736,
+              "payoutRatio": 0.5732899022801303,
+              "revenueGrowth": 0.11814039242726306,
+              "netIncomeGrowth": -0.16306837903505728,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.2914979757085019
+          }
+        },
+        {
+          "ticker": "BKNG",
+          "companyName": "Booking Holdings Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "14.3% below its 52-week high and 0.5% under its 50-day average. FCF yield 6.4%, revenue +13.4% in FY2025, profitable three straight years, net debt 0.3× EBITDA.",
+          "sortOrder": 8,
+          "snapshot": {
+            "symbol": "BKNG",
+            "companyName": "Booking Holdings Inc.",
+            "sector": "Consumer Cyclical",
+            "marketCap": 149776168620,
+            "avgVolume": 6671360,
+            "price": 193.29,
+            "sma50": 194.2502,
+            "sma200": 185.83838,
+            "yearHigh": 225.54,
+            "yearLow": 150.14,
+            "fundamentals": {
+              "fcfYield": 0.06368836970453945,
+              "netDebtToEbitda": 0.32261054973579306,
+              "currentRatio": 1.094252764463006,
+              "netProfitMargin": 0.25526716476045463,
+              "interestCoverage": 8.831368993653673,
+              "payoutRatio": 0.17769454848106533,
+              "revenueGrowth": 0.1338725304351489,
+              "netIncomeGrowth": -0.08126487589255356,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.0452674897119341
+          }
+        },
+        {
+          "ticker": "PPG",
+          "companyName": "PPG Industries, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "15.7% below its 52-week high and 2.8% under its 50-day average. FCF yield 5.6%, revenue +0.2% in FY2025, profitable three straight years, net debt 2.1× EBITDA.",
+          "sortOrder": 9,
+          "snapshot": {
+            "symbol": "PPG",
+            "companyName": "PPG Industries, Inc.",
+            "sector": "Basic Materials",
+            "marketCap": 25015419338,
+            "avgVolume": 1773585,
+            "price": 112.53,
+            "sma50": 115.7898,
+            "sma200": 111.376,
+            "yearHigh": 133.43,
+            "yearLow": 93.39,
+            "fundamentals": {
+              "fcfYield": 0.05624530938254864,
+              "netDebtToEbitda": 2.1347951114306256,
+              "currentRatio": 1.5798431822528207,
+              "netProfitMargin": 0.09573107606114122,
+              "interestCoverage": 8.035294117647059,
+              "payoutRatio": 0.40521628498727735,
+              "revenueGrowth": 0.0018933417481855476,
+              "netIncomeGrowth": 0.4121863799283154,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": -0.008888888888888898
+          }
+        },
+        {
+          "ticker": "EBAY",
+          "companyName": "eBay Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "13.3% below its 52-week high and 5.4% under its 50-day average. FCF yield 5.3%, revenue +7.9% in FY2025, profitable three straight years, net debt 1.6× EBITDA.",
+          "sortOrder": 10,
+          "snapshot": {
+            "symbol": "EBAY",
+            "companyName": "eBay Inc.",
+            "sector": "Consumer Cyclical",
+            "marketCap": 45914040000,
+            "avgVolume": 3888950,
+            "price": 103.41,
+            "sma50": 109.3294,
+            "sma200": 98.6609,
+            "yearHigh": 119.31,
+            "yearLow": 78.03,
+            "fundamentals": {
+              "fcfYield": 0.05290320782052723,
+              "netDebtToEbitda": 1.5886618325642716,
+              "currentRatio": 1.0188391038696538,
+              "netProfitMargin": 0.18504330446369088,
+              "interestCoverage": 9.89558232931727,
+              "payoutRatio": 0.24302430243024303,
+              "revenueGrowth": 0.07945152192939804,
+              "netIncomeGrowth": 0.028354430379746835,
+              "growthFiscalYear": "2025",
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.06666666666666672
+          }
+        }
+      ]
+    },
+    "leader-pullback-and-reclaim": {
+      "refreshedAt": "2026-09-05T20:17:26.135Z",
+      "universeSize": 158,
+      "qualifiedCount": 13,
+      "constituents": [
+        {
+          "ticker": "GOOGL",
+          "companyName": "Alphabet Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$4.1T communication services company, 17.2% below its 52-week high and still above its 200-day average; RSI 45, 2.9% under its 50-day.",
+          "sortOrder": 1,
+          "snapshot": {
+            "symbol": "GOOGL",
+            "companyName": "Alphabet Inc.",
+            "sector": "Communication Services",
+            "marketCap": 4096080585860,
+            "avgVolume": 30102998,
+            "price": 338.46,
+            "sma50": 348.5694,
+            "sma200": 335.941,
+            "yearHigh": 408.61,
+            "yearLow": 233.23,
+            "lastQuarterEpsSurprise": 2.1742160278745644,
+            "rsi": 44.82098126567299
+          }
+        },
+        {
+          "ticker": "LLY",
+          "companyName": "Eli Lilly and Company",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$1.1T healthcare company, 11.2% below its 52-week high and still above its 200-day average; RSI 41, 3.6% under its 50-day.",
+          "sortOrder": 2,
+          "snapshot": {
+            "symbol": "LLY",
+            "companyName": "Eli Lilly and Company",
+            "sector": "Healthcare",
+            "marketCap": 1081307016200,
+            "avgVolume": 2863968,
+            "price": 1148.2,
+            "sma50": 1191.0692,
+            "sma200": 1062.6887,
+            "yearHigh": 1292.65,
+            "yearLow": 712.05,
+            "lastQuarterEpsSurprise": 0.30937500000000007,
+            "rsi": 41.33059158849309
+          }
+        },
+        {
+          "ticker": "CSCO",
+          "companyName": "Cisco Systems, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$430B technology company, 16.2% below its 52-week high and still above its 200-day average; RSI 41, 4.4% under its 50-day.",
+          "sortOrder": 3,
+          "snapshot": {
+            "symbol": "CSCO",
+            "companyName": "Cisco Systems, Inc.",
+            "sector": "Technology",
+            "marketCap": 430404665418,
+            "avgVolume": 21787588,
+            "price": 109.2,
+            "sma50": 114.2832,
+            "sma200": 94.75465,
+            "yearHigh": 130.37,
+            "yearLow": 66.13,
+            "lastQuarterEpsSurprise": 0.04273504273504278,
+            "rsi": 40.952106839866666
+          }
+        },
+        {
+          "ticker": "GE",
+          "companyName": "GE Aerospace",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$350B industrials company, 13.3% below its 52-week high and still above its 200-day average; RSI 42, 5.8% under its 50-day.",
+          "sortOrder": 4,
+          "snapshot": {
+            "symbol": "GE",
+            "companyName": "GE Aerospace",
+            "sector": "Industrials",
+            "marketCap": 349783074383,
+            "avgVolume": 4164290,
+            "price": 337.12,
+            "sma50": 357.8994,
+            "sma200": 321.14124,
+            "yearHigh": 388.84,
+            "yearLow": 268.91,
+            "lastQuarterEpsSurprise": 0.08602150537634404,
+            "rsi": 41.747285176425954
+          }
+        },
+        {
+          "ticker": "PM",
+          "companyName": "Philip Morris International Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$284B consumer defensive company, 12.1% below its 52-week high and still above its 200-day average; RSI 41, 2.9% under its 50-day.",
+          "sortOrder": 5,
+          "snapshot": {
+            "symbol": "PM",
+            "companyName": "Philip Morris International Inc.",
+            "sector": "Consumer Defensive",
+            "marketCap": 284493083300,
+            "avgVolume": 4931733,
+            "price": 182.53,
+            "sma50": 187.9274,
+            "sma200": 174.3999,
+            "yearHigh": 207.76,
+            "yearLow": 142.11,
+            "lastQuarterEpsSurprise": 0.07317073170731725,
+            "rsi": 40.51107285097456
+          }
+        },
+        {
+          "ticker": "PANW",
+          "companyName": "Palo Alto Networks, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$272B technology company, 16.5% below its 52-week high and still above its 200-day average; RSI 43, 4.4% under its 50-day.",
+          "sortOrder": 6,
+          "snapshot": {
+            "symbol": "PANW",
+            "companyName": "Palo Alto Networks, Inc.",
+            "sector": "Technology",
+            "marketCap": 271606900000,
+            "avgVolume": 6728058,
+            "price": 333.26,
+            "sma50": 348.5008,
+            "sma200": 232.4152,
+            "yearHigh": 398.88,
+            "yearLow": 139.57,
+            "lastQuarterEpsSurprise": 0.042944785276073656,
+            "rsi": 43.49553982650583
+          }
+        },
+        {
+          "ticker": "ADI",
+          "companyName": "Analog Devices, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$176B technology company, 18.8% below its 52-week high and still above its 200-day average; RSI 43, 4.3% under its 50-day.",
+          "sortOrder": 7,
+          "snapshot": {
+            "symbol": "ADI",
+            "companyName": "Analog Devices, Inc.",
+            "sector": "Technology",
+            "marketCap": 176447265750,
+            "avgVolume": 4368272,
+            "price": 362.25,
+            "sma50": 378.4788,
+            "sma200": 347.6365,
+            "yearHigh": 445.91,
+            "yearLow": 223.47,
+            "lastQuarterEpsSurprise": 0.032934131736527046,
+            "rsi": 42.77487907486247
+          }
+        },
+        {
+          "ticker": "PLD",
+          "companyName": "Prologis, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$128B real estate company, 10.4% below its 52-week high and still above its 200-day average; RSI 39, 3.3% under its 50-day.",
+          "sortOrder": 8,
+          "snapshot": {
+            "symbol": "PLD",
+            "companyName": "Prologis, Inc.",
+            "sector": "Real Estate",
+            "marketCap": 128148657840,
+            "avgVolume": 4222461,
+            "price": 137.34,
+            "sma50": 142.0732,
+            "sma200": 137.32155,
+            "yearHigh": 153.35,
+            "yearLow": 110.6,
+            "lastQuarterEpsSurprise": 0.5127175368139222,
+            "rsi": 38.74264747385453
+          }
+        },
+        {
+          "ticker": "HWM",
+          "companyName": "Howmet Aerospace Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$104B industrials company, 16.4% below its 52-week high and still above its 200-day average; RSI 42, 5.8% under its 50-day.",
+          "sortOrder": 9,
+          "snapshot": {
+            "symbol": "HWM",
+            "companyName": "Howmet Aerospace Inc.",
+            "sector": "Industrials",
+            "marketCap": 103735867117,
+            "avgVolume": 2805490,
+            "price": 259.27,
+            "sma50": 275.3492,
+            "sma200": 245.53885,
+            "yearHigh": 310,
+            "yearLow": 176.32,
+            "lastQuarterEpsSurprise": 0.07258064516129038,
+            "rsi": 41.98928602602289
+          }
+        },
+        {
+          "ticker": "MDLZ",
+          "companyName": "Mondelez International, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "$78.2B consumer defensive company, 8.1% below its 52-week high and still above its 200-day average; RSI 44, 0.4% under its 50-day.",
+          "sortOrder": 10,
+          "snapshot": {
+            "symbol": "MDLZ",
+            "companyName": "Mondelez International, Inc.",
+            "sector": "Consumer Defensive",
+            "marketCap": 78212276800,
+            "avgVolume": 8958844,
+            "price": 61.28,
+            "sma50": 61.5254,
+            "sma200": 59.1015,
+            "yearHigh": 66.65,
+            "yearLow": 51.2,
+            "lastQuarterEpsSurprise": 0.07352941176470577,
+            "rsi": 43.749488781634206
+          }
+        }
+      ]
+    },
+    "200-day-comeback-watchlist": {
+      "refreshedAt": "2026-09-05T20:17:26.161Z",
+      "universeSize": 326,
+      "qualifiedCount": 15,
+      "constituents": [
+        {
+          "ticker": "ADBE",
+          "companyName": "Adobe Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "0.5% below its 200-day average after closing under it on 48 of the last 60 sessions; 28.1% off its 52-week high, back above its 50-day.",
+          "sortOrder": 1,
+          "snapshot": {
+            "symbol": "ADBE",
+            "companyName": "Adobe Inc.",
+            "sector": "Technology",
+            "marketCap": 105937725000,
+            "avgVolume": 6205739,
+            "price": 266.51,
+            "sma50": 248.8478,
+            "sma200": 267.93475,
+            "yearHigh": 370.86,
+            "yearLow": 190.12,
+            "fundamentals": {
+              "fcfYield": 0.10031365125124218,
+              "netDebtToEbitda": 0.21591709427507796,
+              "currentRatio": 0.7507865540652426,
+              "netProfitMargin": 0.286887848241924,
+              "interestCoverage": 67.33333333333333,
+              "payoutRatio": 0
+            },
+            "sessionsBelow200Of60": 48
+          }
+        },
+        {
+          "ticker": "UBER",
+          "companyName": "Uber Technologies, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "0.7% below its 200-day average after closing under it on 50 of the last 60 sessions; 25.7% off its 52-week high, back above its 50-day.",
+          "sortOrder": 2,
+          "snapshot": {
+            "symbol": "UBER",
+            "companyName": "Uber Technologies, Inc.",
+            "sector": "Technology",
+            "marketCap": 154216981225,
+            "avgVolume": 19185593,
+            "price": 75.76,
+            "sma50": 74.0896,
+            "sma200": 76.3218,
+            "yearHigh": 101.99,
+            "yearLow": 65.41,
+            "fundamentals": {
+              "fcfYield": 0.06559588911444794,
+              "netDebtToEbitda": 1.2306252339947585,
+              "currentRatio": 0.8425122722076525,
+              "netProfitMargin": 0.173447770112445,
+              "interestCoverage": 14.909090909090908,
+              "payoutRatio": 0
+            },
+            "sessionsBelow200Of60": 50
+          }
+        },
+        {
+          "ticker": "CTSH",
+          "companyName": "Cognizant Technology Solutions Corporation",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "0.7% below its 200-day average after closing under it on 54 of the last 60 sessions; 28.4% off its 52-week high, back above its 50-day.",
+          "sortOrder": 3,
+          "snapshot": {
+            "symbol": "CTSH",
+            "companyName": "Cognizant Technology Solutions Corporation",
+            "sector": "Technology",
+            "marketCap": 28067178663,
+            "avgVolume": 10280361,
+            "price": 62.31,
+            "sma50": 52.4574,
+            "sma200": 62.77785,
+            "yearHigh": 87.03,
+            "yearLow": 37.08,
+            "fundamentals": {
+              "fcfYield": 0.09256363210545471,
+              "netDebtToEbitda": 0.2665320545179202,
+              "currentRatio": 2.18215935334873,
+              "netProfitMargin": 0.10257831993346271,
+              "interestCoverage": 94.72222222222223,
+              "payoutRatio": 0.27837837837837837
+            },
+            "sessionsBelow200Of60": 54
+          }
+        },
+        {
+          "ticker": "META",
+          "companyName": "Meta Platforms, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "0.9% below its 200-day average after closing under it on 52 of the last 60 sessions; 22.0% off its 52-week high, back above its 50-day.",
+          "sortOrder": 4,
+          "snapshot": {
+            "symbol": "META",
+            "companyName": "Meta Platforms, Inc.",
+            "sector": "Communication Services",
+            "marketCap": 1571213291779,
+            "avgVolume": 17851201,
+            "price": 616.77,
+            "sma50": 595.4916,
+            "sma200": 622.2901,
+            "yearHigh": 790.8,
+            "yearLow": 520.26,
+            "fundamentals": {
+              "fcfYield": 0.026079209114635918,
+              "netDebtToEbitda": 0.904587567244471,
+              "currentRatio": 2.225562709519502,
+              "netProfitMargin": 0.29835091654691387,
+              "interestCoverage": 38.12587719298246,
+              "payoutRatio": 0.03907603747540309
+            },
+            "sessionsBelow200Of60": 52
+          }
+        },
+        {
+          "ticker": "PSKY",
+          "companyName": "Paramount Skydance Corporation",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "1.4% below its 200-day average after closing under it on 59 of the last 60 sessions; 47.9% off its 52-week high, back above its 50-day.",
+          "sortOrder": 5,
+          "snapshot": {
+            "symbol": "PSKY",
+            "companyName": "Paramount Skydance Corporation",
+            "sector": "Communication Services",
+            "marketCap": 11812096200,
+            "avgVolume": 10361101,
+            "price": 10.86,
+            "sma50": 9.564,
+            "sma200": 11.01065,
+            "yearHigh": 20.86,
+            "yearLow": 7.62,
+            "fundamentals": {
+              "fcfYield": 0.03724995060571891,
+              "netDebtToEbitda": -3.368774900398406,
+              "currentRatio": 1.039622641509434,
+              "netProfitMargin": -0.021099483555313943,
+              "interestCoverage": -5.752118644067797,
+              "payoutRatio": -0.22061191626409019
+            },
+            "sessionsBelow200Of60": 59
+          }
+        },
+        {
+          "ticker": "CPRT",
+          "companyName": "Copart, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "2.1% below its 200-day average after closing under it on 60 of the last 60 sessions; 31.4% off its 52-week high, back above its 50-day.",
+          "sortOrder": 6,
+          "snapshot": {
+            "symbol": "CPRT",
+            "companyName": "Copart, Inc.",
+            "sector": "Industrials",
+            "marketCap": 31218363173,
+            "avgVolume": 11777214,
+            "price": 33.72,
+            "sma50": 30.0826,
+            "sma200": 34.4483,
+            "yearHigh": 49.16,
+            "yearLow": 26.81,
+            "fundamentals": {
+              "fcfYield": 0.04289888590822308,
+              "netDebtToEbitda": -1.5352933394411878,
+              "currentRatio": 7.612702642358583,
+              "netProfitMargin": 0.3348233523401296,
+              "interestCoverage": 0,
+              "payoutRatio": 0
+            },
+            "sessionsBelow200Of60": 60
+          }
+        },
+        {
+          "ticker": "COIN",
+          "companyName": "Coinbase Global, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "4.4% below its 200-day average after closing under it on 60 of the last 60 sessions; 54.1% off its 52-week high, back above its 50-day.",
+          "sortOrder": 7,
+          "snapshot": {
+            "symbol": "COIN",
+            "companyName": "Coinbase Global, Inc.",
+            "sector": "Financial Services",
+            "marketCap": 48714333394,
+            "avgVolume": 8487829,
+            "price": 184.64,
+            "sma50": 162.305,
+            "sma200": 193.15704,
+            "yearHigh": 402.16,
+            "yearLow": 139.11,
+            "fundamentals": {
+              "fcfYield": 0.054618216336461446,
+              "netDebtToEbitda": 3.272458110845148,
+              "currentRatio": 1.5412789236718987,
+              "netProfitMargin": -0.1784927128950322,
+              "interestCoverage": -0.26410812502794795,
+              "payoutRatio": 0
+            },
+            "sessionsBelow200Of60": 60
+          }
+        },
+        {
+          "ticker": "GEHC",
+          "companyName": "GE HealthCare Technologies Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "5.3% below its 200-day average after closing under it on 52 of the last 60 sessions; 23.3% off its 52-week high, back above its 50-day.",
+          "sortOrder": 8,
+          "snapshot": {
+            "symbol": "GEHC",
+            "companyName": "GE HealthCare Technologies Inc.",
+            "sector": "Healthcare",
+            "marketCap": 31103115313,
+            "avgVolume": 4432277,
+            "price": 68.86,
+            "sma50": 68.292,
+            "sma200": 72.73685,
+            "yearHigh": 89.77,
+            "yearLow": 58.75,
+            "fundamentals": {
+              "fcfYield": 0.028775252607121375,
+              "netDebtToEbitda": 2.298705035971223,
+              "currentRatio": 1.0201156347867983,
+              "netProfitMargin": 0.07864446969322729,
+              "interestCoverage": 5.896788990825688,
+              "payoutRatio": 0.04020100502512563
+            },
+            "sessionsBelow200Of60": 52
+          }
+        },
+        {
+          "ticker": "ORCL",
+          "companyName": "Oracle Corporation",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "6.1% below its 200-day average after closing under it on 60 of the last 60 sessions; 54.1% off its 52-week high, back above its 50-day.",
+          "sortOrder": 9,
+          "snapshot": {
+            "symbol": "ORCL",
+            "companyName": "Oracle Corporation",
+            "sector": "Technology",
+            "marketCap": 457505050100,
+            "avgVolume": 31563839,
+            "price": 158.83,
+            "sma50": 139.7122,
+            "sma200": 169.0904,
+            "yearHigh": 345.72,
+            "yearLow": 114.5,
+            "fundamentals": {
+              "fcfYield": -0.051772106110791104,
+              "netDebtToEbitda": 3.89132940773281,
+              "currentRatio": 1.1150033521693323,
+              "netProfitMargin": 0.2536743965082099,
+              "interestCoverage": 4.518921270117442,
+              "payoutRatio": 0.33867852753555333
+            },
+            "sessionsBelow200Of60": 60
+          }
+        },
+        {
+          "ticker": "TMUS",
+          "companyName": "T-Mobile US, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "6.7% below its 200-day average after closing under it on 60 of the last 60 sessions; 26.6% off its 52-week high, back above its 50-day.",
+          "sortOrder": 10,
+          "snapshot": {
+            "symbol": "TMUS",
+            "companyName": "T-Mobile US, Inc.",
+            "sector": "Communication Services",
+            "marketCap": 194711351192,
+            "avgVolume": 5099658,
+            "price": 181.52,
+            "sma50": 181.4178,
+            "sma200": 194.591,
+            "yearHigh": 247.25,
+            "yearLow": 165.66,
+            "fundamentals": {
+              "fcfYield": 0.07881923630054165,
+              "netDebtToEbitda": 3.9965746168514724,
+              "currentRatio": 0.9242166935552347,
+              "netProfitMargin": 0.11454728872208181,
+              "interestCoverage": 4.806832776778834,
+              "payoutRatio": 0.4112689393939394
+            },
+            "sessionsBelow200Of60": 60
+          }
+        }
+      ]
+    },
+    "dividend-growth-buy-zones": {
+      "refreshedAt": "2026-09-05T20:17:36.948Z",
+      "universeSize": 356,
+      "qualifiedCount": 56,
+      "constituents": [
+        {
+          "ticker": "ELV",
+          "companyName": "Elevance Health Inc.",
+          "alertType": "PRICE_BELOW",
+          "triggerValue": 405.74,
+          "triggerDirection": "BELOW",
+          "rationale": "14+ straight years of dividend growth; earnings payout 30%. Yields 1.69% today; $405.74 is where the yield reaches 1.70%, the top fifth of its five-year range.",
+          "sortOrder": 1,
+          "snapshot": {
+            "symbol": "ELV",
+            "companyName": "Elevance Health Inc.",
+            "sector": "Healthcare",
+            "marketCap": 88374235675,
+            "avgVolume": 1376041,
+            "price": 407.5,
+            "sma50": 395.8858,
+            "sma200": 358.88574,
+            "yearHigh": 436.24,
+            "yearLow": 274.84,
+            "fundamentals": {
+              "fcfYield": 0.07116327458975787,
+              "netDebtToEbitda": 2.5992256775321594,
+              "currentRatio": 2.0496049299856614,
+              "netProfitMargin": 0.024677668773276717,
+              "interestCoverage": 6.249557522123894,
+              "payoutRatio": 0.30364698770904697
+            },
+            "dividend": {
+              "forwardAnnual": 6.88,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.016883435582822084,
+              "yieldP80": 0.016956693691912203,
+              "growthYears": 14,
+              "growthYearsCapped": true,
+              "recentCut": false,
+              "fcfPayout": 0.4817265280403277,
+              "buyZonePrice": 405.7394752186588
+            }
+          }
+        },
+        {
+          "ticker": "SYY",
+          "companyName": "Sysco Corporation",
+          "alertType": "PRICE_BELOW",
+          "triggerValue": 77.04,
+          "triggerDirection": "BELOW",
+          "rationale": "10 straight years of dividend growth; earnings payout 59%. Yields 2.75% today; $77.04 is where the yield reaches 2.86%, the top fifth of its five-year range.",
+          "sortOrder": 2,
+          "snapshot": {
+            "symbol": "SYY",
+            "companyName": "Sysco Corporation",
+            "sector": "Consumer Defensive",
+            "marketCap": 38278549150,
+            "avgVolume": 3232661,
+            "price": 80.05,
+            "sma50": 83.1002,
+            "sma200": 79.4039,
+            "yearHigh": 91.85,
+            "yearLow": 68.19,
+            "fundamentals": {
+              "fcfYield": 0.05624560093861342,
+              "netDebtToEbitda": 3.441514360313316,
+              "currentRatio": 1.276917228927112,
+              "netProfitMargin": 0.02077986588293733,
+              "interestCoverage": 4.316596931659693,
+              "payoutRatio": 0.5902105862265224
+            },
+            "dividend": {
+              "forwardAnnual": 2.2,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.027482823235477828,
+              "yieldP80": 0.02855543113101904,
+              "growthYears": 10,
+              "growthYearsCapped": false,
+              "recentCut": false,
+              "fcfPayout": 0.5350877192982456,
+              "buyZonePrice": 77.04313725490196
+            }
+          }
+        },
+        {
+          "ticker": "CL",
+          "companyName": "Colgate-Palmolive Company",
+          "alertType": "PRICE_BELOW",
+          "triggerValue": 85.07,
+          "triggerDirection": "BELOW",
+          "rationale": "39+ straight years of dividend growth; free-cash-flow payout 50%. Yields 2.39% today; $85.07 is where the yield reaches 2.49%, the top fifth of its five-year range.",
+          "sortOrder": 3,
+          "snapshot": {
+            "symbol": "CL",
+            "companyName": "Colgate-Palmolive Company",
+            "sector": "Consumer Defensive",
+            "marketCap": 71032777530,
+            "avgVolume": 4715144,
+            "price": 88.77,
+            "sma50": 91.83,
+            "sma200": 87.72065,
+            "yearHigh": 99.33,
+            "yearLow": 74.55,
+            "fundamentals": {
+              "fcfYield": 0.05431295430297107,
+              "netDebtToEbitda": 1.6902032308494008,
+              "currentRatio": 1.026024723487313,
+              "netProfitMargin": 0.09678798821628813,
+              "interestCoverage": 17.04313725490196,
+              "payoutRatio": 0.8944526264113893
+            },
+            "dividend": {
+              "forwardAnnual": 2.12,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.023881942097555484,
+              "yieldP80": 0.024920466595970307,
+              "growthYears": 39,
+              "growthYearsCapped": true,
+              "recentCut": false,
+              "fcfPayout": 0.5016510731975784,
+              "buyZonePrice": 85.07063829787235
+            }
+          }
+        },
+        {
+          "ticker": "LHX",
+          "companyName": "L3Harris Technologies, Inc.",
+          "alertType": "PRICE_BELOW",
+          "triggerValue": 232.55,
+          "triggerDirection": "BELOW",
+          "rationale": "24 straight years of dividend growth; earnings payout 49%. Yields 1.95% today; $232.55 is where the yield reaches 2.15%, the top fifth of its five-year range.",
+          "sortOrder": 4,
+          "snapshot": {
+            "symbol": "LHX",
+            "companyName": "L3Harris Technologies, Inc.",
+            "sector": "Industrials",
+            "marketCap": 47754836750,
+            "avgVolume": 1548712,
+            "price": 256.45,
+            "sma50": 282.6722,
+            "sma200": 314.09155,
+            "yearHigh": 379.23,
+            "yearLow": 256.05,
+            "fundamentals": {
+              "fcfYield": 0.05880032664963513,
+              "netDebtToEbitda": 2.5547169811320756,
+              "currentRatio": 1.1838675589996477,
+              "netProfitMargin": 0.08171986743415315,
+              "interestCoverage": 4.1125,
+              "payoutRatio": 0.49092849519743864
+            },
+            "dividend": {
+              "forwardAnnual": 5,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.019496977968414896,
+              "yieldP80": 0.02150032860764247,
+              "growthYears": 24,
+              "growthYearsCapped": false,
+              "recentCut": false,
+              "fcfPayout": 0.3366890380313199,
+              "buyZonePrice": 232.55458515283848
+            }
+          }
+        },
+        {
+          "ticker": "AFL",
+          "companyName": "Aflac Incorporated",
+          "alertType": "PRICE_BELOW",
+          "triggerValue": 105.84,
+          "triggerDirection": "BELOW",
+          "rationale": "39+ straight years of dividend growth; earnings payout 25%. Yields 2.08% today; $105.84 is where the yield reaches 2.31%, the top fifth of its five-year range.",
+          "sortOrder": 5,
+          "snapshot": {
+            "symbol": "AFL",
+            "companyName": "Aflac Incorporated",
+            "sector": "Financial Services",
+            "marketCap": 59658131850,
+            "avgVolume": 2277146,
+            "price": 117.21,
+            "sma50": 121.5022,
+            "sma200": 114.57105,
+            "yearHigh": 130.22,
+            "yearLow": 104.66,
+            "fundamentals": {
+              "fcfYield": 0.0443694751732324,
+              "netDebtToEbitda": 0.3780063749637786,
+              "currentRatio": 11.305456123223777,
+              "netProfitMargin": 0.2688118538176591,
+              "interestCoverage": 24.03305785123967,
+              "payoutRatio": 0.2455779514603044
+            },
+            "dividend": {
+              "forwardAnnual": 2.44,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.020817336404743623,
+              "yieldP80": 0.023052741879147753,
+              "growthYears": 39,
+              "growthYearsCapped": true,
+              "recentCut": false,
+              "fcfPayout": 0.4688845401174168,
+              "buyZonePrice": 105.8442424242424
+            }
+          }
+        },
+        {
+          "ticker": "QCOM",
+          "companyName": "QUALCOMM Incorporated",
+          "alertType": "PRICE_BELOW",
+          "triggerValue": 151.71,
+          "triggerDirection": "BELOW",
+          "rationale": "22+ straight years of dividend growth; earnings payout 41%. Yields 2.18% today; $151.71 is where the yield reaches 2.43%, the top fifth of its five-year range.",
+          "sortOrder": 6,
+          "snapshot": {
+            "symbol": "QCOM",
+            "companyName": "QUALCOMM Incorporated",
+            "sector": "Technology",
+            "marketCap": 177177000000,
+            "avgVolume": 14639307,
+            "price": 168.74,
+            "sma50": 169.3114,
+            "sma200": 167.82816,
+            "yearHigh": 259.92,
+            "yearLow": 121.99,
+            "fundamentals": {
+              "fcfYield": 0.058788668958160484,
+              "netDebtToEbitda": 0.7969271877087508,
+              "currentRatio": 2.015596249890476,
+              "netProfitMargin": 0.21010233951303636,
+              "interestCoverage": 14.853197674418604,
+              "payoutRatio": 0.4131115671238795
+            },
+            "dividend": {
+              "forwardAnnual": 3.68,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.02180869977480147,
+              "yieldP80": 0.02425614489003881,
+              "growthYears": 22,
+              "growthYearsCapped": true,
+              "recentCut": false,
+              "fcfPayout": 0.296801872074883,
+              "buyZonePrice": 151.71413333333334
+            }
+          }
+        },
+        {
+          "ticker": "MAS",
+          "companyName": "Masco Corporation",
+          "alertType": "PRICE_BELOW",
+          "triggerValue": 63.99,
+          "triggerDirection": "BELOW",
+          "rationale": "12 straight years of dividend growth; earnings payout 29%. Yields 1.76% today; $63.99 is where the yield reaches 2.00%, the top fifth of its five-year range.",
+          "sortOrder": 7,
+          "snapshot": {
+            "symbol": "MAS",
+            "companyName": "Masco Corporation",
+            "sector": "Basic Materials",
+            "marketCap": 14335526161,
+            "avgVolume": 2364498,
+            "price": 72.7,
+            "sma50": 76.2306,
+            "sma200": 69.5302,
+            "yearHigh": 83.64,
+            "yearLow": 58.16,
+            "fundamentals": {
+              "fcfYield": 0.10135658668412931,
+              "netDebtToEbitda": 1.9738605898123325,
+              "currentRatio": 1.8645200486026732,
+              "netProfitMargin": 0.11614173228346457,
+              "interestCoverage": 13.077669902912621,
+              "payoutRatio": 0.29152542372881357
+            },
+            "dividend": {
+              "forwardAnnual": 1.28,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.017606602475928473,
+              "yieldP80": 0.020003226326826908,
+              "growthYears": 12,
+              "growthYearsCapped": false,
+              "recentCut": false,
+              "fcfPayout": 0.30138568129330257,
+              "buyZonePrice": 63.98967741935484
+            }
+          }
+        },
+        {
+          "ticker": "INTU",
+          "companyName": "Intuit Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "14+ straight years of dividend growth; earnings payout 30%. Yield 1.66% is already in the top fifth of its five-year range; watching for the price to reclaim its 200-day average.",
+          "sortOrder": 8,
+          "snapshot": {
+            "symbol": "INTU",
+            "companyName": "Intuit Inc.",
+            "sector": "Technology",
+            "marketCap": 91005759900,
+            "avgVolume": 4586090,
+            "price": 332.7,
+            "sma50": 315.684,
+            "sma200": 427.26443,
+            "yearHigh": 705.08,
+            "yearLow": 252.84,
+            "fundamentals": {
+              "fcfYield": 0.09468631446480565,
+              "netDebtToEbitda": 0.5276082534147051,
+              "currentRatio": 1.5065433435009348,
+              "netProfitMargin": 0.2128869824692279,
+              "interestCoverage": 15.817204301075268,
+              "payoutRatio": 0.29500657030223393
+            },
+            "dividend": {
+              "forwardAnnual": 5.52,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.01659152389540126,
+              "yieldP80": 0.006961400592238558,
+              "growthYears": 14,
+              "growthYearsCapped": true,
+              "recentCut": false,
+              "fcfPayout": 0.1563189044911222,
+              "buyZonePrice": 792.9438805970149
+            }
+          }
+        },
+        {
+          "ticker": "ZTS",
+          "companyName": "Zoetis Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "12+ straight years of dividend growth; earnings payout 34%. Yield 2.80% is already in the top fifth of its five-year range; watching for the price to reclaim its 200-day average.",
+          "sortOrder": 9,
+          "snapshot": {
+            "symbol": "ZTS",
+            "companyName": "Zoetis Inc.",
+            "sector": "Healthcare",
+            "marketCap": 31781674680,
+            "avgVolume": 6337429,
+            "price": 75.81,
+            "sma50": 75.6168,
+            "sma200": 103.25325,
+            "yearHigh": 152.97,
+            "yearLow": 71,
+            "fundamentals": {
+              "fcfYield": 0.07444541622877124,
+              "netDebtToEbitda": 2.003613835828601,
+              "currentRatio": 3.083939835031538,
+              "netProfitMargin": 0.2748765367237575,
+              "interestCoverage": 14.430327868852459,
+              "payoutRatio": 0.3398318042813456
+            },
+            "dividend": {
+              "forwardAnnual": 2.12,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.027964648463263422,
+              "yieldP80": 0.013001345895020189,
+              "growthYears": 12,
+              "growthYearsCapped": true,
+              "recentCut": false,
+              "fcfPayout": 0.3893999123959702,
+              "buyZonePrice": 163.0600414078675
+            }
+          }
+        },
+        {
+          "ticker": "MKC",
+          "companyName": "McCormick & Company, Incorporated",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 200,
+          "triggerDirection": "ABOVE",
+          "rationale": "27 straight years of dividend growth; earnings payout 31%. Yield 3.69% is already in the top fifth of its five-year range; watching for the price to reclaim its 200-day average.",
+          "sortOrder": 10,
+          "snapshot": {
+            "symbol": "MKC",
+            "companyName": "McCormick & Company, Incorporated",
+            "sector": "Consumer Defensive",
+            "marketCap": 14001788984,
+            "avgVolume": 3703711,
+            "price": 52.08,
+            "sma50": 52.8542,
+            "sma200": 57.1162,
+            "yearHigh": 72.41,
+            "yearLow": 44.82,
+            "fundamentals": {
+              "fcfYield": 0.08270371745519516,
+              "netDebtToEbitda": 3.3510266491917866,
+              "currentRatio": 0.7807827985889467,
+              "netProfitMargin": 0.22049067128814753,
+              "interestCoverage": 5.482341557813256,
+              "payoutRatio": 0.30666257291986493
+            },
+            "dividend": {
+              "forwardAnnual": 1.92,
+              "paymentsPerYear": 4,
+              "yieldNow": 0.03686635944700461,
+              "yieldP80": 0.024167312161115416,
+              "growthYears": 27,
+              "growthYearsCapped": false,
+              "recentCut": false,
+              "fcfPayout": 0.6523500810372771,
+              "buyZonePrice": 79.44615384615383
+            }
+          }
+        }
+      ]
+    }
+  }
+}

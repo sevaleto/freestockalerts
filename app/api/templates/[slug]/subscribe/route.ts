@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma/client";
 import { getAuthUser } from "@/lib/supabase/server";
+import { resolveTemplateSlug } from "@/lib/templates/redirects";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,9 @@ export async function POST(_: Request, props: RouteProps) {
   }
   const userId = user.id;
 
+  // Old slugs keep working: resolve to the strategy that replaced them.
   const template = await prisma.alertTemplate.findUnique({
-    where: { slug: params.slug },
+    where: { slug: resolveTemplateSlug(params.slug) },
   });
   if (!template) {
     return NextResponse.json({ error: "Template not found" }, { status: 404 });

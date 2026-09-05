@@ -1,9 +1,24 @@
 import { updateSession } from "@/lib/supabase/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { REGION_COOKIE, REGION_COOKIE_MAX_AGE, regionFromHeaders } from "@/lib/cookies/region";
+import { LEGACY_TEMPLATE_SLUGS } from "@/lib/templates/redirects";
+
+/** /templates/<old-slug> and /welcome/<old-slug> → the strategy that replaced it (real 308, before auth). */
+function legacyTemplateRedirect(request: NextRequest): NextResponse | null {
+  const match = /^\/(templates|welcome)\/([^/]+)\/?$/.exec(request.nextUrl.pathname);
+  if (!match) return null;
+  const target = Object.prototype.hasOwnProperty.call(LEGACY_TEMPLATE_SLUGS, match[2]) ? LEGACY_TEMPLATE_SLUGS[match[2]] : null;
+  if (!target) return null;
+  const url = request.nextUrl.clone();
+  url.pathname = `/${match[1]}/${target}`;
+  return NextResponse.redirect(url, 308);
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const legacy = legacyTemplateRedirect(request);
+  if (legacy) return legacy;
 
   // Ad landing pages are ISR and never need a session; skip the Supabase round trip.
   const response = pathname.startsWith("/go/")

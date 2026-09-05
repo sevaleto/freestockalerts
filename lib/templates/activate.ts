@@ -1,5 +1,8 @@
 import { Prisma, type Alert } from "@prisma/client";
 import { prisma } from "@/lib/prisma/client";
+import { resolveTemplateSlug } from "@/lib/templates/redirects";
+import { getStrategy } from "@/lib/templates/catalog";
+import { seedStrategy } from "@/lib/templates/seed";
 
 export class TemplateNotFoundError extends Error {
   constructor(slug: string) {
@@ -22,24 +25,42 @@ export interface ActivationResult {
   alreadyActive: boolean;
 }
 
+type Db = Pick<typeof prisma, "alertTemplate">;
+
+/**
+ * Find a template by slug, following legacy redirects. If the catalog knows
+ * the slug but the database does not (new code deployed before the seed ran),
+ * seed that one template on the spot so activation never 404s for a real strategy.
+ */
+export async function findTemplateForActivation(db: Db, slug: string) {
+  const canonical = resolveTemplateSlug(slug);
+  const found = await db.alertTemplate.findUnique({
+    where: { slug: canonical },
+    include: { items: { orderBy: { sortOrder: "asc" } } },
+  });
+  if (found) return found;
+  const strategy = getStrategy(canonical);
+  if (!strategy) return null;
+  return seedStrategy(db as Parameters<typeof seedStrategy>[0], strategy);
+}
+
 /**
  * Subscribe a user to a template and create its alerts. Idempotent: if the
- * user already has alerts from this template nothing new is created.
+ * user already has alerts from this template nothing new is created, so
+ * activating twice (or via an old slug and the new one) never duplicates.
  * Used by the welcome page (auto-activation after signup) and the
  * authenticated activate API.
  */
 export async function activateTemplateForUser(
   userId: string,
-  templateSlug: string
+  templateSlug: string,
+  db = prisma
 ): Promise<ActivationResult> {
-  const template = await prisma.alertTemplate.findUnique({
-    where: { slug: templateSlug },
-    include: { items: { orderBy: { sortOrder: "asc" } } },
-  });
+  const template = await findTemplateForActivation(db, templateSlug);
   if (!template) throw new TemplateNotFoundError(templateSlug);
 
   const run = () =>
-    prisma.$transaction(
+    db.$transaction(
       async (tx) => {
         await tx.templateSubscription.upsert({
           where: { userId_templateId: { userId, templateId: template.id } },

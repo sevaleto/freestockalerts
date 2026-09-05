@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma/client";
-import { mockTemplates } from "@/lib/mock/templates";
+import { getStrategy } from "@/lib/templates/catalog";
 import { getBatchQuotes } from "@/lib/api/quotes";
 import { fetchFmpAvgVolume, fetchFmpRsi } from "@/lib/api/fmp";
 import { watchlistMetric, type WatchlistQuote } from "@/lib/lp/watchlistMetric";
@@ -16,6 +16,9 @@ import { MemberBenefits } from "@/components/lp/MemberBenefits";
 import { HonestAnswer } from "@/components/lp/HonestAnswer";
 import { LpFooter } from "@/components/lp/LpFooter";
 import { LandingSignup } from "./LandingSignup";
+import { SignalList } from "@/components/templates/SignalList";
+import { loadRecentSignals } from "@/lib/strategies/signals";
+import { CheckCircle2 } from "lucide-react";
 
 // Ad pages: static, refreshed hourly, unknown slugs 404.
 export const revalidate = 3600;
@@ -46,7 +49,7 @@ export async function generateMetadata(props: LpPageProps): Promise<Metadata> {
   };
 }
 
-/** Prisma first (matches what activation creates); mock fallback so an ad page never 404s. */
+/** Prisma first (matches what activation creates); catalog fallback so an ad page never 404s. */
 async function loadTemplate(templateSlug: string) {
   try {
     const t = await prisma.alertTemplate.findUnique({
@@ -57,7 +60,8 @@ async function loadTemplate(templateSlug: string) {
   } catch (err) {
     console.error(`[lp] template load failed for ${templateSlug}:`, err);
   }
-  return mockTemplates.find((t) => t.slug === templateSlug) ?? null;
+  const strategy = getStrategy(templateSlug);
+  return strategy ? { name: strategy.name, slug: strategy.slug, items: strategy.items } : null;
 }
 
 /**
@@ -105,11 +109,14 @@ export default async function LandingPage(props: LpPageProps) {
   if (!lp) notFound();
   const template = await loadTemplate(lp.templateSlug);
   if (!template) notFound();
+  const strategy = getStrategy(lp.templateSlug);
+  const isSignal = strategy?.kind === "signal";
 
-  const watchlist = template.items
-    .filter((i) => i.ticker.toUpperCase() !== lp.sampleAlert.ticker.toUpperCase())
-    .slice(0, WATCHLIST_ROWS);
-  const rows = await loadWatchlistRows(watchlist);
+  const watchlist = isSignal
+    ? []
+    : template.items.filter((i) => i.ticker.toUpperCase() !== lp.sampleAlert.ticker.toUpperCase()).slice(0, WATCHLIST_ROWS);
+  const rows = isSignal ? [] : await loadWatchlistRows(watchlist);
+  const recent = isSignal ? await loadRecentSignals(lp.templateSlug, 3) : null;
 
   const disclosure = <p className="text-sm text-lp-muted">{lp.disclosure}</p>;
 
@@ -142,7 +149,11 @@ export default async function LandingPage(props: LpPageProps) {
           {/* Product proof */}
           <div className="flex flex-col gap-6">
             <PhoneEmailPreview alert={lp.sampleAlert} />
-            <WatchlistPreview rows={rows} title={lp.proofTitle} />
+            {isSignal && strategy ? (
+              <SignalList signals={recent?.signals ?? []} lastScanAt={recent?.lastScan?.finishedAt ?? recent?.lastScan?.startedAt ?? null} strategyName={strategy.name} title="Latest confirmed signals" compact />
+            ) : (
+              <WatchlistPreview rows={rows} title={lp.proofTitle} />
+            )}
             <div className="lg:hidden">{disclosure}</div>
           </div>
         </div>
@@ -165,7 +176,38 @@ export default async function LandingPage(props: LpPageProps) {
               ))}
             </ul>
           </div>
-          <AlertProofList items={template.items} title={`All ${template.items.length} alerts`} columns={2} className="mt-8" />
+          {isSignal && strategy ? (
+            <div className="mt-8 grid gap-6 lg:grid-cols-2">
+              <div className="rounded-[20px] border border-lp-border bg-lp-bg p-6">
+                <h3 className="text-base font-semibold text-lp-navy">How a stock qualifies</h3>
+                <ul className="mt-3 space-y-2 text-sm text-lp-navy/85">
+                  {strategy.qualificationRules.map((r) => (
+                    <li key={r} className="flex items-start gap-2.5">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-lp-green" aria-hidden />
+                      <span>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-[20px] border border-lp-border bg-lp-bg p-6">
+                <h3 className="text-base font-semibold text-lp-navy">What is left out</h3>
+                <ul className="mt-3 space-y-2 text-sm text-lp-navy/85">
+                  {strategy.disqualifiers.map((r) => (
+                    <li key={r} className="flex items-start gap-2.5">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-lp-teal" aria-hidden />
+                      <span>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-xs text-lp-muted">
+                  Full rules, scoring and data limits:{" "}
+                  <span className="underline underline-offset-2">freestockalerts.ai/templates/{strategy.slug}</span>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <AlertProofList items={template.items} title={`All ${template.items.length} alerts`} columns={2} className="mt-8" />
+          )}
           <p className="mt-6 text-center text-sm text-lp-muted">{lp.afterSignupNote}</p>
         </div>
       </section>

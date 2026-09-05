@@ -1,61 +1,16 @@
 import { PrismaClient } from "@prisma/client";
-import { mockTemplates } from "../lib/mock/templates";
+import { seedTemplates } from "../lib/templates/seed";
+import { STRATEGIES } from "../lib/templates/catalog";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  for (const template of mockTemplates) {
-    console.log(`seeding ${template.slug} (${template.items.length} items)`);
-    await prisma.alertTemplate.upsert({
-      where: { slug: template.slug },
-      update: {
-        name: template.name,
-        description: template.description,
-        longDescription: template.longDescription,
-        category: template.category,
-        iconEmoji: template.iconEmoji,
-        isActive: template.isActive,
-        isFeatured: template.isFeatured,
-        sortOrder: template.sortOrder,
-        // Replace items so edits to lib/mock/templates.ts propagate.
-        // User alerts reference AlertTemplate (not TemplateItem), so this is safe.
-        items: {
-          deleteMany: {},
-          create: template.items.map((item) => ({
-            ticker: item.ticker,
-            companyName: item.companyName,
-            alertType: item.alertType as any,
-            triggerValue: item.triggerValue,
-            triggerDirection: item.triggerDirection as any,
-            rationale: item.rationale,
-            sortOrder: item.sortOrder,
-          })),
-        },
-      },
-      create: {
-        name: template.name,
-        slug: template.slug,
-        description: template.description,
-        longDescription: template.longDescription,
-        category: template.category,
-        iconEmoji: template.iconEmoji,
-        isActive: template.isActive,
-        isFeatured: template.isFeatured,
-        sortOrder: template.sortOrder,
-        items: {
-          create: template.items.map((item) => ({
-            ticker: item.ticker,
-            companyName: item.companyName,
-            alertType: item.alertType as any,
-            triggerValue: item.triggerValue,
-            triggerDirection: item.triggerDirection as any,
-            rationale: item.rationale,
-            sortOrder: item.sortOrder,
-          })),
-        },
-      },
-    });
+  for (const s of STRATEGIES) {
+    console.log(`seeding ${s.slug} (${s.items.length} alerts, refreshed ${s.lastRefreshedAt || "never"})`);
+    if (s.items.length === 0 && s.kind !== "signal") console.warn(`  ! ${s.slug} has no constituents yet; run npm run refresh:strategies first`);
   }
+  const summary = await seedTemplates(prisma);
+  console.log(`upserted ${summary.upserted.length}, retired ${summary.retired.join(", ") || "none"}` + (summary.absent.length ? ` (not present: ${summary.absent.join(", ")})` : ""));
 }
 
 main()
