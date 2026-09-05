@@ -6,6 +6,7 @@ import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
 import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
+import { useTurnstile } from "@/components/auth/useTurnstile";
 
 interface EmailSignupFormProps {
   source: string;
@@ -24,15 +25,18 @@ export function EmailSignupForm({ source, contentName, ctaLabel = "Get my first 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputId = useId();
+  const turnstile = useTurnstile("light");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     setError(null);
-    const result = await sendMagicLink(email, source, next);
-    if (!result.ok) setError(result.message);
-    else {
+    const result = await sendMagicLink(email, source, next, await turnstile.waitForToken());
+    if (!result.ok) {
+      setError(result.message);
+      turnstile.reset();
+    } else {
       trackLead("email", email, contentName);
       setSubmitted(true);
     }
@@ -81,6 +85,7 @@ export function EmailSignupForm({ source, contentName, ctaLabel = "Get my first 
         </button>
       </div>
       <EmailSuggestion email={email} onAccept={setEmail} />
+      <turnstile.Widget />
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
     </form>
   );

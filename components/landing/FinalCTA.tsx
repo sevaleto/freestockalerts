@@ -7,6 +7,7 @@ import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
 import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
+import { useTurnstile } from "@/components/auth/useTurnstile";
 
 export function FinalCTA() {
   const [email, setEmail] = useState("");
@@ -14,15 +15,17 @@ export function FinalCTA() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputId = useId();
+  const turnstile = useTurnstile("dark");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     setError(null);
-    const result = await sendMagicLink(email, "final-cta");
+    const result = await sendMagicLink(email, "final-cta", undefined, await turnstile.waitForToken());
     if (!result.ok) {
       setError(result.message);
+      turnstile.reset();
     } else {
       trackLead("email", email, "home_final_cta");
       setSubmitted(true);
@@ -77,6 +80,7 @@ export function FinalCTA() {
                     />
                   </div>
                   <EmailSuggestion email={email} onAccept={setEmail} variant="dark" />
+                  <turnstile.Widget />
                   <button
                     type="submit"
                     disabled={loading}

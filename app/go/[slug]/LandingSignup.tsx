@@ -7,6 +7,7 @@ import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
 import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
+import { useTurnstile } from "@/components/auth/useTurnstile";
 import type { LandingPage } from "@/lib/lp/pages";
 
 type Props = {
@@ -23,15 +24,17 @@ export function LandingSignup({ lp }: Props) {
   const inputId = useId();
   const errorId = useId();
   const next = `/welcome/${lp.templateSlug}`;
+  const turnstile = useTurnstile("light");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     setError(null);
-    const result = await sendMagicLink(email, lp.source, next);
+    const result = await sendMagicLink(email, lp.source, next, await turnstile.waitForToken());
     if (!result.ok) {
       setError(result.message);
+      turnstile.reset();
     } else {
       trackLead("email", email, lp.metaContentName);
       setSubmitted(true);
@@ -76,6 +79,7 @@ export function LandingSignup({ lp }: Props) {
           </div>
           <EmailSuggestion email={email} onAccept={setEmail} className="mt-2" />
         </div>
+        <turnstile.Widget />
 
         <button
           type="submit"
