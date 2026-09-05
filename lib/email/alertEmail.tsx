@@ -62,7 +62,7 @@ export function AlertEmail({
             style={{
               marginTop: "16px",
               padding: "16px",
-              backgroundColor: "#EFF6FF",
+              backgroundColor: "#E9F5F1",
               borderRadius: "12px",
             }}
           >
@@ -74,7 +74,7 @@ export function AlertEmail({
               style={{
                 display: "inline-block",
                 padding: "12px 18px",
-                backgroundColor: "#2563EB",
+                backgroundColor: "#0F8075",
                 color: "#ffffff",
                 borderRadius: "8px",
                 textDecoration: "none",
@@ -88,7 +88,7 @@ export function AlertEmail({
           <Text style={{ fontSize: "12px", color: "#64748B" }}>
             You&apos;re receiving this because you set an alert for {ticker} on
             FreeStockAlerts.AI. Manage your alerts:{" "}
-            <Link href={`${appUrl}/dashboard/alerts`} style={{ color: "#2563EB" }}>
+            <Link href={`${appUrl}/dashboard/alerts`} style={{ color: "#0F8075" }}>
               {appUrl}/dashboard/alerts
             </Link>
           </Text>

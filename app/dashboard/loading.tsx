@@ -6,15 +6,15 @@ export default function DashboardLoading() {
       <Skeleton className="h-8 w-48" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-3xl" />
+          <Skeleton key={i} className="h-24 rounded-[20px]" />
         ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {Array.from({ length: 2 }).map((_, i) => (
-          <Skeleton key={i} className="h-40 rounded-3xl" />
+          <Skeleton key={i} className="h-40 rounded-[20px]" />
         ))}
       </div>
-      <Skeleton className="h-64 rounded-3xl" />
+      <Skeleton className="h-64 rounded-[20px]" />
     </div>
   );
 }

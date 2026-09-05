@@ -22,7 +22,7 @@ export function AlertCard({
   aiSummary,
 }: AlertCardProps) {
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="border-border shadow-sm">
       <CardContent className="space-y-3 p-5">
         <div className="flex items-center justify-between">
           <div>

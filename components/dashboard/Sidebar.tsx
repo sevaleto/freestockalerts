@@ -47,10 +47,10 @@ export function Sidebar() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium",
+              "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium",
               isActive
-                ? "bg-primary/10 text-primary"
-                : "text-text-secondary hover:bg-surface"
+                ? "bg-lp-mint text-lp-teal"
+                : "text-text-secondary hover:bg-lp-bg hover:text-text-primary"
             )}
           >
             <item.icon className="h-4 w-4" />
@@ -63,7 +63,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden h-screen w-72 flex-col border-r border-border bg-white px-6 py-6 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-72 flex-col border-r border-lp-border bg-white px-6 py-6 md:flex">
         <div className="flex items-center justify-between">
           <Logo />
         </div>
@@ -72,7 +72,7 @@ export function Sidebar() {
           <div className="mt-auto">
             <button
               onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-text-secondary hover:bg-lp-bg"
             >
               <LogOut className="h-4 w-4" />
               Sign Out
@@ -96,7 +96,7 @@ export function Sidebar() {
             {navLinks}
             <button
               onClick={handleSignOut}
-              className="mt-6 flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface"
+              className="mt-6 flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-text-secondary hover:bg-lp-bg"
             >
               <LogOut className="h-4 w-4" />
               Sign Out

@@ -57,7 +57,7 @@ export function ActivateButton({ slug, templateName }: ActivateButtonProps) {
 
   if (activated) {
     return (
-      <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
+      <div className="flex items-center gap-2 text-sm font-semibold text-lp-green">
         ✅ {templateName} activated! Taking you to your alerts...
       </div>
     );
@@ -68,7 +68,7 @@ export function ActivateButton({ slug, templateName }: ActivateButtonProps) {
       <Button
         onClick={handleActivate}
         disabled={loading || signedIn === null}
-        className="bg-emerald-600 hover:bg-emerald-700"
+        className="bg-lp-teal hover:bg-lp-teal-dark"
       >
         {loading ? "Activating..." : signedIn ? "Activate this template →" : "Sign in to activate →"}
       </Button>

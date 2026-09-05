@@ -27,18 +27,18 @@ const config: Config = {
   			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
-  				hover: '#1D4ED8',
+  				hover: '#0B6A61',
   				foreground: 'hsl(var(--primary-foreground))'
   			},
-  			success: '#16A34A',
+  			success: '#07875F',
   			warning: '#D97706',
   			danger: '#DC2626',
-  			surface: '#F8FAFC',
+  			surface: '#FBFAF6',
   			border: 'hsl(var(--border))',
   			text: {
-  				primary: '#0F172A',
-  				secondary: '#64748B',
-  				muted: '#94A3B8'
+  				primary: '#071B3C',
+  				secondary: '#5B6B7F',
+  				muted: '#8A97A8'
   			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -94,7 +94,7 @@ const config: Config = {
   			soft: '0 10px 30px rgba(15, 23, 42, 0.08)'
   		},
   		backgroundImage: {
-  			'hero-glow': 'radial-gradient(circle at top, rgba(37, 99, 235, 0.18), transparent 55%)'
+  			'hero-glow': 'radial-gradient(60% 50% at 20% 10%, rgba(233,245,241,0.9) 0%, rgba(251,250,246,0) 70%)'
   		},
   		keyframes: {
   			float: {

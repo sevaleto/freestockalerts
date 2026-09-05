@@ -14,7 +14,7 @@ export function StatsRow({ stats }: StatsRowProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (
-        <Card key={stat.label} className="border-border shadow-soft">
+        <Card key={stat.label} className="border-border shadow-sm">
           <CardContent className="space-y-2 p-5">
             <p className="text-xs font-semibold uppercase tracking-widest text-text-muted">
               {stat.label}

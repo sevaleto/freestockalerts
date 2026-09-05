@@ -56,7 +56,7 @@ export function MemberBenefits({ templateName, ctaLabel }: MemberBenefitsProps) 
           <h2 className="mt-3 font-serif text-3xl text-lp-navy md:text-4xl">
             {templateName} is just the start.
           </h2>
-          <p className="mt-3 text-base leading-relaxed text-slate-600">
+          <p className="mt-3 text-base leading-relaxed text-lp-navy/75">
             Signing up activates these alerts for you. It also gives you a full alerting account you can shape around your own watchlist.
           </p>
         </div>
@@ -68,7 +68,7 @@ export function MemberBenefits({ templateName, ctaLabel }: MemberBenefitsProps) 
                 <Icon className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mt-4 text-base font-semibold text-text-primary">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{body}</p>
+              <p className="mt-2 text-sm leading-relaxed text-lp-navy/75">{body}</p>
             </div>
           ))}
         </div>
@@ -80,7 +80,7 @@ export function MemberBenefits({ templateName, ctaLabel }: MemberBenefitsProps) 
           >
             {ctaLabel}
           </Link>
-          <p className="text-xs text-slate-500">No credit card. No paid tiers, ever. Unsubscribe anytime.</p>
+          <p className="text-xs text-lp-muted">No credit card. No paid tiers, ever. Unsubscribe anytime.</p>
         </div>
       </div>
     </section>

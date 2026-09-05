@@ -8,28 +8,24 @@ export function Footer() {
   const { openBanner } = useCookieConsent();
 
   return (
-    <footer className="bg-white py-12">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 md:flex-row md:items-center md:justify-between">
+    <footer className="border-t border-lp-border/70 bg-lp-bg py-12">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-5 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12">
         <Logo />
-        <div className="flex flex-wrap gap-6 text-sm text-text-secondary">
-          <Link href="/about">About</Link>
-          <Link href="/templates">Templates</Link>
-          <Link href="/blog">Blog</Link>
-          <Link href="/contact">Contact</Link>
-          <Link href="/privacy">Privacy Policy</Link>
-          <Link href="/terms">Terms of Use</Link>
-          <Link href="/disclaimer">Disclaimer</Link>
-          <button
-            type="button"
-            onClick={openBanner}
-            className="text-text-secondary hover:text-text-primary transition-colors"
-          >
+        <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-text-secondary" aria-label="Footer">
+          <Link href="/about" className="hover:text-text-primary">About</Link>
+          <Link href="/templates" className="hover:text-text-primary">Templates</Link>
+          <Link href="/blog" className="hover:text-text-primary">Blog</Link>
+          <Link href="/contact" className="hover:text-text-primary">Contact</Link>
+          <Link href="/privacy" className="hover:text-text-primary">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-text-primary">Terms of Use</Link>
+          <Link href="/disclaimer" className="hover:text-text-primary">Disclaimer</Link>
+          <button type="button" onClick={openBanner} className="text-text-secondary transition-colors hover:text-text-primary">
             Cookie Settings
           </button>
-        </div>
+        </nav>
       </div>
-      <div className="mx-auto mt-6 w-full max-w-6xl px-6 text-xs text-text-muted">
-        © 2026 FreeStockAlerts.AI — Built for traders, by traders.
+      <div className="mx-auto mt-6 w-full max-w-[1440px] px-5 text-xs text-text-muted sm:px-8 lg:px-12">
+        © 2026 FreeStockAlerts.AI · Wealthpire, Inc. Educational information only. Not investment advice.
       </div>
     </footer>
   );

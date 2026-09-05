@@ -16,7 +16,7 @@ export function AlertHistoryItem({
   aiSummary,
 }: AlertHistoryItemProps) {
   return (
-    <div className="rounded-3xl border border-border bg-white p-5 shadow-soft">
+    <div className="rounded-[20px] border border-border bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-text-primary">{ticker}</p>

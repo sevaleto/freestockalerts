@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { CheckCircle2 } from "lucide-react";
-import { sendMagicLink } from "@/lib/auth/magicLink";
+import { useState, useId } from "react";
+import { CheckCircle2, Mail } from "lucide-react";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
 import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
-import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
 
 export function FinalCTA() {
@@ -15,13 +13,13 @@ export function FinalCTA() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inputId = useId();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     setError(null);
-
     const result = await sendMagicLink(email, "final-cta");
     if (!result.ok) {
       setError(result.message);
@@ -33,67 +31,72 @@ export function FinalCTA() {
   };
 
   return (
-    <section className="bg-slate-900 py-20 text-white">
-      <div className="mx-auto w-full max-w-6xl px-6">
+    <section className="bg-lp-navy py-20 text-white">
+      <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
-            <h2 className="text-3xl font-bold md:text-4xl">
+            <h2 className="font-serif text-3xl leading-tight md:text-[2.75rem]">
               Your next trade shouldn&apos;t catch you off guard.
             </h2>
-            <p className="mt-4 text-lg leading-relaxed text-slate-400">
+            <p className="mt-4 text-lg leading-relaxed text-white/75">
               Set your alerts tonight. Wake up to AI-powered market context tomorrow.
               No credit card. No commitment. Just better information.
             </p>
-            <div className="mt-6 flex flex-col gap-3 text-sm text-slate-400">
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                12 alert types including RSI, SMA, volume, and earnings
-              </span>
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                AI summary with every triggered alert
-              </span>
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                5 one-click templates — 50 alerts in 2 minutes
-              </span>
-            </div>
+            <ul className="mt-6 flex flex-col gap-3 text-[15px] text-white/85">
+              {[
+                "12 alert types including RSI, SMA, volume, and earnings",
+                "AI summary with every triggered alert",
+                "9 one-click templates, screened from market data",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2.5">
+                  <CheckCircle2 className="h-5 w-5 text-lp-mint" aria-hidden />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="rounded-2xl bg-slate-800 p-8">
+          <div className="rounded-[20px] border border-white/10 bg-white/5 p-6 md:p-8">
             {!submitted ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <p className="text-lg font-semibold">Get your first alert free</p>
-                <GoogleSignInButton label="Sign up with Google" dark />
+                <GoogleSignInButton
+                  label="Continue with Google"
+                  className="h-14 rounded-xl border-white/20 bg-white text-lg font-semibold text-lp-navy hover:bg-lp-bg"
+                />
                 <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-slate-600" />
-                  <span className="text-xs text-slate-500">or use email</span>
-                  <div className="h-px flex-1 bg-slate-600" />
+                  <div className="h-px flex-1 bg-white/15" />
+                  <span className="text-xs text-white/60">or use email</span>
+                  <div className="h-px flex-1 bg-white/15" />
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-13 border-slate-600 bg-slate-700 text-base text-white placeholder:text-slate-400"
-                    required
-                  />
+                <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+                  <label htmlFor={inputId} className="sr-only">Email address</label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/50" aria-hidden />
+                    <input
+                      id={inputId}
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="you@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-14 w-full rounded-xl border border-white/20 bg-white/10 pl-12 pr-4 text-lg text-white placeholder:text-white/50 transition focus:border-lp-mint focus:outline-none focus:ring-2 focus:ring-lp-mint/40"
+                    />
+                  </div>
                   <EmailSuggestion email={email} onAccept={setEmail} variant="dark" />
-                  <Button
+                  <button
                     type="submit"
                     disabled={loading}
-                    className="h-13 w-full bg-emerald-600 text-base font-semibold shadow-lg hover:bg-emerald-700"
+                    className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-lp-teal text-lg font-semibold text-white transition-colors hover:bg-lp-teal-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lp-mint disabled:opacity-70"
                   >
-                    {loading ? "Sending..." : "Get Your First Alert →"}
-                  </Button>
-                  {error && (
-                    <p className="text-sm text-red-400">{error}</p>
-                  )}
+                    <Mail className="h-5 w-5" aria-hidden />
+                    {loading ? "Sending…" : "Get my first alert"}
+                  </button>
+                  {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
                 </form>
-                <p className="text-center text-xs text-slate-500">
-                  Free forever. Unsubscribe anytime.
-                </p>
+                <p className="text-center text-xs text-white/60">Free forever. Unsubscribe anytime.</p>
               </div>
             ) : (
               <CheckInboxCard
