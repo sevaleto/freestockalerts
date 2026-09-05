@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     return fail(origin, searchParams.get("error_code") ?? providerError, searchParams.get("error_description"));
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   let path: "token_hash" | "code";
   let result;
 
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
     user: result.data.user,
     request,
     origin,
-    abVariant: cookies().get("ab_hero_headline")?.value ?? null,
+    abVariant: (await cookies()).get("ab_hero_headline")?.value ?? null,
   });
 
   const redirectUrl = new URL(next, origin);

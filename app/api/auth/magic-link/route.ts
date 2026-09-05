@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     const isNewUser = !data.user.last_sign_in_at;
 
     // Capture the lead NOW.
-    const abVariant = cookies().get("ab_hero_headline")?.value ?? null;
+    const abVariant = (await cookies()).get("ab_hero_headline")?.value ?? null;
     const user = await upsertUserForAuth({
       authUser: data.user,
       abVariant,

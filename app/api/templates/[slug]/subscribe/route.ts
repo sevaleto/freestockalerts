@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma/client";
 export const dynamic = "force-dynamic";
 
 interface RouteProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export async function POST(request: Request, { params }: RouteProps) {
+export async function POST(request: Request, props: RouteProps) {
+  const params = await props.params;
   const payload = await request.json().catch(() => ({}));
   const userId = payload?.userId as string | undefined;
   if (!userId) {

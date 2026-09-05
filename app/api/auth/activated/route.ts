@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     user,
     request,
     origin,
-    abVariant: cookies().get("ab_hero_headline")?.value ?? null,
+    abVariant: (await cookies()).get("ab_hero_headline")?.value ?? null,
   });
   return NextResponse.json({ ok: true, capiEventId });
 }

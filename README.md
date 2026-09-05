@@ -9,7 +9,7 @@ Google), create alerts on any ticker, and get an email when the alert fires.
 
 ## Tech stack
 
-- Next.js 14 (App Router) + TypeScript, Tailwind + shadcn/ui
+- Next.js 15 (App Router) + React 19 + TypeScript, Tailwind + shadcn/ui
 - Prisma on Supabase Postgres (pooled via pgbouncer)
 - Supabase Auth (magic link + Google OAuth)
 - Financial Modeling Prep (quotes, search, RSI/SMA indicators, earnings calendar), Alpha Vantage as quote fallback
@@ -137,8 +137,6 @@ on them.
 - "Delete account" removes the Prisma record but not the Supabase Auth user.
 - Template subscriber counts on the dashboard are hardcoded.
 - No rate limiting on `/api/quotes/*` or `/api/ai/summary`.
-- Next.js 14 has open advisories that are only patched in 15.x; upgrading is a major
-  version bump (async `cookies()`/`params`, etc.).
 
 See `BUILD_SPEC.md` for the original build specification and `LAUNCH-READINESS.md` /
 `QA-REPORT.md` / `FIX-LOG.md` for the Feb 2026 QA history.
