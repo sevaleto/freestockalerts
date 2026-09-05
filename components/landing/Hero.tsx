@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/Logo";
 import { CheckCircle2, Zap, Shield, TrendingUp } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { sendMagicLink } from "@/lib/auth/magicLink";
+import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
+import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { trackLead } from "@/lib/tracking/events";
 import { ACTIVE_TESTS, HERO_HEADLINES } from "@/lib/ab/variants";
@@ -29,22 +31,14 @@ export function Hero() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
+    const result = await sendMagicLink(email, "hero");
+    if (!result.ok) {
+      setError(result.message);
     } else {
       trackLead("email", email);
       setSubmitted(true);
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
@@ -116,6 +110,7 @@ export function Hero() {
                       {loading ? "Sending..." : "Get Your First Alert →"}
                     </Button>
                   </div>
+                  <EmailSuggestion email={email} onAccept={setEmail} />
                   {error && (
                     <p className="text-sm text-red-600">{error}</p>
                   )}
@@ -127,17 +122,14 @@ export function Hero() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-6 w-6 text-emerald-600" />
-                  <div>
-                    <p className="font-semibold text-emerald-900">Check your inbox!</p>
-                    <p className="mt-1 text-sm text-emerald-700">
-                      We sent a magic link to <strong>{email}</strong>. Click it to set up your first alert.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <CheckInboxCard
+                email={email}
+                source="hero"
+                variant="light"
+                purpose="signup"
+                onChangeEmail={() => setSubmitted(false)}
+                onUseSuggestion={(fixed) => { setEmail(fixed); setSubmitted(false); }}
+              />
             )}
           </div>
 
