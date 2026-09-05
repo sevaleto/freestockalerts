@@ -17,13 +17,14 @@ export type SendMagicLinkResult =
 export async function sendMagicLink(
   email: string,
   source: string,
-  next?: string
+  next?: string,
+  turnstileToken?: string
 ): Promise<SendMagicLinkResult> {
   try {
     const res = await fetch("/api/auth/magic-link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source, next }),
+      body: JSON.stringify({ email, source, next, turnstileToken }),
     });
     const body = await res.json().catch(() => ({}));
     if (res.ok && body?.ok) return { ok: true, isNewUser: !!body.isNewUser };

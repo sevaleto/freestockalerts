@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
 import { sendMagicLink, verifyCode } from "@/lib/auth/magicLink";
+import { useTurnstile } from "@/components/auth/useTurnstile";
 
 interface CheckInboxCardProps {
   email: string;
@@ -49,6 +50,7 @@ export function CheckInboxCard({
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
+  const turnstile = useTurnstile(variant === "dark" ? "dark" : "light");
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -60,7 +62,8 @@ export function CheckInboxCard({
     setResending(true);
     setResendError(null);
     setResent(false);
-    const r = await sendMagicLink(email, source, next);
+    const r = await sendMagicLink(email, source, next, await turnstile.waitForToken());
+    turnstile.reset();
     if (r.ok) {
       setResent(true);
       setCooldown(RESEND_COOLDOWN);
@@ -164,6 +167,7 @@ export function CheckInboxCard({
             </a>
           ) : null}
 
+          <turnstile.Widget />
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <Button
               type="button"

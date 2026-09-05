@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { upsertUserForAuth, ensureOnAudience, toSignupSource } from "@/lib/auth/users";
 import { safeNext } from "@/lib/auth/completeSignIn";
 import { sendMagicLinkEmail } from "@/lib/email/sendMagicLinkEmail";
+import { verifyTurnstile } from "@/lib/auth/turnstile";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,17 @@ export async function POST(request: Request) {
 
   if (!EMAIL_RE.test(email) || email.length > 254) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
+  }
+
+  // Bot check (no-op until TURNSTILE_SECRET_KEY is configured)
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || undefined;
+  const turnstile = await verifyTurnstile(typeof body?.turnstileToken === "string" ? body.turnstileToken : undefined, ip);
+  if (!turnstile.ok) {
+    console.warn("[magic-link] turnstile rejected:", { email, ip, errors: turnstile.errors });
+    return NextResponse.json(
+      { error: "We couldn't verify you're not a bot. Please try again.", code: "turnstile" },
+      { status: 403 }
+    );
   }
 
   const now = new Date();

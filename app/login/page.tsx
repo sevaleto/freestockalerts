@@ -12,6 +12,7 @@ import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
 import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { trackLead } from "@/lib/tracking/events";
+import { useTurnstile } from "@/components/auth/useTurnstile";
 
 const REASON_MESSAGES: Record<string, string> = {
   otp_expired: "That link has expired or was already used. Request a fresh one below.",
@@ -33,6 +34,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
   const next = clientSafeNext(searchParams.get("next"));
+  const turnstile = useTurnstile("light");
 
   // If already logged in, go straight to the destination
   useEffect(() => {
@@ -71,9 +73,10 @@ function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const result = await sendMagicLink(email, "login", next);
+    const result = await sendMagicLink(email, "login", next, await turnstile.waitForToken());
     if (!result.ok) {
       setError(result.message);
+      turnstile.reset();
     } else {
       trackLead("email", email);
       setSubmitted(true);
@@ -131,6 +134,7 @@ function LoginForm() {
               className="h-14 rounded-xl border-lp-border bg-white text-base"
             />
             <EmailSuggestion email={email} onAccept={setEmail} />
+            <turnstile.Widget />
             <Button
               type="submit"
               disabled={loading}

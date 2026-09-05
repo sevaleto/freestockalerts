@@ -10,6 +10,7 @@ import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { PhoneEmailPreview } from "@/components/lp/PhoneEmailPreview";
 import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
+import { useTurnstile } from "@/components/auth/useTurnstile";
 import { ACTIVE_TESTS, HERO_HEADLINES } from "@/lib/ab/variants";
 import { usePendingTemplate } from "@/lib/landing/pendingTemplate";
 import { X } from "lucide-react";
@@ -47,6 +48,7 @@ export function Hero() {
   const errorId = useId();
   const [pending, setPending] = usePendingTemplate();
   const next = pending ? `/welcome/${pending.slug}` : undefined;
+  const turnstile = useTurnstile("light");
 
   useEffect(() => {
     setVariant(assignVariant(ACTIVE_TESTS.hero_headline));
@@ -57,9 +59,10 @@ export function Hero() {
     if (!email) return;
     setLoading(true);
     setError(null);
-    const result = await sendMagicLink(email, "hero", next);
+    const result = await sendMagicLink(email, "hero", next, await turnstile.waitForToken());
     if (!result.ok) {
       setError(result.message);
+      turnstile.reset();
     } else {
       trackLead("email", email, "home_hero");
       setSubmitted(true);
@@ -132,6 +135,7 @@ export function Hero() {
                       />
                     </div>
                     <EmailSuggestion email={email} onAccept={setEmail} />
+                    <turnstile.Widget />
                     <button
                       type="submit"
                       disabled={loading}
