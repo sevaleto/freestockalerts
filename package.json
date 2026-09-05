@@ -10,7 +10,10 @@
     "lint": "eslint",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
-    "screen:templates": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/screen-templates.ts"
+    "screen:templates": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/screen-templates.ts",
+    "leads:export": "tsx scripts/export-leads.ts",
+    "emails:verify": "tsx scripts/verify-emails.ts",
+    "update:disposable": "tsx scripts/update-disposable-domains.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
@@ -60,6 +63,7 @@
     "prisma": "^5.19.0",
     "tailwindcss": "^3.4.0",
     "ts-node": "^10.9.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.5.0"
   }
 }

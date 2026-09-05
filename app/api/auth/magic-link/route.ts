@@ -1,12 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma/client";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { upsertUserForAuth, ensureOnAudience, toSignupSource } from "@/lib/auth/users";
+import { upsertUserForAuth, toSignupSource } from "@/lib/auth/users";
 import { safeNext } from "@/lib/auth/completeSignIn";
 import { sendMagicLinkEmail } from "@/lib/email/sendMagicLinkEmail";
 import { verifyTurnstile } from "@/lib/auth/turnstile";
 import { checkSignupRateLimit, clientIp } from "@/lib/auth/rateLimit";
+import { precheckEmail } from "@/lib/email/precheck";
+import { verifyUserEmail } from "@/lib/email/verification";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,11 @@ const RESEND_COOLDOWN_SEC = 60;
  *   - the email is a branded Resend send, not Supabase's default template;
  *   - the link is a token-hash link that works in ANY browser (no PKCE
  *     verifier needed), and the same email carries a one-time code.
+ *
+ * Address quality: disposable domains and domains with no mail server are
+ * rejected at submit. Everything else is verified with Email Oversight right
+ * after the link goes out (see lib/email/verification.ts); the verdict, not
+ * the submit, decides whether the lead joins the Resend audience.
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -53,6 +60,13 @@ export async function POST(request: Request) {
       { error: "We couldn't verify you're not a bot. Please try again.", code: "turnstile" },
       { status: 403 }
     );
+  }
+
+  // Throwaway inbox or a domain that can't receive mail: say so now.
+  const precheck = await precheckEmail(email);
+  if (!precheck.ok) {
+    console.warn("[magic-link] precheck rejected:", { email, reason: precheck.reason });
+    return NextResponse.json({ error: precheck.message, code: precheck.reason }, { status: 400 });
   }
 
   const now = new Date();
@@ -103,7 +117,6 @@ export async function POST(request: Request) {
       source,
       lastLinkSentAt: now,
     });
-    await ensureOnAudience(user);
 
     // Send the branded email.
     const link = new URL("/api/auth/callback", origin);
@@ -128,6 +141,17 @@ export async function POST(request: Request) {
     }
 
     console.log(`[magic-link] sent to ${email} (source=${source}, new=${isNewUser})`);
+
+    // Verify the address after the response is on its way. The verdict adds
+    // the lead to the Resend audience (or keeps them off it).
+    after(async () => {
+      try {
+        await verifyUserEmail(user.id);
+      } catch (err) {
+        console.error("[magic-link] async verification failed:", err);
+      }
+    });
+
     return NextResponse.json({ ok: true, isNewUser });
   } catch (err) {
     console.error("[magic-link] error:", err);

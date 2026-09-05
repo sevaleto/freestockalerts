@@ -1,5 +1,6 @@
 import type { User as AuthUser } from "@supabase/supabase-js";
-import { upsertUserForAuth, ensureOnAudience, type SignupSource } from "@/lib/auth/users";
+import { upsertUserForAuth, type SignupSource } from "@/lib/auth/users";
+import { ensureOnAudience, markEmailConfirmed } from "@/lib/email/verification";
 import { sendCAPIEvent, extractFbCookies, generateEventId } from "@/lib/tracking/meta-capi";
 
 interface CompleteSignInInput {
@@ -14,7 +15,7 @@ interface CompleteSignInInput {
 /**
  * Everything that must happen once a user has a verified session, regardless
  * of how they got it (magic link, one-time code, Google OAuth):
- *   1. Prisma User row exists and is marked emailVerified
+ *   1. Prisma User row exists and is marked emailVerified (emailStatus VALID)
  *   2. user is on the Resend audience
  *   3. Meta CAPI CompleteRegistration fires (server side)
  * Returns the CAPI event id so the browser pixel can dedupe against it.
@@ -37,7 +38,8 @@ export async function completeSignIn({ user, request, origin, abVariant, sourceO
       emailVerified: true,
     });
     createdNow = created;
-    await ensureOnAudience(row);
+    const confirmed = await markEmailConfirmed(row.id, provider === "google" ? "google" : "magic-link");
+    await ensureOnAudience(confirmed ?? row);
   } catch (e) {
     console.error("[auth] completeSignIn: failed to upsert user record:", e);
   }

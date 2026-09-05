@@ -158,6 +158,40 @@ session-mode pooler (same host as `DATABASE_URL`, port 5432, no `pgbouncer` para
 IPv4 and works for `db push`. Push additive changes **before** merging code that depends
 on them.
 
+## Email verification and lead gating
+
+Signup stays passwordless, but every address gets a deliverability verdict
+(`User.emailStatus`) that decides where it can go:
+
+| Status | Set by | Resend audience | Newsletter export | Lead sharing |
+|---|---|---|---|---|
+| `PENDING` | default; Email Oversight Retry/Unknown | no | no | no |
+| `VALID` | Email Oversight "Verified", or the user confirmed (magic link, code, Google) | yes | yes | yes |
+| `ACCEPT_ALL` | Email Oversight "Catch All" | yes | yes | no |
+| `RISKY` | Email Oversight "Role", or still unknown after 3 attempts | no | no | no |
+| `INVALID` | Undeliverable / Malformed / Disposable / Bot, or a Resend hard bounce | no | no | no |
+| `SUPPRESSED` | SpamTrap / Complainer / Seed / Suppressed, or a Resend complaint | no | no | no |
+
+Flow: `POST /api/auth/magic-link` rejects disposable domains (`lib/email/disposableDomains.ts`,
+refresh with `npm run update:disposable`) and domains with no MX/A record, sends the link,
+then calls Email Oversight after the response (`after()`), storing the verdict. A confirmed
+sign-in marks the user `VALID` regardless of the verdict (except `SUPPRESSED`). The hourly
+cron `/api/email/verify-pending` retries anything still `PENDING`. The Resend webhook
+records complaints as `SUPPRESSED` and bounces as `INVALID`. The one filter every export
+must use is `leadWhere(purpose)` in `lib/email/verification.ts`.
+
+Set `EMAIL_OVERSIGHT_API_TOKEN` and `EMAIL_OVERSIGHT_LIST_ID`. Email Oversight whitelists
+callers by IP; Vercel has no fixed egress IP, so the whitelist must be off for the account
+or every call returns ResultId 12 and addresses stay `PENDING`.
+
+```bash
+npm run emails:verify -- --status                 # counts per status
+npm run emails:verify -- --confirmed              # confirmed users → VALID (no API calls)
+npm run emails:verify -- --pending --limit 100    # verify PENDING users (1 credit each)
+npm run leads:export -- --purpose newsletter      # CSV of VALID + ACCEPT_ALL
+npm run leads:export -- --purpose lead-share      # CSV of VALID only
+```
+
 ## Known gaps
 
 - Users who signed up before Sept 2026 and never clicked their link exist only in

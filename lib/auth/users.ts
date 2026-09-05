@@ -1,6 +1,5 @@
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma/client";
-import { addContactToAudience } from "@/lib/email/audience";
 import { isLpSlug, type LpSlug } from "@/lib/lp/pages";
 
 export type SignupSource =
@@ -84,24 +83,5 @@ export async function upsertUserForAuth(input: UpsertInput) {
   return { user, created: false };
 }
 
-/**
- * Put the user on the Resend broadcast audience if they aren't already
- * (and haven't unsubscribed). Awaited so the lead lands on the list even
- * on a short-lived serverless invocation. Never throws.
- */
-export async function ensureOnAudience(user: {
-  id: string;
-  email: string;
-  firstName: string | null;
-  resendContactId: string | null;
-  unsubscribedFromBlasts: boolean;
-}) {
-  if (user.resendContactId || user.unsubscribedFromBlasts) return user.resendContactId;
-  const contactId = await addContactToAudience(user.email, user.firstName);
-  if (contactId) {
-    await prisma.user
-      .update({ where: { id: user.id }, data: { resendContactId: contactId } })
-      .catch((err) => console.error("[audience] failed to store contact id:", err));
-  }
-  return contactId;
-}
+// Audience membership is gated on the deliverability verdict; see lib/email/verification.ts
+export { ensureOnAudience } from "@/lib/email/verification";
