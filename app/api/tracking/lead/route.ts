@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { headers } from "next/headers";
 import {
   sendCAPIEvent,
@@ -17,6 +19,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { event_id, email, method } = body;
+    const contentName =
+      typeof body.content_name === "string" && body.content_name.trim()
+        ? body.content_name.trim().slice(0, 64)
+        : "signup";
 
     if (!event_id) {
       return NextResponse.json({ error: "event_id required" }, { status: 400 });
@@ -44,7 +50,7 @@ export async function POST(request: Request) {
         fbp,
       },
       customData: {
-        content_name: "signup",
+        content_name: contentName,
         method,
       },
     });

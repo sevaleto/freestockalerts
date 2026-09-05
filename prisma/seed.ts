@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   for (const template of mockTemplates) {
+    console.log(`seeding ${template.slug} (${template.items.length} items)`);
     await prisma.alertTemplate.upsert({
       where: { slug: template.slug },
       update: {
@@ -16,6 +17,20 @@ async function main() {
         isActive: template.isActive,
         isFeatured: template.isFeatured,
         sortOrder: template.sortOrder,
+        // Replace items so edits to lib/mock/templates.ts propagate.
+        // User alerts reference AlertTemplate (not TemplateItem), so this is safe.
+        items: {
+          deleteMany: {},
+          create: template.items.map((item) => ({
+            ticker: item.ticker,
+            companyName: item.companyName,
+            alertType: item.alertType as any,
+            triggerValue: item.triggerValue,
+            triggerDirection: item.triggerDirection as any,
+            rationale: item.rationale,
+            sortOrder: item.sortOrder,
+          })),
+        },
       },
       create: {
         name: template.name,

@@ -7,6 +7,8 @@ interface CompleteSignInInput {
   request: Request;
   origin: string;
   abVariant?: string | null;
+  /** Attribution override, e.g. "lp:radar" carried through Google OAuth via cookie. */
+  sourceOverride?: SignupSource;
 }
 
 /**
@@ -17,9 +19,14 @@ interface CompleteSignInInput {
  *   3. Meta CAPI CompleteRegistration fires (server side)
  * Returns the CAPI event id so the browser pixel can dedupe against it.
  */
-export async function completeSignIn({ user, request, origin, abVariant }: CompleteSignInInput) {
+export async function completeSignIn({ user, request, origin, abVariant, sourceOverride }: CompleteSignInInput) {
   const provider = user.app_metadata?.provider;
-  const source: SignupSource = provider === "google" ? "google" : "unknown";
+  const source: SignupSource =
+    sourceOverride && sourceOverride !== "unknown"
+      ? sourceOverride
+      : provider === "google"
+        ? "google"
+        : "unknown";
 
   try {
     const row = await upsertUserForAuth({
@@ -58,13 +65,4 @@ export async function completeSignIn({ user, request, origin, abVariant }: Compl
   return eventId;
 }
 
-/**
- * Only allow same-origin relative paths as post-login destinations.
- */
-export function safeNext(raw: string | null | undefined): string {
-  if (!raw) return "/dashboard";
-  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\") || raw.startsWith("/api/")) {
-    return "/dashboard";
-  }
-  return raw;
-}
+export { safeNext } from "@/lib/auth/safeNext";

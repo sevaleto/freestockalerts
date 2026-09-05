@@ -11,18 +11,34 @@ interface GoogleSignInButtonProps {
   className?: string;
   /** Dark variant for dark-bg sections */
   dark?: boolean;
+  /** Post-login destination (same-origin path). Carried through OAuth via a short-lived cookie. */
+  next?: string;
+  /** Attribution source, e.g. "lp:radar". Carried the same way. */
+  source?: string;
+  /** Meta pixel content_name for the Lead event. */
+  contentName?: string;
+}
+
+function setShortCookie(name: string, value: string) {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=900; SameSite=Lax${secure}`;
 }
 
 export function GoogleSignInButton({
   label = "Continue with Google",
   className = "",
   dark = false,
+  next,
+  source,
+  contentName,
 }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    trackLead("google");
+    trackLead("google", undefined, contentName);
+    if (next) setShortCookie("fsa_next", next);
+    if (source) setShortCookie("fsa_src", source);
     const supabase = createClient();
     const siteUrl =
       process.env.NEXT_PUBLIC_APP_URL || window.location.origin;

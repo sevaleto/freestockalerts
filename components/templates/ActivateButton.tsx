@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
 import { trackSubscribe } from "@/lib/tracking/events";
 
 interface ActivateButtonProps {
@@ -13,70 +13,41 @@ interface ActivateButtonProps {
 
 export function ActivateButton({ slug, templateName }: ActivateButtonProps) {
   const router = useRouter();
-  const [userId, setUserId] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [activated, setActivated] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUserId(user.id);
-    });
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => setSignedIn(!!user));
   }, []);
 
+  const loginWithReturn = () =>
+    router.push(`/login?next=${encodeURIComponent(`/welcome/${slug}`)}`);
+
   const handleActivate = async () => {
-    if (!userId) {
-      // Not logged in — redirect to login, then back here
-      router.push(`/login`);
+    if (!signedIn) {
+      // Sign in first; the welcome page activates the template on arrival.
+      loginWithReturn();
       return;
     }
 
     setLoading(true);
     setError(null);
-
     try {
-      // 1. Subscribe to template
-      const subRes = await fetch(`/api/templates/${slug}/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      if (!subRes.ok) {
-        const body = await subRes.json().catch(() => ({}));
-        throw new Error(body.error || "Failed to subscribe");
+      const res = await fetch(`/api/templates/${slug}/activate`, { method: "POST" });
+      if (res.status === 401) {
+        loginWithReturn();
+        return;
       }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Failed to activate template");
 
-      // 2. Fetch template items to create individual alerts
-      const tplRes = await fetch(`/api/templates/${slug}`);
-      if (!tplRes.ok) throw new Error("Failed to load template");
-      const tplData = await tplRes.json();
-      const items = tplData?.data?.items ?? [];
-
-      // 3. Create alerts from template items
-      for (const item of items) {
-        await fetch("/api/alerts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId,
-            ticker: item.ticker,
-            companyName: item.companyName,
-            alertType: item.alertType,
-            triggerValue: item.triggerValue,
-            triggerDirection: item.triggerDirection,
-            note: item.rationale,
-            templateId: tplData.data.id,
-          }),
-        });
-      }
-
-      trackSubscribe(templateName, items.length);
+      trackSubscribe(templateName, body.data?.alertCount ?? 0);
       setActivated(true);
-      setTimeout(() => router.push("/dashboard/alerts"), 2000);
+      setTimeout(() => router.push("/dashboard/alerts"), 1500);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -87,7 +58,7 @@ export function ActivateButton({ slug, templateName }: ActivateButtonProps) {
   if (activated) {
     return (
       <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
-        ✅ {templateName} activated! Redirecting to your alerts...
+        ✅ {templateName} activated! Taking you to your alerts...
       </div>
     );
   }
@@ -96,14 +67,12 @@ export function ActivateButton({ slug, templateName }: ActivateButtonProps) {
     <div className="space-y-2">
       <Button
         onClick={handleActivate}
-        disabled={loading}
+        disabled={loading || signedIn === null}
         className="bg-emerald-600 hover:bg-emerald-700"
       >
-        {loading ? "Activating..." : userId ? "Activate this template →" : "Sign in to activate →"}
+        {loading ? "Activating..." : signedIn ? "Activate this template →" : "Sign in to activate →"}
       </Button>
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
 }

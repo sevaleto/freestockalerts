@@ -1,6 +1,10 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { safeNext } from "@/lib/auth/safeNext";
+
+/** Browser-side guard for post-login destinations (same rules as the server). */
+export const clientSafeNext = safeNext;
 
 export type SendMagicLinkResult =
   | { ok: true; isNewUser: boolean }
@@ -42,7 +46,7 @@ export type VerifyCodeResult = { ok: true; redirectTo: string } | { ok: false; m
  * Verify the one-time code from the email in THIS browser, then run the
  * post-auth work and return where to send the user.
  */
-export async function verifyCode(email: string, code: string): Promise<VerifyCodeResult> {
+export async function verifyCode(email: string, code: string, next?: string): Promise<VerifyCodeResult> {
   const token = code.replace(/\D/g, "");
   if (token.length < 6 || token.length > 8) return { ok: false, message: "Enter the code from the email." };
 
@@ -59,13 +63,13 @@ export async function verifyCode(email: string, code: string): Promise<VerifyCod
     };
   }
 
-  let redirectTo = "/dashboard";
+  const dest = new URL(clientSafeNext(next), window.location.origin);
   try {
     const res = await fetch("/api/auth/activated", { method: "POST" });
     const body = await res.json().catch(() => ({}));
-    if (body?.capiEventId) redirectTo = `/dashboard?capi_eid=${encodeURIComponent(body.capiEventId)}`;
+    if (body?.capiEventId) dest.searchParams.set("capi_eid", String(body.capiEventId));
   } catch {
-    // Session exists regardless; dashboard still works.
+    // Session exists regardless; the destination still works.
   }
-  return { ok: true, redirectTo };
+  return { ok: true, redirectTo: dest.pathname + dest.search };
 }

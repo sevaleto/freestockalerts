@@ -3,6 +3,15 @@ import { cookies } from "next/headers";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { completeSignIn, safeNext } from "@/lib/auth/completeSignIn";
+import { toSignupSource } from "@/lib/auth/users";
+
+const HANDOFF_COOKIES = ["fsa_next", "fsa_src"] as const;
+
+/** Clear the short-lived OAuth hand-off cookies on whatever response we return. */
+function clearHandoff(res: NextResponse) {
+  for (const name of HANDOFF_COOKIES) res.cookies.set({ name, value: "", path: "/", maxAge: 0 });
+  return res;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +29,7 @@ function fail(origin: string, reason: string, description?: string | null) {
   url.searchParams.set("error", "auth_failed");
   url.searchParams.set("reason", reason.slice(0, 64));
   if (description) url.searchParams.set("error_description", description.slice(0, 200));
-  return NextResponse.redirect(url.toString());
+  return clearHandoff(NextResponse.redirect(url.toString()));
 }
 
 /**
@@ -35,7 +44,11 @@ function fail(origin: string, reason: string, description?: string | null) {
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const next = safeNext(searchParams.get("next"));
+  const jar = await cookies();
+  // Google OAuth can't carry query params through Supabase, so the button
+  // stashes next/source in short-lived cookies before redirecting.
+  const next = safeNext(searchParams.get("next") ?? jar.get("fsa_next")?.value ?? null);
+  const sourceOverride = toSignupSource(jar.get("fsa_src")?.value);
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const code = searchParams.get("code");
@@ -83,10 +96,11 @@ export async function GET(request: Request) {
     user: result.data.user,
     request,
     origin,
-    abVariant: (await cookies()).get("ab_hero_headline")?.value ?? null,
+    abVariant: jar.get("ab_hero_headline")?.value ?? null,
+    sourceOverride,
   });
 
   const redirectUrl = new URL(next, origin);
   redirectUrl.searchParams.set("capi_eid", eventId);
-  return NextResponse.redirect(redirectUrl.toString());
+  return clearHandoff(NextResponse.redirect(redirectUrl.toString()));
 }

@@ -42,7 +42,11 @@ function tt(event: string, params?: Record<string, any>) {
 // ─── Standard Events ────────────────────────────────────────────
 
 /** User initiates signup (clicks Google OAuth or submits email) */
-export function trackLead(method: "google" | "email" = "google", email?: string) {
+export function trackLead(
+  method: "google" | "email" = "google",
+  email?: string,
+  contentName: string = "signup"
+) {
   const eventId = generateEventId();
 
   // Capture A/B variant for attribution
@@ -51,15 +55,15 @@ export function trackLead(method: "google" | "email" = "google", email?: string)
     : null;
 
   // Browser pixel (with event_id for dedup)
-  fbWithId("Lead", eventId, { content_name: "signup", method });
-  tt("SubmitForm", { content_name: "signup", method });
+  fbWithId("Lead", eventId, { content_name: contentName, method });
+  tt("SubmitForm", { content_name: contentName, method });
 
   // Server-side CAPI (async, fire-and-forget)
   if (typeof window !== "undefined") {
     fetch("/api/tracking/lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event_id: eventId, email, method, ab_variant: abVariant }),
+      body: JSON.stringify({ event_id: eventId, email, method, ab_variant: abVariant, content_name: contentName }),
       keepalive: true, // survives page navigation (OAuth redirect)
     }).catch(() => {}); // silent fail
   }
@@ -78,16 +82,20 @@ export function trackCompleteRegistration(capiEventId?: string) {
 }
 
 /** User views a template detail page */
-export function trackViewContent(templateName: string, templateSlug: string) {
+export function trackViewContent(
+  templateName: string,
+  templateSlug: string,
+  contentType: string = "template"
+) {
   fb("ViewContent", {
     content_name: templateName,
     content_ids: [templateSlug],
-    content_type: "template",
+    content_type: contentType,
   });
   tt("ViewContent", {
     content_name: templateName,
     content_id: templateSlug,
-    content_type: "template",
+    content_type: contentType,
   });
 }
 
