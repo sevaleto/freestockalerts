@@ -10,9 +10,10 @@ import { Logo } from "@/components/shared/Logo";
 import { TrackViewContent } from "@/components/shared/TrackViewContent";
 import { AlertProofList } from "@/components/lp/AlertProofList";
 import type { DescribableItem } from "@/lib/alerts/describe";
-import { SampleAlertCard } from "@/components/lp/SampleAlertCard";
+import { PhoneEmailPreview } from "@/components/lp/PhoneEmailPreview";
 import { WatchlistPreview, type WatchlistRow } from "@/components/lp/WatchlistPreview";
 import { MemberBenefits } from "@/components/lp/MemberBenefits";
+import { HonestAnswer } from "@/components/lp/HonestAnswer";
 import { LpFooter } from "@/components/lp/LpFooter";
 import { LandingSignup } from "./LandingSignup";
 
@@ -139,8 +140,8 @@ export default async function LandingPage(props: LpPageProps) {
           </div>
 
           {/* Product proof */}
-          <div className="flex flex-col gap-4">
-            <SampleAlertCard alert={lp.sampleAlert} />
+          <div className="flex flex-col gap-6">
+            <PhoneEmailPreview alert={lp.sampleAlert} />
             <WatchlistPreview rows={rows} title={lp.proofTitle} />
             <div className="lg:hidden">{disclosure}</div>
           </div>
@@ -170,6 +171,7 @@ export default async function LandingPage(props: LpPageProps) {
       </section>
 
       <MemberBenefits templateName={template.name} ctaLabel={lp.ctaLabel} />
+      <HonestAnswer ctaLabel={lp.ctaLabel} />
       <LpFooter />
     </div>
   );

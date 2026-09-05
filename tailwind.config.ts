@@ -78,6 +78,7 @@ const config: Config = {
   		},
   		fontFamily: {
   			serif: ['var(--font-serif)', 'Georgia', 'serif'],
+  			script: ['var(--font-script)', 'cursive'],
   			sans: [
   				'var(--font-inter)',
   				'Inter',

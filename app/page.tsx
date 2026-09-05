@@ -4,7 +4,7 @@ import { InlineCta } from "@/components/landing/InlineCta";
 import { TemplatePreview } from "@/components/landing/TemplatePreview";
 import { Features } from "@/components/landing/Features";
 import { Testimonials } from "@/components/landing/Testimonials";
-import { WhyFree } from "@/components/landing/WhyFree";
+import { HonestAnswer } from "@/components/lp/HonestAnswer";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { StickyCta } from "@/components/landing/StickyCta";
 import { Footer } from "@/components/shared/Footer";
@@ -18,7 +18,7 @@ export default function HomePage() {
       <TemplatePreview />
       <Features />
       <Testimonials />
-      <WhyFree />
+      <HonestAnswer ctaLabel="Get my first alert" />
       <FinalCTA />
       <Footer />
       <StickyCta />
