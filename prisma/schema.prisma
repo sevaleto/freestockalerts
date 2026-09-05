@@ -22,9 +22,25 @@ model User {
   signupVariant          String?   // A/B test variant at signup (e.g. "hero_headline:A")
   signupSource           String?   // which form captured the lead: hero | final-cta | template-preview | login | google
   lastLinkSentAt         DateTime? // last magic-link email; rate-limits resends to one per 60s
+  emailStatus            EmailStatus @default(PENDING) // deliverability verdict; gates the Resend audience and lead exports
+  emailVerdict           String?   // raw verdict: Email Oversight Result name, or magic-link | google | bounce | complaint | precheck:<reason>
+  emailCheckedAt         DateTime? // when emailStatus was last written
+  emailCheckAttempts     Int       @default(0) // Email Oversight calls made (Retry/Unknown are retried up to 3 times)
   alerts                 Alert[]
   templateSubs           TemplateSubscription[]
   preferences            UserPreferences?
+
+  @@index([emailStatus])
+}
+
+/// Deliverability verdict for a lead's address. Only VALID and ACCEPT_ALL are mailable.
+enum EmailStatus {
+  PENDING    // not checked yet, or Email Oversight said Retry/Unknown (retried by cron)
+  VALID      // Email Oversight "Verified", or the user confirmed via magic link / Google
+  ACCEPT_ALL // catch-all domain: probably fine for the newsletter, not good enough to share
+  RISKY      // role account, or still unknown after all retries
+  INVALID    // undeliverable, malformed, disposable, bot, or hard-bounced
+  SUPPRESSED // spam trap, complainer, seed, suppression list, or a Resend complaint
 }
 
 model UserPreferences {

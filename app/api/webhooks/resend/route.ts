@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma/client";
 import { unsubscribeContact } from "@/lib/email/audience";
+import { markEmailFromResend } from "@/lib/email/verification";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,9 @@ export const dynamic = "force-dynamic";
  *   Events: email.bounced, email.complained, contact.updated, contact.deleted
  * Put the endpoint's signing secret (whsec_…) in RESEND_WEBHOOK_SECRET.
  *
- * Bounces and complaints suppress the address from broadcasts. This matters
- * because leads are added to the audience at form-submit time, before their
- * email is verified.
+ * Bounces and complaints suppress the address from broadcasts and record the
+ * verdict on the user (complaint → SUPPRESSED, bounce → INVALID) so exports
+ * and lead sharing skip them too. See lib/email/verification.ts.
  */
 
 const TOLERANCE_SEC = 5 * 60;
@@ -41,8 +42,9 @@ function verifySignature(rawBody: string, headers: Headers, secret: string): boo
   });
 }
 
-async function suppress(email: string, why: string) {
+async function suppress(email: string, why: "email.bounced" | "email.complained") {
   const normalized = email.trim().toLowerCase();
+  await markEmailFromResend(normalized, why === "email.complained" ? "complaint" : "bounce");
   const users = await prisma.user.findMany({
     where: { email: normalized },
     select: { id: true, resendContactId: true },
