@@ -8,6 +8,7 @@ import { Logo } from "@/components/shared/Logo";
 import { TrackViewContent } from "@/components/shared/TrackViewContent";
 import { AlertProofList } from "@/components/lp/AlertProofList";
 import { LpFooter } from "@/components/lp/LpFooter";
+import { MemberBenefits } from "@/components/lp/MemberBenefits";
 import { LandingSignup } from "./LandingSignup";
 
 // Ad pages: static, refreshed hourly, unknown slugs 404.
@@ -107,7 +108,7 @@ export default async function LandingPage(props: LpPageProps) {
         </div>
       </section>
 
-      <div className="flex-1" />
+      <MemberBenefits templateName={template.name} ctaLabel={lp.ctaLabel} />
       <LpFooter />
     </div>
   );

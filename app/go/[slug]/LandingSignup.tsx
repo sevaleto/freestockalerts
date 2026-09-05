@@ -52,7 +52,7 @@ export function LandingSignup({ lp }: Props) {
   }
 
   return (
-    <div className="space-y-3">
+    <div id="signup" className="scroll-mt-24 space-y-3">
       <GoogleSignInButton
         label="Sign up with Google"
         className="sm:max-w-sm shadow-lg"
