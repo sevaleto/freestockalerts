@@ -7,7 +7,7 @@ import { Logo } from "@/components/shared/Logo";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
 import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
-import { SampleAlertCard } from "@/components/lp/SampleAlertCard";
+import { PhoneEmailPreview } from "@/components/lp/PhoneEmailPreview";
 import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
 import { ACTIVE_TESTS, HERO_HEADLINES } from "@/lib/ab/variants";
@@ -174,8 +174,8 @@ export function Hero() {
             <p className="mt-8 hidden text-sm text-lp-muted lg:block">Educational information only. Not investment advice.</p>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <SampleAlertCard alert={HOME_SAMPLE} />
+          <div className="flex flex-col gap-4 lg:items-center">
+            <PhoneEmailPreview alert={HOME_SAMPLE} />
             <p className="text-sm text-lp-muted lg:hidden">Educational information only. Not investment advice.</p>
           </div>
         </div>
