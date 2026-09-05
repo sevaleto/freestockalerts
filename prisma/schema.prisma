@@ -114,6 +114,20 @@ model AlertTemplate {
   isActive        Boolean                 @default(true)
   isFeatured      Boolean                 @default(false)
   sortOrder       Int                     @default(0)
+  /// Catalog section shown on the index and on every strategy page.
+  section         StrategySection         @default(IDEA_DISCOVERY)
+  /// One line describing the final alert trigger, e.g. "Fresh 52-week high".
+  triggerSummary  String?
+  /// Human cadence, e.g. "Monthly", "Weekly", "Weekly in earnings season, biweekly otherwise".
+  refreshCadence  String?
+  /// When the constituent list was last rebuilt or reviewed.
+  lastRefreshedAt DateTime?
+  /// Bumped when the strategy's rules change.
+  version         Int                     @default(1)
+  /// Retired templates stay in the table so existing user alerts keep their reference.
+  retiredAt       DateTime?
+  /// Slug of the strategy that replaced a retired template.
+  replacedBySlug  String?
   alerts          Alert[]
   items           TemplateItem[]
   subscriptions   TemplateSubscription[]
@@ -168,6 +182,13 @@ enum TriggerDirection {
   BOTH
 }
 
+/// The three catalog sections. `TemplateCategory` below is the older topical tag and is kept for compatibility.
+enum StrategySection {
+  IDEA_DISCOVERY
+  ENTRY_TIMING
+  MARKET_MONITORING
+}
+
 enum TemplateCategory {
   EARNINGS
   VALUE_INVESTING
@@ -175,4 +196,118 @@ enum TemplateCategory {
   DIVIDEND
   MACRO
   AI_PICKS
+}
+
+// ---------------------------------------------------------------------------
+// Event-driven strategies (insider purchases, analyst clusters). Source rows are
+// normalized copies of what the data provider returned so every signal can be
+// explained and reproduced; signals are idempotent on signalKey; deliveries
+// are unique per signal + user so a re-run never emails twice.
+// ---------------------------------------------------------------------------
+
+/// One line of a Form 4 (or similar) as normalized from the provider.
+model InsiderTransaction {
+  id                       String   @id @default(cuid())
+  symbol                   String
+  /// accession + transaction details; stable across re-fetches
+  dedupKey                 String   @unique
+  accession                String?
+  insiderName              String
+  insiderTitle             String?
+  /// raw "typeOfOwner" string, e.g. "director, officer: CEO"
+  ownerType                String?
+  isDirector               Boolean  @default(false)
+  isOfficer                Boolean  @default(false)
+  isSenior                 Boolean  @default(false)
+  transactionCode          String
+  acquisitionOrDisposition String?
+  securityName             String?
+  transactionDate          DateTime
+  filingDate               DateTime?
+  shares                   Float
+  price                    Float
+  value                    Float
+  sharesOwnedAfter         Float?
+  filingUrl                String?
+  raw                      Json
+  fetchedAt                DateTime @default(now())
+
+  @@index([symbol, transactionDate])
+  @@index([transactionDate])
+}
+
+/// One analyst rating action as normalized from the provider.
+model AnalystAction {
+  id            String   @id @default(cuid())
+  symbol        String
+  /// symbol|firm|date|previousGrade|newGrade
+  dedupKey      String   @unique
+  firm          String
+  actionDate    DateTime
+  previousGrade String?
+  newGrade      String?
+  /// provider's action word (upgrade, downgrade, maintain, initiate, ...)
+  action        String?
+  previousTier  String?
+  newTier       String?
+  /// POSITIVE | NEGATIVE | NEUTRAL, derived from the tiers
+  direction     String
+  isTrueUpgrade Boolean  @default(false)
+  sourceUrl     String?
+  raw           Json
+  fetchedAt     DateTime @default(now())
+
+  @@index([symbol, actionDate])
+  @@index([actionDate])
+}
+
+/// A confirmed strategy event. Subscribers of the strategy's template are emailed once per signal.
+model StrategySignal {
+  id           String           @id @default(cuid())
+  strategySlug String
+  symbol       String
+  companyName  String?
+  /// strategy + symbol + event identity; a re-run of the scan cannot create it twice
+  signalKey    String           @unique
+  score        Int
+  price        Float
+  confirmation String
+  explanation  String
+  /// everything shown in the alert (insiders, firms, dates, ratios, links)
+  payload      Json
+  dataAsOf     DateTime
+  createdAt    DateTime         @default(now())
+  deliveries   SignalDelivery[]
+
+  @@index([strategySlug, createdAt])
+  @@index([strategySlug, symbol, createdAt])
+}
+
+model SignalDelivery {
+  id        String         @id @default(cuid())
+  signalId  String
+  signal    StrategySignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  userId    String
+  emailSent Boolean        @default(false)
+  sentAt    DateTime       @default(now())
+
+  @@unique([signalId, userId])
+  @@index([userId])
+}
+
+/// One execution of the daily scan, for "last scanned" and for operations.
+model StrategyScanRun {
+  id             String    @id @default(cuid())
+  strategySlug   String
+  startedAt      DateTime  @default(now())
+  finishedAt     DateTime?
+  status         String    @default("RUNNING")
+  dryRun         Boolean   @default(false)
+  candidates     Int       @default(0)
+  qualified      Int       @default(0)
+  signalsCreated Int       @default(0)
+  emailsSent     Int       @default(0)
+  error          String?
+
+  @@index([strategySlug, startedAt])
 }

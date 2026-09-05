@@ -20,6 +20,7 @@ interface AlertEmailProps {
   volume: string;
   aiSummary: string;
   appUrl: string;
+  contextLines?: string[];
 }
 
 export function AlertEmail({
@@ -31,6 +32,7 @@ export function AlertEmail({
   volume,
   aiSummary,
   appUrl,
+  contextLines = [],
 }: AlertEmailProps) {
   return (
     <Html>
@@ -49,7 +51,7 @@ export function AlertEmail({
               Current price: {currentPrice}
             </Text>
             <Text style={{ margin: 0, color: "#0F172A" }}>
-              Trigger price: {triggerPrice}
+              Trigger: {triggerPrice}
             </Text>
             <Text style={{ margin: 0, color: "#0F172A" }}>
               Day change: {dayChange}
@@ -58,6 +60,16 @@ export function AlertEmail({
               Volume: {volume}
             </Text>
           </Section>
+          {contextLines.length > 0 ? (
+            <Section style={{ marginTop: "16px" }}>
+              <Text style={{ margin: 0, fontSize: "13px", fontWeight: 600, color: "#0F172A" }}>Context</Text>
+              {contextLines.map((line) => (
+                <Text key={line} style={{ margin: "4px 0 0", fontSize: "14px", color: "#0F172A" }}>
+                  • {line}
+                </Text>
+              ))}
+            </Section>
+          ) : null}
           <Section
             style={{
               marginTop: "16px",

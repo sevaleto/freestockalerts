@@ -354,6 +354,27 @@ export const fetchFmpNextEarningsDate = async (
 const AVG_VOLUME_TTL_MS = 6 * 60 * 60_000; // 6 hours
 const AVG_VOLUME_SESSIONS = 30;
 
+/**
+ * Recent daily closes, newest first (about 60 sessions), from the same
+ * lightweight endpoint. Used for relative-performance context on sector alerts.
+ */
+export const fetchFmpHistoricalCloses = async (ticker: string, sessions = 60): Promise<number[]> => {
+  const normalized = ticker.trim().toUpperCase();
+  const cacheKey = `closes:${normalized}:${sessions}`;
+  const entry = quoteCache.get(cacheKey);
+  if (entry && Date.now() <= entry.expiresAt) return entry.data;
+
+  const data = (await fmpFetch(
+    `/historical-price-eod/light?symbol=${encodeURIComponent(normalized)}`
+  )) as Array<{ date: string; price?: number }>;
+  const closes = (Array.isArray(data) ? data : [])
+    .slice(0, sessions)
+    .map((r) => toNumber(r.price))
+    .filter((v): v is number => v !== undefined && v > 0);
+  quoteCache.set(cacheKey, { data: closes, expiresAt: Date.now() + AVG_VOLUME_TTL_MS });
+  return closes;
+};
+
 export const fetchFmpAvgVolume = async (ticker: string): Promise<number | null> => {
   const normalized = ticker.trim().toUpperCase();
   const cacheKey = `avgvol:${normalized}`;
@@ -370,4 +391,92 @@ export const fetchFmpAvgVolume = async (ticker: string): Promise<number | null> 
   const avg = Math.round(volumes.reduce((a, b) => a + b, 0) / volumes.length);
   quoteCache.set(cacheKey, { data: avg, expiresAt: Date.now() + AVG_VOLUME_TTL_MS });
   return avg;
+};
+
+// ---------------------------------------------------------------------------
+// Event-strategy sources: insider transactions, analyst grades, daily bars.
+// Same key, same base URL, same in-process cache. These feeds change once a
+// day, so they are cached for hours, and the pulls that page through the
+// whole market retry on 429/5xx instead of failing the scan.
+// ---------------------------------------------------------------------------
+
+const EVENT_FEED_TTL_MS = 30 * 60_000; // 30 minutes: a scan re-run within the window is free
+const RETRY_ATTEMPTS = 4;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** fmpFetch with backoff on rate limits and server errors. */
+export const fmpFetchRetry = async <T>(path: string): Promise<T> => {
+  let last: unknown;
+  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+    try {
+      return (await fmpFetch(path)) as T;
+    } catch (err) {
+      last = err;
+      const retryable = err instanceof FmpError && (err.code === "RATE_LIMIT" || (err.status ?? 0) >= 500);
+      if (!retryable || attempt === RETRY_ATTEMPTS - 1) throw err;
+      const wait = (err instanceof FmpError && err.code === "RATE_LIMIT" ? 8000 : 1500) * (attempt + 1);
+      console.warn(`[fmp] ${path.split("?")[0]} ${err instanceof FmpError ? err.status : ""} — retrying in ${wait}ms`);
+      await sleep(wait);
+    }
+  }
+  throw last;
+};
+
+const cachedFeed = async <T>(key: string, path: string, ttl = EVENT_FEED_TTL_MS): Promise<T> => {
+  const entry = quoteCache.get(key);
+  if (entry && Date.now() <= entry.expiresAt) return entry.data as T;
+  const data = await fmpFetchRetry<T>(path);
+  quoteCache.set(key, { data, expiresAt: Date.now() + ttl });
+  return data;
+};
+
+/** One page of open-market purchases (code P) across the whole market, newest filing first. */
+export const fetchFmpInsiderPurchases = (page: number, limit = 1000) =>
+  cachedFeed<unknown[]>(`insider-purchases:${page}:${limit}`, `/insider-trading/search?transactionType=P-Purchase&page=${page}&limit=${limit}`);
+
+/** All recent insider transactions for one symbol (every code). */
+export const fetchFmpInsiderTransactions = (ticker: string, limit = 100) => {
+  const t = ticker.trim().toUpperCase();
+  return cachedFeed<unknown[]>(`insider-symbol:${t}:${limit}`, `/insider-trading/search?symbol=${encodeURIComponent(t)}&page=0&limit=${limit}`);
+};
+
+/** One page of the cross-market analyst-grade feed, newest first. */
+export const fetchFmpGradesLatest = (page: number, limit = 1000) =>
+  cachedFeed<unknown[]>(`grades-latest:${page}:${limit}`, `/grades-latest-news?page=${page}&limit=${limit}`);
+
+/** Every recorded analyst action for one symbol, newest first (the provider ignores limit). */
+export const fetchFmpGrades = (ticker: string) => {
+  const t = ticker.trim().toUpperCase();
+  return cachedFeed<unknown[]>(`grades:${t}`, `/grades?symbol=${encodeURIComponent(t)}`);
+};
+
+export interface FmpDailyBar {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+/** Daily OHLCV from `from` (YYYY-MM-DD) to today, oldest first. */
+export const fetchFmpDailyBars = async (ticker: string, from: string): Promise<FmpDailyBar[]> => {
+  const t = ticker.trim().toUpperCase();
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(
+    `bars:${t}:${from}`,
+    `/historical-price-eod/full?symbol=${encodeURIComponent(t)}&from=${from}`,
+    AVG_VOLUME_TTL_MS
+  );
+  return (Array.isArray(rows) ? rows : [])
+    .map((r) => ({
+      date: String(r.date ?? "").slice(0, 10),
+      open: toNumber(r.open) ?? 0,
+      high: toNumber(r.high) ?? 0,
+      low: toNumber(r.low) ?? 0,
+      close: toNumber(r.close) ?? 0,
+      volume: toNumber(r.volume) ?? 0,
+    }))
+    .filter((b) => b.date && b.close > 0)
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
 };

@@ -10,6 +10,8 @@ interface SendAlertEmailInput {
   dayChange: string;
   volume: string;
   aiSummary: string;
+  /** Factual context lines (moving averages, volume vs average, sector vs SPY). */
+  contextLines?: string[];
 }
 
 export async function sendAlertEmail(input: SendAlertEmailInput) {
