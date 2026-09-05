@@ -7,6 +7,7 @@ export type SignupSource =
   | "hero"
   | "final-cta"
   | "template-preview"
+  | "inline-cta"
   | "login"
   | "google"
   | "unknown"
@@ -16,6 +17,7 @@ export const SIGNUP_SOURCES: readonly SignupSource[] = [
   "hero",
   "final-cta",
   "template-preview",
+  "inline-cta",
   "login",
   "google",
   "unknown",
@@ -55,7 +57,7 @@ export async function upsertUserForAuth(input: UpsertInput) {
   });
 
   if (!existing) {
-    return prisma.user.create({
+    const created = await prisma.user.create({
       data: {
         id: input.authUser.id,
         email,
@@ -65,9 +67,10 @@ export async function upsertUserForAuth(input: UpsertInput) {
         lastLinkSentAt: input.lastLinkSentAt ?? null,
       },
     });
+    return { user: created, created: true };
   }
 
-  return prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: existing.id },
     data: {
       ...(existing.id !== input.authUser.id ? { id: input.authUser.id } : {}),
@@ -78,6 +81,7 @@ export async function upsertUserForAuth(input: UpsertInput) {
       ...(input.lastLinkSentAt ? { lastLinkSentAt: input.lastLinkSentAt } : {}),
     },
   });
+  return { user, created: false };
 }
 
 /**

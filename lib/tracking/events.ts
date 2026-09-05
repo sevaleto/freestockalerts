@@ -41,7 +41,19 @@ function tt(event: string, params?: Record<string, any>) {
 
 // ─── Standard Events ────────────────────────────────────────────
 
-/** User initiates signup (clicks Google OAuth or submits email) */
+/**
+ * User clicked "Continue with Google". This is intent, not a lead: the real
+ * Lead fires server-side from the auth callback once Google hands back a
+ * verified email. Sent as a custom event so it never trains Meta's Lead model.
+ */
+export function trackInitiateSignup(contentName: string = "signup") {
+  if (typeof window !== "undefined" && typeof window.fbq === "function") {
+    window.fbq("trackCustom", "InitiateSignup", { content_name: contentName, method: "google" });
+  }
+  tt("ClickButton", { content_name: contentName, method: "google" });
+}
+
+/** User submitted the email form (a captured lead) */
 export function trackLead(
   method: "google" | "email" = "google",
   email?: string,

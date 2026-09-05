@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, DM_Serif_Display } from "next/font/google";
+import { Inter, JetBrains_Mono, DM_Serif_Display, Caveat } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { CookieConsentProvider } from "@/lib/cookies/CookieConsentContext";
@@ -19,6 +19,12 @@ const jetbrains = JetBrains_Mono({
 const serif = DM_Serif_Display({
   variable: "--font-serif",
   weight: "400",
+  subsets: ["latin"],
+});
+
+const script = Caveat({
+  variable: "--font-script",
+  weight: ["500", "600"],
   subsets: ["latin"],
 });
 
@@ -54,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrains.variable} ${serif.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrains.variable} ${serif.variable} ${script.variable}`}>
       <body className="min-h-screen bg-white text-text-primary antialiased">
         <CookieConsentProvider>
           {children}

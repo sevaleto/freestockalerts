@@ -24,8 +24,12 @@ export function Footer() {
           </button>
         </nav>
       </div>
-      <div className="mx-auto mt-6 w-full max-w-[1440px] px-5 text-xs text-text-muted sm:px-8 lg:px-12">
-        © 2026 FreeStockAlerts.AI · Wealthpire, Inc. Educational information only. Not investment advice.
+      <div className="mx-auto mt-6 w-full max-w-[1440px] space-y-1 px-5 text-xs text-text-muted sm:px-8 lg:px-12">
+        <p>© 2026 FreeStockAlerts.AI, a Wealthpire, Inc. property. Educational information only. Not investment advice.</p>
+        <p>
+          Wealthpire, Inc. · 400 Continental Blvd, 6th Floor, El Segundo, CA 90245 ·{" "}
+          <Link href="/contact" className="underline underline-offset-2 hover:text-text-primary">Contact us</Link>
+        </p>
       </div>
     </footer>
   );

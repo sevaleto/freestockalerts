@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { mockTemplates } from "@/lib/mock/templates";
+import { TemplateCardLink } from "@/components/landing/TemplateCardLink";
 
 export function TemplatePreview() {
-  const templates = [...mockTemplates].sort((a, b) => a.sortOrder - b.sortOrder);
+  // Three concrete strategies on the homepage; the rest live on /templates.
+  const FEATURED = ["momentum-breakout-alerts", "under-the-radar-breakouts", "sector-rotation-radar"];
+  const templates = FEATURED.map((slug) => mockTemplates.find((t) => t.slug === slug)!).filter(Boolean);
   return (
     <section id="templates" className="border-t border-lp-border/70 bg-lp-bg py-20">
       <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl space-y-3">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Alert templates</p>
-            <h2 className="font-serif text-3xl text-lp-navy md:text-4xl">Pre-built strategies. One click to activate.</h2>
+            <h2 className="font-serif text-3xl text-lp-navy md:text-4xl">Pick a strategy. We set up all 10 alerts.</h2>
             <p className="text-base leading-relaxed text-lp-navy/75">
-              Each template sets up 10 alerts around a specific strategy. Customize any alert after activation.
+              Choose one below and it&apos;s live the moment you confirm your email. Six more strategies wait on your dashboard.
             </p>
           </div>
           <Link href="/templates" className="inline-flex items-center gap-2 text-sm font-semibold text-lp-teal hover:text-lp-teal-dark">
@@ -22,34 +25,35 @@ export function TemplatePreview() {
 
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
-            <Link
+            <TemplateCardLink
               key={template.id}
-              href={`/templates/${template.slug}`}
+              slug={template.slug}
+              name={template.name}
               className="group rounded-[20px] border border-lp-border bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-lp-teal/40"
             >
               <div className="flex items-center justify-between">
                 <span className="text-3xl" aria-hidden>{template.iconEmoji}</span>
-                <span className="rounded-full bg-lp-mint px-3 py-1 text-xs font-semibold text-lp-teal opacity-0 transition group-hover:opacity-100">
-                  Preview →
+                <span className="rounded-full bg-lp-mint px-3 py-1 text-xs font-semibold text-lp-teal">
+                  Activate free →
                 </span>
               </div>
               <h3 className="mt-4 text-lg font-semibold text-lp-navy group-hover:text-lp-teal">{template.name}</h3>
               <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-lp-navy/75">{template.description}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {template.items.slice(0, 4).map((item, i) => (
-                  <span key={`${item.ticker}-${i}`} className="rounded-md bg-lp-bg px-2 py-1 font-mono text-xs font-medium text-lp-navy">
-                    {item.ticker}
+                {Array.from(new Set(template.items.map((i) => i.ticker))).slice(0, 4).map((ticker) => (
+                  <span key={ticker} className="rounded-md bg-lp-bg px-2 py-1 font-mono text-xs font-medium text-lp-navy">
+                    {ticker}
                   </span>
                 ))}
-                {template.items.length > 4 && (
-                  <span className="rounded-md bg-lp-bg px-2 py-1 text-xs text-lp-muted">+{template.items.length - 4} more</span>
+                {new Set(template.items.map((i) => i.ticker)).size > 4 && (
+                  <span className="rounded-md bg-lp-bg px-2 py-1 text-xs text-lp-muted">+{new Set(template.items.map((i) => i.ticker)).size - 4} more</span>
                 )}
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-lp-border/70 pt-3 text-xs text-lp-muted">
                 <span className="font-semibold">{template.items.length} alerts</span>
                 <span className="uppercase tracking-widest">{template.category.replace("_", " ")}</span>
               </div>
-            </Link>
+            </TemplateCardLink>
           ))}
         </div>
 

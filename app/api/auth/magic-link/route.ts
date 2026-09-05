@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     // Capture the lead NOW.
     const abVariant = (await cookies()).get("ab_hero_headline")?.value ?? null;
-    const user = await upsertUserForAuth({
+    const { user } = await upsertUserForAuth({
       authUser: data.user,
       abVariant,
       source,

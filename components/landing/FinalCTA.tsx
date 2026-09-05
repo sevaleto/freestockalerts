@@ -24,7 +24,7 @@ export function FinalCTA() {
     if (!result.ok) {
       setError(result.message);
     } else {
-      trackLead("email", email);
+      trackLead("email", email, "home_final_cta");
       setSubmitted(true);
     }
     setLoading(false);
@@ -60,15 +60,6 @@ export function FinalCTA() {
             {!submitted ? (
               <div className="space-y-3">
                 <p className="text-lg font-semibold">Get your first alert free</p>
-                <GoogleSignInButton
-                  label="Continue with Google"
-                  className="h-14 rounded-xl border-white/20 bg-white text-lg font-semibold text-lp-navy hover:bg-lp-bg"
-                />
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-white/15" />
-                  <span className="text-xs text-white/60">or use email</span>
-                  <div className="h-px flex-1 bg-white/15" />
-                </div>
                 <form onSubmit={handleSubmit} className="space-y-3" noValidate>
                   <label htmlFor={inputId} className="sr-only">Email address</label>
                   <div className="relative">
@@ -96,6 +87,12 @@ export function FinalCTA() {
                   </button>
                   {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
                 </form>
+                <GoogleSignInButton
+                  label="Continue with Google"
+                  className="h-12 rounded-xl border-white/20 bg-white/10 text-base font-medium text-white hover:bg-white/20"
+                  source="final-cta"
+                  contentName="home_final_cta"
+                />
                 <p className="text-center text-xs text-white/60">Free forever. Unsubscribe anytime.</p>
               </div>
             ) : (
