@@ -66,6 +66,16 @@ model Alert {
   @@index([isActive, isTriggered])
 }
 
+/// Per-IP request counter for the signup route (fixed 60s windows).
+model SignupRateLimit {
+  ip          String
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@id([ip, windowStart])
+  @@index([windowStart])
+}
+
 model AlertHistory {
   id             String   @id @default(cuid())
   alertId        String
