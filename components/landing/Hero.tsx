@@ -67,7 +67,7 @@ export function Hero() {
     <section className="relative overflow-hidden bg-lp-bg">
       <div className="absolute inset-0 bg-hero-glow" aria-hidden />
       <div className="relative mx-auto w-full max-w-[1440px] px-5 pb-16 pt-6 sm:px-8 md:pt-8 lg:px-12 lg:pb-24">
-        <nav className="flex items-center justify-between" aria-label="Primary">
+        <nav className="flex items-center justify-between gap-3" aria-label="Primary">
           <Logo size="lg" />
           <div className="hidden items-center gap-7 text-sm font-medium text-text-secondary md:flex">
             <a href="#how" className="hover:text-text-primary">How it works</a>
@@ -76,7 +76,7 @@ export function Hero() {
           </div>
           <Link
             href="/login"
-            className="inline-flex h-10 items-center rounded-xl border border-lp-border bg-white px-4 text-sm font-semibold text-lp-navy hover:bg-lp-mint"
+            className="inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-xl border border-lp-border bg-white px-3.5 text-sm font-semibold text-lp-navy hover:bg-lp-mint sm:px-4"
           >
             Log in
           </Link>
