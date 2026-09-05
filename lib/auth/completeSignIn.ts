@@ -2,6 +2,7 @@ import type { User as AuthUser } from "@supabase/supabase-js";
 import { upsertUserForAuth, type SignupSource } from "@/lib/auth/users";
 import { ensureOnAudience, markEmailConfirmed } from "@/lib/email/verification";
 import { sendCAPIEvent, extractFbCookies, generateEventId } from "@/lib/tracking/meta-capi";
+import { marketingAllowed } from "@/lib/cookies/serverConsent";
 
 interface CompleteSignInInput {
   user: AuthUser;
@@ -17,7 +18,9 @@ interface CompleteSignInInput {
  * of how they got it (magic link, one-time code, Google OAuth):
  *   1. Prisma User row exists and is marked emailVerified (emailStatus VALID)
  *   2. user is on the Resend audience
- *   3. Meta CAPI CompleteRegistration fires (server side)
+ *   3. Meta CAPI CompleteRegistration fires (server side), unless the visitor
+ *      has opted out of marketing (explicit choice, GPC, or opt-in region
+ *      without consent; see lib/cookies/serverConsent.ts)
  * Returns the CAPI event id so the browser pixel can dedupe against it.
  */
 export async function completeSignIn({ user, request, origin, abVariant, sourceOverride }: CompleteSignInInput) {
@@ -45,6 +48,11 @@ export async function completeSignIn({ user, request, origin, abVariant, sourceO
   }
 
   const eventId = generateEventId();
+  const consent = marketingAllowed(request);
+  if (!consent.allowed) {
+    console.log(`[CAPI] skipped on sign-in (${consent.reason})`);
+    return eventId;
+  }
   const cookieHeader = request.headers.get("cookie");
   const { fbc, fbp } = extractFbCookies(cookieHeader);
   const userData = {

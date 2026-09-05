@@ -5,7 +5,15 @@
  *  - essential:  Always on (auth, security, basic function)
  *  - analytics:  Site analytics (Google Analytics, etc.)
  *  - marketing:  Ad pixels & retargeting (Meta Pixel, TikTok Pixel, etc.)
+ *
+ * Two regimes, chosen by region (see ./region.ts):
+ *  - optin  (EEA/UK/CH): nothing non-essential until the visitor accepts.
+ *  - optout (everyone else, incl. US): on by default, no banner; the visitor
+ *    can opt out from the footer, and a Global Privacy Control signal turns
+ *    marketing off automatically. No cookie is written until they choose.
  */
+
+import { isConsentRegion, REGION_COOKIE, type ConsentRegion } from "./region";
 
 export type ConsentCategory = "essential" | "analytics" | "marketing";
 
@@ -84,8 +92,32 @@ export function hasConsent(category: ConsentCategory): boolean {
   return prefs[category] === true;
 }
 
-/** Revoke consent (delete cookie) */
-export function revokeConsent(): void {
-  if (typeof document === "undefined") return;
-  document.cookie = `${COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax; Secure`;
+/** Region the middleware stamped on this browser; null when absent (local dev, first paint). */
+export function readRegionCookie(): ConsentRegion | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.split("; ").find((row) => row.startsWith(`${REGION_COOKIE}=`));
+  const value = match?.split("=")[1];
+  return isConsentRegion(value) ? value : null;
+}
+
+/** Global Privacy Control browser signal (Firefox, Brave, DuckDuckGo, Chrome with the flag). */
+export function hasGpc(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
+}
+
+/**
+ * What applies right now: a stored choice always wins; otherwise the region
+ * default (opt-out region: on, minus marketing when GPC is set; opt-in: off).
+ */
+export function effectivePreferences(
+  stored: ConsentPreferences | null,
+  region: ConsentRegion,
+  gpc: boolean
+): ConsentPreferences {
+  if (stored) return stored;
+  if (region === "optout") {
+    return { essential: true, analytics: true, marketing: !gpc, timestamp: "" };
+  }
+  return DEFAULT_PREFERENCES;
 }
