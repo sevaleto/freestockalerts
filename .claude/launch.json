@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "next-dev", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3000 },
+    {
+      "name": "next-dev-testdb",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DATABASE_URL=postgresql://manueljesus@localhost:5432/freestockalerts_test",
+        "DIRECT_URL=postgresql://manueljesus@localhost:5432/freestockalerts_test",
+        "npm",
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    }
+  ]
+}

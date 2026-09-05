@@ -9,8 +9,13 @@
     "start": "next start",
     "lint": "eslint",
     "prisma:generate": "prisma generate",
-    "prisma:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
-    "screen:templates": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/screen-templates.ts",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "refresh:strategies": "tsx scripts/refresh-strategies.ts",
+    "scan:strategies": "tsx scripts/scan-strategies.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:db": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://$USER@localhost:5432/freestockalerts_test} node --import tsx --test tests/db.*.test.ts",
+    "smoke": "tsx scripts/smoke-templates.ts",
     "leads:export": "tsx scripts/export-leads.ts",
     "emails:verify": "tsx scripts/verify-emails.ts",
     "update:disposable": "tsx scripts/update-disposable-domains.ts"
@@ -50,7 +55,7 @@
     "zod": "^3.23.0"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

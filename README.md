@@ -61,16 +61,84 @@ cookie) Google signups from a page. Meta pixel `ViewContent` and `Lead` carry
 SELECT "signupSource", count(*) FROM "User" GROUP BY 1 ORDER BY 2 DESC;
 ```
 
-**Templates** live in `lib/mock/templates.ts` and are pushed to the database with
-`npm run prisma:seed` (idempotent by slug; items are replaced on every run). Two templates
-are screened from market data and should be refreshed quarterly:
+## Strategy catalog (`/templates`)
+
+Ten alert templates, each a defined setup, grouped into three sections: Idea Discovery,
+Entry Timing, and Market and Portfolio Monitoring. Everything lives under `lib/templates/`:
+
+| File | What it holds |
+|---|---|
+| `catalog.ts` | The ten strategies: copy, universe, trigger rules, cadence, sample alert, SEO, fixed alert lists |
+| `screens.ts` | Qualification rules for the seven data-driven lists (one source of truth for the page, the refresh script and the tests) |
+| `screened.json` | Output of the refresh script: the current constituents plus the point-in-time snapshot each one was judged on |
+| `redirects.ts` | Retired slugs → their replacements |
+| `seed.ts` | Idempotent upsert of the catalog into `AlertTemplate` / `TemplateItem`; retires legacy rows without deleting them |
+| `activate.ts` | One-click activation (resolves legacy slugs, seeds a missing template on the spot, never duplicates a user's alerts) |
+
+**Refreshing the screened lists** (weekly for the two weekly strategies, monthly otherwise;
+each page shows its cadence and last-refresh date and flags itself when overdue):
 
 ```bash
-set -a; source .env.local; set +a; npm run screen:templates
+set -a; source .env.local; set +a
+npm run refresh:strategies                 # rebuilds every screened list from FMP (read-only, ~5 min)
+npm run refresh:strategies -- --only leader-pullback-and-reclaim,200-day-comeback-watchlist
+git diff lib/templates/screened.json       # review the new names
+npm test                                   # re-checks every constituent against the rules
+npm run prisma:seed                        # pushes the lists to the database
 ```
 
-It prints ranked candidates for Under-the-Radar Breakouts and Turnaround Signals; hand-pick
-10, edit the template, re-run the seed.
+The script ranks qualifying names and takes the top 10; a company appears in one list only.
+Rationales are generated from the stored numbers, so nothing on a page is hand-written about
+a specific company. Company guidance is not available from FMP and is not part of any screen.
+
+**Retired templates** (`earnings-season-alerts`, `buffett-style-value-watchlist`,
+`momentum-breakout-alerts`, `dividend-income-watchlist`, `market-fear-greed-signals`,
+`turnaround-signals`, `oversold-bounce-leaders`, `sector-rotation-radar`) stay in the
+table with `isActive = false`, `retiredAt` and `replacedBySlug` set. Existing user alerts keep
+their reference. `/templates/<old>`, `/welcome/<old>` and `/api/templates/<old>/*` redirect or
+resolve to the replacement.
+
+**Deploying a catalog change:** push the schema first (additive columns on `AlertTemplate`),
+deploy, then seed. Activation also seeds a missing template on demand, so a deploy that lands
+before the seed still works.
+
+```bash
+set -a; source .env.local; set +a
+DIRECT_URL="$(echo "$DATABASE_URL" | sed -E 's/:6543\//:5432\//; s/\?.*$//')" npx prisma db push
+npm run prisma:seed
+```
+
+## Event strategies (insider purchases, analyst clusters)
+
+Two strategies have no fixed list. A daily scan (`/api/strategies/scan`, scheduled in
+`vercel.json` at 21:40 UTC on weekdays, `CRON_SECRET`-protected like the alert check)
+pulls the source feeds from FMP server-side, normalizes them, applies the rules, and
+emails everyone subscribed to the strategy's template one message per confirmed signal.
+
+| Piece | Where |
+|---|---|
+| Thresholds | `lib/strategies/config.ts` (`UNIVERSE`, `INSIDER`, `ANALYST`) |
+| Normalization | `lib/strategies/insider/normalize.ts`, `lib/strategies/analyst/normalize.ts` |
+| Rules and scoring | `lib/strategies/insider/evaluate.ts`, `lib/strategies/analyst/evaluate.ts` (pure, tested) |
+| Scan, idempotency, delivery | `lib/strategies/scan.ts`, `lib/strategies/deliver.ts` |
+| Alert presentation | `lib/strategies/present.ts` (email and pages share it), `lib/email/signalEmail.tsx` |
+| Tables | `InsiderTransaction`, `AnalystAction` (normalized source rows with the raw record), `StrategySignal` (unique `signalKey`), `SignalDelivery` (unique per signal + user), `StrategyScanRun` |
+
+Idempotency: source rows are keyed on the filing accession plus transaction details (insider)
+or symbol + firm + date + grades (analyst); a signal is keyed on the exact event; a symbol gets
+at most one signal per cooldown window; a delivery row is claimed before the email is sent.
+Re-running the scan on the same data creates and sends nothing.
+
+```bash
+set -a; source .env.local; set +a
+npm run scan:strategies -- --dry-run          # evaluate and print, no writes, no email
+npm run scan:strategies -- --only analyst     # one strategy
+curl -s -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/strategies/scan?dryRun=1" | jq '.summaries[] | {strategySlug, candidates, qualified, wouldCreate}'
+```
+
+Subscribing (`/welcome/<slug>`, the Activate button, or the dashboard toggle) creates the
+`TemplateSubscription`; activation creates no per-user alerts for these two templates.
+Users with `emailAlerts` off, or an `INVALID`/`SUPPRESSED` address, are skipped.
 
 ## How the alert loop works
 
@@ -79,8 +147,10 @@ It prints ranked candidates for Under-the-Radar Breakouts and Turnaround Signals
 3. It loads every `Alert` with `isActive = true`, fetches one quote per distinct ticker,
    and fetches RSI / SMA / earnings data only for tickers that have alerts of those types
    (`lib/alerts/evaluator.ts`).
-4. Triggered alerts get an AI summary, an email (if the user's `emailAlerts` preference
-   is on), an `AlertHistory` row with `emailSent`/`emailSentAt`, and a cooldown.
+4. Triggered alerts get descriptive context (`lib/alerts/context.ts`: position vs the 50- and
+   200-day averages, volume vs the 30-session average, and for the sector ETFs the 21-session
+   return vs SPY), a two-sentence AI summary built on that context, an email (if the user's
+   `emailAlerts` preference is on), an `AlertHistory` row with `emailSent`/`emailSentAt`, and a cooldown.
 5. **One-shot types** (price above/below, 52-week high/low, RSI, SMA cross, earnings
    reminder) deactivate after firing. Editing the trigger re-arms them.
    **Recurring types** (daily % change, volume spike) stay active but notify at most
@@ -110,6 +180,23 @@ npm run dev                             # http://localhost:3000
 
 `npm run build` runs `prisma generate` then `next build`. See `.env.example` for every
 variable and what it does.
+
+### Validation
+
+```bash
+npm run typecheck          # tsc --noEmit
+npx eslint . --ext .ts,.tsx
+npm test                   # catalog, screens, redirects, alert context, insider and analyst rules (no database)
+npm run test:db            # seed, activation, signal idempotency against a local throwaway Postgres (tests/db.*.test.ts)
+npm run build
+npm run smoke              # every template page, redirects, auth gates, against http://localhost:3000
+```
+
+For `test:db`: `createdb freestockalerts_test`, then
+`DATABASE_URL=postgresql://$USER@localhost:5432/freestockalerts_test DIRECT_URL=$DATABASE_URL npx prisma db push`
+(set `TEST_DATABASE_URL` if your local Postgres needs different credentials).
+The `next-dev-testdb` entry in `.claude/launch.json` runs the dev server against that database so
+nothing local touches production data.
 
 > The Vercel development environment uses the **production** database. Local dev
 > reads and writes live user data.
@@ -216,7 +303,6 @@ npm run leads:export -- --purpose lead-share      # CSV of VALID only
 - Users who signed up before Sept 2026 and never clicked their link exist only in
   Supabase Auth (no `User` row). Since then the row is created at submit.
 - "Delete account" removes the Prisma record but not the Supabase Auth user.
-- Template subscriber counts on the dashboard are hardcoded.
 - No rate limiting on `/api/quotes/*` or `/api/ai/summary`.
 
 See `BUILD_SPEC.md` for the original build specification and `LAUNCH-READINESS.md` /
