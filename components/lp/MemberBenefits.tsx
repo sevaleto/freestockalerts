@@ -22,12 +22,12 @@ const BENEFITS = [
   {
     icon: LayoutGrid,
     title: "Every strategy template, one click",
-    body: "Nine ready-made alert sets, from momentum breakouts to sector rotation to a Buffett-style value watchlist. Turn any of them on from your dashboard.",
+    body: "Twelve ready-made alert strategies: screened breakout lists, insider-purchase and analyst-upgrade signals, pullback-and-reclaim alerts, dividend buy zones, sector leadership and market stress. Turn any of them on from your dashboard.",
   },
   {
     icon: Sparkles,
     title: "Plain-English context on every alert",
-    body: "Each email tells you what happened, why the level matters, and what traders typically watch next. Not just a price ping.",
+    body: "Each email tells you what happened, where the stock sits against its moving averages and average volume, and what investors typically watch next. Not just a price ping.",
   },
   {
     icon: Clock3,

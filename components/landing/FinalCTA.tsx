@@ -49,7 +49,7 @@ export function FinalCTA() {
               {[
                 "12 alert types including RSI, SMA, volume, and earnings",
                 "One email per trigger, never a flood",
-                "9 one-click templates, screened from market data",
+                "12 one-click strategies, screened from market data",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2.5">
                   <CheckCircle2 className="h-5 w-5 text-lp-mint" aria-hidden />

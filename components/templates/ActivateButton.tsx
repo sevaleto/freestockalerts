@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { trackSubscribe } from "@/lib/tracking/events";
@@ -9,9 +10,13 @@ import { trackSubscribe } from "@/lib/tracking/events";
 interface ActivateButtonProps {
   slug: string;
   templateName: string;
+  /** Button text when signed in; defaults to "Activate this template". */
+  label?: string;
+  /** Disable activation (e.g. the strategy has no constituents right now). */
+  disabled?: boolean;
 }
 
-export function ActivateButton({ slug, templateName }: ActivateButtonProps) {
+export function ActivateButton({ slug, templateName, label, disabled = false }: ActivateButtonProps) {
   const router = useRouter();
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,22 +62,33 @@ export function ActivateButton({ slug, templateName }: ActivateButtonProps) {
 
   if (activated) {
     return (
-      <div className="flex items-center gap-2 text-sm font-semibold text-lp-green">
-        ✅ {templateName} activated! Taking you to your alerts...
+      <div className="flex items-center gap-2 text-sm font-semibold text-lp-green" role="status">
+        <CheckCircle2 className="h-5 w-5" aria-hidden />
+        {templateName} activated. Taking you to your alerts…
       </div>
     );
   }
+
+  const text = loading
+    ? "Activating…"
+    : signedIn
+      ? `${label ?? "Activate this template"} →`
+      : `${label ?? "Activate this template"} (sign in first) →`;
 
   return (
     <div className="space-y-2">
       <Button
         onClick={handleActivate}
-        disabled={loading || signedIn === null}
-        className="bg-lp-teal hover:bg-lp-teal-dark"
+        disabled={disabled || loading || signedIn === null}
+        className="h-auto min-h-12 w-full whitespace-normal rounded-xl bg-lp-teal px-6 py-3 text-center text-base font-semibold leading-snug hover:bg-lp-teal-dark sm:w-auto"
       >
-        {loading ? "Activating..." : signedIn ? "Activate this template →" : "Sign in to activate →"}
+        {text}
       </Button>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="text-sm text-danger" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

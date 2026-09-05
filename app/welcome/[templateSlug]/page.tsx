@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shared/Logo";
@@ -17,6 +17,8 @@ import {
   AlertLimitError,
   TemplateNotFoundError,
 } from "@/lib/templates/activate";
+import { isLegacyTemplateSlug, resolveTemplateSlug } from "@/lib/templates/redirects";
+import { getStrategy } from "@/lib/templates/catalog";
 
 interface WelcomePageProps {
   params: Promise<{ templateSlug: string }>;
@@ -33,7 +35,11 @@ export const metadata: Metadata = {
  * the user sees their alerts live with zero extra clicks.
  */
 export default async function WelcomePage(props: WelcomePageProps) {
-  const { templateSlug } = await props.params;
+  const { templateSlug: rawSlug } = await props.params;
+  // Links in old emails and ads carry retired slugs; send them to the replacement.
+  if (isLegacyTemplateSlug(rawSlug)) permanentRedirect(`/welcome/${resolveTemplateSlug(rawSlug)}`);
+  const templateSlug = rawSlug;
+  const strategy = getStrategy(templateSlug);
   const user = await getAuthUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/welcome/${templateSlug}`)}`);
 
@@ -84,14 +90,24 @@ export default async function WelcomePage(props: WelcomePageProps) {
                 Delete a few alerts on your dashboard, then come back to this page to activate {templateSlug.replace(/-/g, " ")}.
               </p>
             </>
+          ) : strategy?.kind === "signal" ? (
+            <>
+              <h1 className="mt-4 font-serif text-3xl text-lp-navy md:text-4xl">
+                You&apos;re subscribed to {result?.template.name}
+              </h1>
+              <p className="mt-2 text-base text-lp-navy/75">
+                This strategy has no fixed list. Every trading day after the close we scan for new events that pass every rule, and you get one email per confirmed signal with the facts and the source link.
+              </p>
+              {result?.alreadyActive ? <p className="mt-2 text-xs text-lp-muted">This was already active on your account.</p> : null}
+            </>
           ) : (
             <>
               <h1 className="mt-4 font-serif text-3xl text-lp-navy md:text-4xl">
                 Your {alerts.length} alerts are live
               </h1>
               <p className="mt-2 text-base text-lp-navy/75">
-                {result?.template.iconEmoji} {result?.template.name}. We&apos;ll email you the moment any of these trigger,
-                with a short AI summary of why it matters.
+                {result?.template.name}. We&apos;ll email you the moment any of these trigger,
+                with a short summary of what happened and what investors typically watch next.
               </p>
               {result?.alreadyActive ? (
                 <p className="mt-2 text-xs text-lp-muted">These were already active on your account.</p>
@@ -108,8 +124,20 @@ export default async function WelcomePage(props: WelcomePageProps) {
         ) : null}
 
         <p className="mt-6 text-center text-xs text-lp-muted">
-          Alerts check every 5 minutes during market hours. Each one fires once, then pauses until you re-arm it.
+          {strategy?.kind === "signal"
+            ? "The scan runs once per trading day after the close. Turn the strategy off any time from your dashboard."
+            : "Alerts check every 5 minutes during market hours. Each one fires once, then pauses until you re-arm it."}
+          {strategy ? (
+            <>
+              {" "}
+              <Link href={`/templates/${strategy.slug}`} className="underline underline-offset-2 hover:text-lp-navy">
+                How this strategy works
+              </Link>
+              .
+            </>
+          ) : null}
         </p>
+        <p className="mt-2 text-center text-xs text-lp-muted">Educational information only. Not investment advice.</p>
       </main>
 
       <LpFooter />
