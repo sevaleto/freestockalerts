@@ -7,9 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/shared/Logo";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle2 } from "lucide-react";
+import { sendMagicLink } from "@/lib/auth/magicLink";
+import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
+import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { trackLead } from "@/lib/tracking/events";
+
+const REASON_MESSAGES: Record<string, string> = {
+  otp_expired: "That link has expired or was already used. Request a fresh one below.",
+  bad_code_verifier:
+    "That link was opened in a different browser than the one you signed up in. Request a new link below and open it here, or use the one-time code.",
+  flow_state_not_found:
+    "That link was opened in a different browser than the one you signed up in. Request a new link below and open it here, or use the one-time code.",
+  flow_state_expired: "That link has expired. Request a fresh one below.",
+  access_denied: "Google sign-in was cancelled. Try again.",
+  missing_token: "That link was incomplete. Request a fresh one below.",
+  invalid_type: "That link was incomplete. Request a fresh one below.",
+};
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -34,6 +48,7 @@ function LoginForm() {
   // Show error from URL params (e.g., expired magic link)
   useEffect(() => {
     const urlError = searchParams.get("error");
+    const reason = searchParams.get("reason");
     const errorDesc = searchParams.get("error_description");
     // Also check hash params (Supabase sometimes returns errors in hash)
     const hash = window.location.hash;
@@ -41,10 +56,12 @@ function LoginForm() {
       const params = new URLSearchParams(hash.replace("#", ""));
       const desc = params.get("error_description");
       if (desc) setError(desc.replace(/\+/g, " "));
+    } else if (urlError === "auth_failed" && reason && REASON_MESSAGES[reason]) {
+      setError(REASON_MESSAGES[reason]);
     } else if (errorDesc) {
       setError(errorDesc);
     } else if (urlError === "auth_failed") {
-      setError("Login link expired or was already used. Please request a new one.");
+      setError("That login link expired or was already used. Request a fresh one below.");
     }
   }, [searchParams]);
 
@@ -53,23 +70,14 @@ function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const siteUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${siteUrl}/api/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
+    const result = await sendMagicLink(email, "login");
+    if (!result.ok) {
+      setError(result.message);
     } else {
       trackLead("email", email);
       setSubmitted(true);
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   if (checkingSession) {
@@ -121,6 +129,7 @@ function LoginForm() {
               required
               className="h-12 border-2 text-base"
             />
+            <EmailSuggestion email={email} onAccept={setEmail} />
             <Button
               type="submit"
               disabled={loading}
@@ -131,23 +140,14 @@ function LoginForm() {
           </form>
         </>
       ) : (
-        <div className="py-4 text-center">
-          <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
-          <h2 className="mt-4 text-xl font-bold text-text-primary">Check your inbox!</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            We sent a magic link to <strong>{email}</strong>.<br />
-            Click it to access your dashboard.
-          </p>
-          <p className="mt-6 text-xs text-slate-400">
-            Didn&apos;t get it? Check spam, or{" "}
-            <button
-              onClick={() => { setSubmitted(false); setEmail(""); setError(null); }}
-              className="font-semibold text-primary underline"
-            >
-              try again
-            </button>
-          </p>
-        </div>
+        <CheckInboxCard
+          email={email}
+          source="login"
+          variant="light"
+          purpose="login"
+          onChangeEmail={() => { setSubmitted(false); setError(null); }}
+          onUseSuggestion={(fixed) => { setEmail(fixed); setSubmitted(false); setError(null); }}
+        />
       )}
     </div>
   );

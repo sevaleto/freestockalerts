@@ -20,6 +20,8 @@ model User {
   unsubscribedFromBlasts Boolean   @default(false)
   resendContactId        String?
   signupVariant          String?   // A/B test variant at signup (e.g. "hero_headline:A")
+  signupSource           String?   // which form captured the lead: hero | final-cta | template-preview | login | google
+  lastLinkSentAt         DateTime? // last magic-link email; rate-limits resends to one per 60s
   alerts                 Alert[]
   templateSubs           TemplateSubscription[]
   preferences            UserPreferences?

@@ -6,7 +6,10 @@ import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { sendMagicLink } from "@/lib/auth/magicLink";
+import { trackLead } from "@/lib/tracking/events";
+import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
+import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export function TemplatePreview() {
@@ -21,21 +24,14 @@ export function TemplatePreview() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
+    const result = await sendMagicLink(email, "template-preview");
+    if (!result.ok) {
+      setError(result.message);
     } else {
+      trackLead("email", email);
       setSubmitted(true);
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
@@ -149,13 +145,19 @@ export function TemplatePreview() {
                   >
                     {loading ? "Sending..." : "Get Started Free →"}
                   </Button>
-                  {error && <p className="text-sm text-red-200">{error}</p>}
                 </form>
+                <EmailSuggestion email={email} onAccept={setEmail} variant="dark" />
+                {error && <p className="text-sm text-red-200">{error}</p>}
               </div>
             ) : (
-              <div className="rounded-xl bg-white/10 p-4 text-center font-semibold">
-                ✅ Check your inbox for a magic link!
-              </div>
+              <CheckInboxCard
+                email={email}
+                source="template-preview"
+                variant="dark"
+                purpose="signup"
+                onChangeEmail={() => setSubmitted(false)}
+                onUseSuggestion={(fixed) => { setEmail(fixed); setSubmitted(false); }}
+              />
             )}
           </div>
         </div>

@@ -4,7 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { sendMagicLink } from "@/lib/auth/magicLink";
+import { EmailSuggestion } from "@/components/auth/EmailSuggestion";
+import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { trackLead } from "@/lib/tracking/events";
 
@@ -20,22 +22,14 @@ export function FinalCTA() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
+    const result = await sendMagicLink(email, "final-cta");
+    if (!result.ok) {
+      setError(result.message);
     } else {
       trackLead("email", email);
       setSubmitted(true);
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
@@ -85,6 +79,7 @@ export function FinalCTA() {
                     className="h-13 border-slate-600 bg-slate-700 text-base text-white placeholder:text-slate-400"
                     required
                   />
+                  <EmailSuggestion email={email} onAccept={setEmail} variant="dark" />
                   <Button
                     type="submit"
                     disabled={loading}
@@ -101,13 +96,14 @@ export function FinalCTA() {
                 </p>
               </div>
             ) : (
-              <div className="py-6 text-center">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
-                <p className="mt-3 text-lg font-semibold">Check your inbox!</p>
-                <p className="mt-1 text-sm text-slate-400">
-                  We sent a magic link to <strong className="text-white">{email}</strong>
-                </p>
-              </div>
+              <CheckInboxCard
+                email={email}
+                source="final-cta"
+                variant="dark"
+                purpose="signup"
+                onChangeEmail={() => setSubmitted(false)}
+                onUseSuggestion={(fixed) => { setEmail(fixed); setSubmitted(false); }}
+              />
             )}
           </div>
         </div>

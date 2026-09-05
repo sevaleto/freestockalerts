@@ -1,113 +1,92 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma/client";
-import { addContactToAudience } from "@/lib/email/audience";
-import {
-  sendCAPIEvent,
-  extractFbCookies,
-  generateEventId,
-} from "@/lib/tracking/meta-capi";
+import { cookies } from "next/headers";
+import type { EmailOtpType } from "@supabase/supabase-js";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { completeSignIn, safeNext } from "@/lib/auth/completeSignIn";
 
+export const dynamic = "force-dynamic";
+
+const EMAIL_OTP_TYPES: readonly EmailOtpType[] = [
+  "magiclink",
+  "signup",
+  "email",
+  "recovery",
+  "invite",
+  "email_change",
+];
+
+function fail(origin: string, reason: string, description?: string | null) {
+  const url = new URL("/login", origin);
+  url.searchParams.set("error", "auth_failed");
+  url.searchParams.set("reason", reason.slice(0, 64));
+  if (description) url.searchParams.set("error_description", description.slice(0, 200));
+  return NextResponse.redirect(url.toString());
+}
+
+/**
+ * GET /api/auth/callback
+ *
+ * Two ways in:
+ *   ?token_hash=…&type=magiclink   — links from our own magic-link emails.
+ *       Verified server-side, so it works in ANY browser or device
+ *       (no PKCE code verifier required).
+ *   ?code=…                        — PKCE exchange. Google OAuth lands here,
+ *       and so do any old-style Supabase emails still in flight.
+ */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
+  const next = safeNext(searchParams.get("next"));
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type");
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
 
-  if (code) {
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.delete(name);
-          },
-        },
-      }
-    );
-
-    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      // Upsert User record in Prisma so FK constraints work
-      if (data.user) {
-        try {
-          // Capture A/B variant from cookie
-          const abVariant = cookieStore.get("ab_hero_headline")?.value ?? null;
-          const variantTag = abVariant ? `hero_headline:${abVariant}` : null;
-
-          const user = await prisma.user.upsert({
-            where: { id: data.user.id },
-            create: {
-              id: data.user.id,
-              email: data.user.email ?? "",
-              emailVerified: !!data.user.email_confirmed_at,
-              signupVariant: variantTag,
-            },
-            update: {
-              email: data.user.email ?? "",
-              emailVerified: !!data.user.email_confirmed_at,
-              // Only set variant if not already set (don't overwrite on re-login)
-              ...(variantTag ? { signupVariant: variantTag } : {}),
-            },
-          });
-
-          // Sync to Resend broadcast audience (async, don't block)
-          if (!user.resendContactId && !user.unsubscribedFromBlasts) {
-            addContactToAudience(user.email, user.firstName)
-              .then(async (contactId) => {
-                if (contactId) {
-                  await prisma.user.update({
-                    where: { id: user.id },
-                    data: { resendContactId: contactId },
-                  });
-                }
-              })
-              .catch((err) =>
-                console.error("[Audience] Sync on signup failed:", err)
-              );
-          }
-        } catch (e) {
-          console.error("Failed to upsert user record:", e);
-        }
-      }
-      // Fire CompleteRegistration via CAPI (server-side)
-      const eventId = generateEventId();
-      const cookieHeader = request.headers.get("cookie");
-      const { fbc, fbp } = extractFbCookies(cookieHeader);
-
-      // Fire async — don't block the redirect
-      sendCAPIEvent({
-        eventName: "CompleteRegistration",
-        eventId,
-        eventSourceUrl: `${origin}/api/auth/callback`,
-        userData: {
-          email: data.user?.email || undefined,
-          ip:
-            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-            request.headers.get("x-real-ip") ||
-            "",
-          userAgent: request.headers.get("user-agent") || "",
-          fbc,
-          fbp,
-        },
-        customData: { content_name: "dashboard" },
-      }).catch((err) => console.error("[CAPI] CompleteRegistration error:", err));
-
-      // Pass event_id to dashboard for browser pixel dedup
-      const redirectUrl = new URL(`${origin}${next}`);
-      redirectUrl.searchParams.set("capi_eid", eventId);
-      return NextResponse.redirect(redirectUrl.toString());
-    }
+  // Provider bounced back with an error (e.g. user cancelled Google)
+  const providerError = searchParams.get("error");
+  if (providerError) {
+    console.error("[auth/callback] provider error", {
+      error: providerError,
+      code: searchParams.get("error_code"),
+      description: searchParams.get("error_description"),
+    });
+    return fail(origin, searchParams.get("error_code") ?? providerError, searchParams.get("error_description"));
   }
 
-  // Auth failed — redirect to login with error
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+  const supabase = createServerSupabaseClient();
+  let path: "token_hash" | "code";
+  let result;
+
+  if (tokenHash) {
+    path = "token_hash";
+    if (!EMAIL_OTP_TYPES.includes(type as EmailOtpType)) {
+      return fail(origin, "invalid_type");
+    }
+    result = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as EmailOtpType });
+  } else if (code) {
+    path = "code";
+    result = await supabase.auth.exchangeCodeForSession(code);
+  } else {
+    return fail(origin, "missing_token");
+  }
+
+  if (result.error || !result.data.user) {
+    console.error("[auth/callback] verify failed", {
+      path,
+      code: result.error?.code,
+      status: result.error?.status,
+      message: result.error?.message,
+      ua: request.headers.get("user-agent"),
+    });
+    return fail(origin, result.error?.code ?? "unknown");
+  }
+
+  const eventId = await completeSignIn({
+    user: result.data.user,
+    request,
+    origin,
+    abVariant: cookies().get("ab_hero_headline")?.value ?? null,
+  });
+
+  const redirectUrl = new URL(next, origin);
+  redirectUrl.searchParams.set("capi_eid", eventId);
+  return NextResponse.redirect(redirectUrl.toString());
 }
