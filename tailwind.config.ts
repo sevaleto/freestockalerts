@@ -14,6 +14,17 @@ const config: Config = {
   	},
   	extend: {
   		colors: {
+  			lp: {
+  				bg: '#FBFAF6',
+  				navy: '#071B3C',
+  				teal: '#0F8075',
+  				'teal-dark': '#0B6A61',
+  				green: '#07875F',
+  				blue: '#0868F7',
+  				mint: '#E9F5F1',
+  				border: '#DDE3E8',
+  				muted: '#5B6B7F'
+  			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
   				hover: '#1D4ED8',
@@ -66,6 +77,7 @@ const config: Config = {
   			}
   		},
   		fontFamily: {
+  			serif: ['var(--font-serif)', 'Georgia', 'serif'],
   			sans: [
   				'var(--font-inter)',
   				'Inter',

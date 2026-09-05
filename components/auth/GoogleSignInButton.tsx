@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { trackLead } from "@/lib/tracking/events";
+import { cn } from "@/lib/utils";
 
 interface GoogleSignInButtonProps {
   /** Label text — defaults to "Continue with Google" */
@@ -57,17 +58,15 @@ export function GoogleSignInButton({
       type="button"
       onClick={handleGoogleSignIn}
       disabled={loading}
-      className={`
-        inline-flex h-12 w-full items-center justify-center gap-3 rounded-lg
-        border text-base font-medium transition-colors
-        disabled:opacity-60 disabled:cursor-not-allowed
-        ${
-          dark
-            ? "border-slate-600 bg-slate-700 text-white hover:bg-slate-600"
-            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-        }
-        ${className}
-      `}
+      className={cn(
+        "inline-flex h-12 w-full items-center justify-center gap-3 rounded-lg border text-base font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+        "disabled:cursor-not-allowed disabled:opacity-60",
+        dark
+          ? "border-slate-600 bg-slate-700 text-white hover:bg-slate-600"
+          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
+        className
+      )}
     >
       {/* Google "G" logo */}
       <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>

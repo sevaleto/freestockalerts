@@ -1,29 +1,34 @@
 import Link from "next/link";
+import { Zap } from "lucide-react";
 
 interface LogoProps {
   variant?: "light" | "dark";
   showText?: boolean;
   /** Render as a plain span (no link) — used on ad landing pages with no exits. */
   linked?: boolean;
+  /** "lg" for landing page headers. */
+  size?: "md" | "lg";
+  /** Extra classes on the wrapper. */
+  className?: string;
 }
 
-export function Logo({ variant = "dark", showText = true, linked = true }: LogoProps) {
-  const textColor = variant === "light" ? "text-white" : "text-text-primary";
+/** Brand mark: a solid lightning bolt beside the wordmark. */
+export function Logo({ variant = "dark", showText = true, linked = true, size = "md", className = "" }: LogoProps) {
+  const color = variant === "light" ? "text-white" : "text-lp-navy";
+  const icon = size === "lg" ? "h-9 w-9" : "h-7 w-7";
+  const text = size === "lg" ? "text-[1.75rem]" : "text-xl";
   const inner = (
     <>
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-soft">
-        ⚡
-      </span>
+      <Zap className={`${icon} ${color} shrink-0 fill-current`} strokeWidth={1.5} aria-hidden />
       {showText ? (
-        <span className={`text-lg font-semibold tracking-tight ${textColor}`}>
-          FreeStockAlerts<span className="text-primary">.AI</span>
-        </span>
+        <span className={`${text} font-semibold tracking-tight ${color}`}>FreeStockAlerts.AI</span>
       ) : null}
     </>
   );
-  if (!linked) return <span className="flex items-center gap-2">{inner}</span>;
+  const wrapper = `flex items-center gap-2.5 ${className}`;
+  if (!linked) return <span className={wrapper}>{inner}</span>;
   return (
-    <Link href="/" className="flex items-center gap-2">
+    <Link href="/" className={wrapper} aria-label="FreeStockAlerts.AI home">
       {inner}
     </Link>
   );

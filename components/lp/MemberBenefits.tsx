@@ -49,11 +49,11 @@ const BENEFITS = [
 /** "What else you get" section for ad landing pages. */
 export function MemberBenefits({ templateName, ctaLabel }: MemberBenefitsProps) {
   return (
-    <section className="border-t border-slate-100 bg-surface py-16">
-      <div className="mx-auto w-full max-w-6xl px-6">
+    <section className="border-t border-lp-border/70 bg-lp-bg py-16">
+      <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12">
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Included with your free account</p>
-          <h2 className="mt-3 text-3xl font-bold text-text-primary md:text-4xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Included with your free account</p>
+          <h2 className="mt-3 font-serif text-3xl text-lp-navy md:text-4xl">
             {templateName} is just the start.
           </h2>
           <p className="mt-3 text-base leading-relaxed text-slate-600">
@@ -63,7 +63,7 @@ export function MemberBenefits({ templateName, ctaLabel }: MemberBenefitsProps) 
 
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {BENEFITS.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div key={title} className="rounded-[18px] border border-lp-border bg-white p-6 shadow-sm">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                 <Icon className="h-5 w-5 text-primary" />
               </div>
@@ -76,7 +76,7 @@ export function MemberBenefits({ templateName, ctaLabel }: MemberBenefitsProps) 
         <div className="mt-10 flex flex-col items-center gap-3 text-center">
           <Link
             href="#signup"
-            className="inline-flex h-12 items-center justify-center rounded-md bg-emerald-600 px-8 text-base font-semibold text-white shadow-lg transition-colors hover:bg-emerald-700"
+            className="inline-flex h-12 items-center justify-center rounded-xl bg-lp-teal px-8 text-base font-semibold text-white shadow-sm transition-colors hover:bg-lp-teal-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lp-teal focus-visible:ring-offset-2"
           >
             {ctaLabel}
           </Link>
