@@ -2,7 +2,7 @@ import { Bell, BrainCircuit, Clock, DollarSign } from "lucide-react";
 
 const features = [
   {
-    title: "No alert spam",
+    title: "One alert—not a flood",
     description:
       "Get alerted once when a level breaks, not every time it bounces around it. Daily-move and volume alerts email you at most once a day.",
     icon: Clock,
@@ -10,11 +10,11 @@ const features = [
   {
     title: "12 alert types",
     description:
-      "Price limits, % moves, RSI, SMA crossovers, volume spikes, 52-week highs and lows, earnings reminders. Set the exact trigger you need.",
+      "Price targets, % moves, RSI, SMA crossovers, volume spikes, 52-week highs and lows, earnings reminders. Set the exact trigger you need.",
     icon: Bell,
   },
   {
-    title: "AI that reads the tape",
+    title: "Why it fired—in plain English",
     description:
       "Every triggered alert includes a two-sentence market context summary: volume vs. average, proximity to the 52-week range, upcoming catalysts, in plain English. AI-generated and educational only; always verify before you act.",
     icon: BrainCircuit,
@@ -33,8 +33,8 @@ export function Features() {
       <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12">
         <div className="max-w-2xl space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Features</p>
-          <h2 className="font-serif text-3xl text-lp-navy md:text-4xl">Everything the paid tools charge for. Free.</h2>
-          <p className="text-base leading-relaxed text-lp-navy/75">Plus AI-powered context they don&apos;t offer at any price.</p>
+          <h2 className="font-serif text-3xl text-lp-navy md:text-4xl">The alerts you&apos;d expect from paid tools—free.</h2>
+          <p className="text-base leading-relaxed text-lp-navy/75">With plain-English context included whenever an alert fires.</p>
         </div>
         <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => (

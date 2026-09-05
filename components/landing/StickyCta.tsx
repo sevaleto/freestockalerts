@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 /** Mobile-only bar that appears once the hero signup form has scrolled past. */
-export function StickyCta({ label = "Get my free alerts" }: { label?: string }) {
+export function StickyCta({ label = "Set my first free alert" }: { label?: string }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {

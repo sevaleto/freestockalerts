@@ -36,7 +36,7 @@ const HOME_SAMPLE: SampleAlert = {
     "AAPL broke above $230 on 1.6x average volume and is within 3% of its 52-week high, 18 days before earnings. Traders watch whether breakouts near highs hold into earnings or fade on profit-taking.",
 };
 
-const REASSURANCE = ["Free forever", "No credit card", "Unsubscribe anytime"];
+const REASSURANCE = ["Free forever", "Up to 50 alerts", "No credit card"];
 
 export function Hero() {
   const [email, setEmail] = useState("");
@@ -142,7 +142,7 @@ export function Hero() {
                       className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-lp-teal text-lg font-semibold text-white shadow-sm transition-colors hover:bg-lp-teal-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lp-teal focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       <Mail className="h-5 w-5" aria-hidden />
-                      {loading ? "Sending…" : "Get my first alert"}
+                      {loading ? "Sending…" : "Set my first free alert"}
                     </button>
                     {error && <p id={errorId} role="alert" className="text-sm text-danger">{error}</p>}
                   </form>

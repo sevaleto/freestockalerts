@@ -76,7 +76,7 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
     bullets: [
       "10 momentum alerts on the market's leaders, pre-set and ready",
       "52-week highs, 2x volume spikes, RSI oversold bounces",
-      "AI context with every alert: what happened, what to watch next",
+      "Plain-English context with every alert: what happened, what to watch next",
     ],
     ctaLabel: "Send me the free alerts",
     proofTitle: "Here's exactly what you'll be watching",
@@ -100,7 +100,7 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
       context: "NVDA printed a fresh 52-week high on volume well above its 30-day average. Price is extended above its 50-day average; traders typically watch whether the breakout holds into the close.",
     },
     afterSignupNote: AFTER,
-    ogDescription: "Free momentum alerts with AI context. New highs, volume surges, oversold bounces.",
+    ogDescription: "Free momentum alerts with plain-English context. New highs, volume surges, oversold bounces.",
   },
   radar: {
     slug: "radar",
@@ -112,7 +112,7 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
     subheadline:
       "Get free email alerts when screened mid-cap stocks hit new 52-week highs, plus the price level and a plain-English rationale behind each alert.",
     logicLine:
-      "Big moves start from new highs, and mid-caps get accumulated by funds long before retail hears the name. This list is screened from market data and refreshed quarterly.",
+      "Find mid-caps already showing strength before they become familiar names. This list is screened from market data and refreshed quarterly.",
     bullets: [
       "10 mid-caps ($2–20B) already in uptrends, screened from live data",
       "Alert fires the day one prints a fresh 52-week high",

@@ -516,7 +516,7 @@ export const mockTemplates: AlertTemplate[] = [
     name: "Under-the-Radar Breakouts",
     slug: "under-the-radar-breakouts",
     description:
-      "New 52-week highs on 10 screened mid-cap stocks most investors have never looked at. Big moves start from new highs, and institutions accumulate mid-caps long before retail hears the name.",
+      "New 52-week highs on 10 screened mid-cap stocks most investors have never looked at. Find mid-caps already showing strength before they become familiar names.",
     longDescription:
       "A data-screened list of liquid mid-caps ($2–20B) trading near their highs and above their 50- and 200-day averages. Each alert fires when one prints a fresh 52-week high. Refreshed quarterly.",
     category: "MOMENTUM",

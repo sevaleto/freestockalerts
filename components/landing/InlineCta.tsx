@@ -6,8 +6,8 @@ export function InlineCta() {
     <section className="border-t border-lp-border/70 bg-lp-mint py-12">
       <div className="mx-auto grid w-full max-w-[1440px] gap-6 px-5 sm:px-8 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:px-12">
         <div>
-          <h2 className="font-serif text-2xl text-lp-navy md:text-3xl">Set your first alert in 60 seconds.</h2>
-          <p className="mt-2 text-base text-lp-navy/75">Free forever. No credit card. One email per alert, never a flood.</p>
+          <h2 className="font-serif text-2xl text-lp-navy md:text-3xl">Choose your ticker. Set your trigger.</h2>
+          <p className="mt-2 text-base text-lp-navy/75">Start with one custom alert or activate an entire watchlist from a ready-made template.</p>
         </div>
         <EmailSignupForm source="inline-cta" contentName="home_inline_cta" inline />
       </div>

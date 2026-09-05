@@ -34,12 +34,12 @@ export const metadata: Metadata = {
     template: "%s | FreeStockAlerts.AI",
   },
   description:
-    "Free stock price alerts with AI-powered context. No credit card. Free forever.",
+    "Free stock price alerts with plain-English context. No credit card. Free forever.",
   metadataBase: new URL("https://freestockalerts.ai"),
   openGraph: {
     title: "FreeStockAlerts.AI",
     description:
-      "Real-time stock alerts with AI-powered context. No credit card. Free forever.",
+      "Real-time stock alerts with plain-English context. No credit card. Free forever.",
     url: "https://freestockalerts.ai",
     siteName: "FreeStockAlerts.AI",
     images: ["/og-image.png"],

@@ -8,7 +8,7 @@ export function Testimonials() {
   ];
   const stats = [
     { stat: "12", label: "Alert types", sub: "Price, %, RSI, SMA, volume, and more" },
-    { stat: "9", label: "Ready-made templates", sub: "10 alerts each, one click" },
+    { stat: "9", label: "Ready-made templates", sub: "Full watchlists, one click" },
     { stat: "5 min", label: "Check interval", sub: "During market hours" },
     { stat: "50", label: "Alerts per account", sub: "Not three, then a paywall" },
     { stat: "$0", label: "Forever", sub: "Not a trial. Not freemium." },
