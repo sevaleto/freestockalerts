@@ -61,7 +61,7 @@ export default async function WelcomePage(props: WelcomePageProps) {
   }));
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-lp-bg">
       <Suspense fallback={null}>
         <TrackRegistration />
       </Suspense>
@@ -75,30 +75,30 @@ export default async function WelcomePage(props: WelcomePageProps) {
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 pb-16">
-        <div className="rounded-3xl border-2 border-emerald-200 bg-emerald-50 p-8 text-center">
-          <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
+        <div className="rounded-[20px] border-2 border-lp-teal/30 bg-lp-mint p-8 text-center">
+          <CheckCircle2 className="mx-auto h-12 w-12 text-lp-green" />
           {limitHit ? (
             <>
-              <h1 className="mt-4 text-2xl font-bold text-text-primary">You&apos;re at the {limitHit}-alert limit</h1>
-              <p className="mt-2 text-sm text-slate-600">
+              <h1 className="mt-4 font-serif text-3xl text-lp-navy">You&apos;re at the {limitHit}-alert limit</h1>
+              <p className="mt-2 text-sm text-lp-navy/75">
                 Delete a few alerts on your dashboard, then come back to this page to activate {templateSlug.replace(/-/g, " ")}.
               </p>
             </>
           ) : (
             <>
-              <h1 className="mt-4 text-2xl font-bold text-text-primary md:text-3xl">
+              <h1 className="mt-4 font-serif text-3xl text-lp-navy md:text-4xl">
                 Your {alerts.length} alerts are live
               </h1>
-              <p className="mt-2 text-base text-slate-600">
+              <p className="mt-2 text-base text-lp-navy/75">
                 {result?.template.iconEmoji} {result?.template.name}. We&apos;ll email you the moment any of these trigger,
                 with a short AI summary of why it matters.
               </p>
               {result?.alreadyActive ? (
-                <p className="mt-2 text-xs text-slate-500">These were already active on your account.</p>
+                <p className="mt-2 text-xs text-lp-muted">These were already active on your account.</p>
               ) : null}
             </>
           )}
-          <Button asChild className="mt-6 h-12 bg-emerald-600 px-8 text-base font-semibold hover:bg-emerald-700">
+          <Button asChild className="mt-6 h-12 bg-lp-teal px-8 text-base font-semibold hover:bg-lp-teal-dark">
             <Link href="/dashboard/alerts">Go to my alerts →</Link>
           </Button>
         </div>
@@ -107,7 +107,7 @@ export default async function WelcomePage(props: WelcomePageProps) {
           <AlertProofList items={items} title="What you're watching" className="mt-8" />
         ) : null}
 
-        <p className="mt-6 text-center text-xs text-slate-500">
+        <p className="mt-6 text-center text-xs text-lp-muted">
           Alerts check every 5 minutes during market hours. Each one fires once, then pauses until you re-arm it.
         </p>
       </main>

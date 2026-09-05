@@ -13,7 +13,7 @@ interface EmailSuggestionProps {
 export function EmailSuggestion({ email, onAccept, variant = "light", className = "" }: EmailSuggestionProps) {
   const suggestion = suggestEmail(email);
   if (!suggestion) return null;
-  const text = variant === "dark" ? "text-slate-300" : "text-slate-600";
+  const text = variant === "dark" ? "text-slate-300" : "text-lp-navy/75";
   const link = variant === "dark" ? "text-emerald-300" : "text-primary";
   return (
     <p className={`text-xs ${text} ${className}`}>

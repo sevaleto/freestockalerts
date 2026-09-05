@@ -11,7 +11,7 @@ export default function HistoryLoading() {
       </div>
       <div className="space-y-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-3xl" />
+          <Skeleton key={i} className="h-32 rounded-[20px]" />
         ))}
       </div>
     </div>

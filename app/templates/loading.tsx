@@ -6,7 +6,7 @@ export default function PublicTemplatesLoading() {
       <Skeleton className="h-10 w-56" />
       <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-44 rounded-3xl" />
+          <Skeleton key={i} className="h-44 rounded-[20px]" />
         ))}
       </div>
     </div>

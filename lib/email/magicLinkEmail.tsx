@@ -51,7 +51,7 @@ export function MagicLinkEmail({ link, code, isNewUser, appUrl }: MagicLinkEmail
               href={link}
               style={{
                 display: "inline-block",
-                backgroundColor: "#059669",
+                backgroundColor: "#0F8075",
                 color: "#ffffff",
                 fontSize: "17px",
                 fontWeight: 700,
@@ -76,7 +76,7 @@ export function MagicLinkEmail({ link, code, isNewUser, appUrl }: MagicLinkEmail
           <Text style={{ margin: "24px 0 0", fontSize: "12px", lineHeight: "1.5", color: muted }}>
             Button not working? Copy this link into your browser:
             <br />
-            <Link href={link} style={{ color: "#2563EB", wordBreak: "break-all" }}>{link}</Link>
+            <Link href={link} style={{ color: "#0F8075", wordBreak: "break-all" }}>{link}</Link>
           </Text>
 
           <Text style={{ margin: "20px 0 0", fontSize: "12px", lineHeight: "1.5", color: "#94A3B8" }}>

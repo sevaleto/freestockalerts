@@ -53,7 +53,7 @@ export function AlertTable({ alerts }: AlertTableProps) {
   };
 
   return (
-    <div className="rounded-3xl border border-border bg-white shadow-soft">
+    <div className="rounded-[20px] border border-border bg-white shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>

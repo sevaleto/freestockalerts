@@ -49,7 +49,7 @@ export default async function AlertsPage() {
       </div>
 
       {alerts.length === 0 ? (
-        <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+        <div className="rounded-[20px] border border-border bg-white p-6 text-sm text-text-secondary">
           No alerts yet. Create one to start monitoring prices.
         </div>
       ) : (

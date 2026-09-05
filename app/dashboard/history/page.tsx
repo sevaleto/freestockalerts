@@ -146,7 +146,7 @@ export default function AlertHistoryPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+        <div className="rounded-[20px] border border-border bg-white p-6 text-sm text-text-secondary">
           {history.length === 0
             ? "No alert history yet. Triggered alerts will appear here."
             : "No results match your filters."}

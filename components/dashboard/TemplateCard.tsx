@@ -21,7 +21,7 @@ export function TemplateCard({
   onToggle,
 }: TemplateCardProps) {
   return (
-    <div className="rounded-3xl border border-border bg-white p-6 shadow-soft">
+    <div className="rounded-[20px] border border-border bg-white p-6 shadow-sm">
       <div className="flex items-start justify-between">
         <div className="text-3xl">{iconEmoji}</div>
         <Switch checked={isActive} onCheckedChange={onToggle} />

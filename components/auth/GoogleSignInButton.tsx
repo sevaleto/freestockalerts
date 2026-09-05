@@ -64,7 +64,7 @@ export function GoogleSignInButton({
         "disabled:cursor-not-allowed disabled:opacity-60",
         dark
           ? "border-slate-600 bg-slate-700 text-white hover:bg-slate-600"
-          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
+          : "border-lp-border bg-white text-lp-navy/75 hover:bg-lp-bg",
         className
       )}
     >

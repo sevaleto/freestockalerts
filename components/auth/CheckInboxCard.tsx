@@ -78,17 +78,17 @@ export function CheckInboxCard({
   const dark = variant === "dark";
   const card = dark
     ? "rounded-2xl border border-white/20 bg-white/10 p-6 text-white"
-    : "rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6 text-emerald-900";
-  const muted = dark ? "text-slate-300" : "text-emerald-800/80";
-  const faint = dark ? "text-slate-400" : "text-slate-500";
-  const icon = dark ? "text-emerald-300" : "text-emerald-600";
+    : "rounded-2xl border-2 border-lp-teal/30 bg-lp-mint p-6 text-lp-navy";
+  const muted = dark ? "text-slate-300" : "text-lp-navy/75";
+  const faint = dark ? "text-lp-muted" : "text-lp-muted";
+  const icon = dark ? "text-emerald-300" : "text-lp-green";
   const linkBtn = dark ? "text-white" : "text-primary";
   const outline = dark
     ? "border-white/30 bg-transparent text-white hover:bg-white/10"
-    : "border-emerald-300 bg-white text-emerald-900 hover:bg-emerald-100";
+    : "border-lp-teal/40 bg-white text-lp-navy hover:bg-lp-mint";
   const input = dark
-    ? "border-white/30 bg-white/10 text-white placeholder:text-slate-400"
-    : "border-emerald-300 bg-white";
+    ? "border-white/30 bg-white/10 text-white placeholder:text-lp-muted"
+    : "border-lp-teal/40 bg-white";
 
   return (
     <div className={`${card} ${className}`}>
@@ -129,7 +129,7 @@ export function CheckInboxCard({
               <Button
                 type="submit"
                 disabled={verifying || code.length < 6}
-                className="h-11 bg-emerald-600 px-5 font-semibold hover:bg-emerald-700"
+                className="h-11 bg-lp-teal px-5 font-semibold hover:bg-lp-teal-dark"
               >
                 {verifying ? "Verifying…" : "Verify"}
               </Button>

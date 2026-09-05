@@ -15,8 +15,8 @@ interface LogoProps {
 /** Brand mark: a solid lightning bolt beside the wordmark. */
 export function Logo({ variant = "dark", showText = true, linked = true, size = "md", className = "" }: LogoProps) {
   const color = variant === "light" ? "text-white" : "text-lp-navy";
-  const icon = size === "lg" ? "h-9 w-9" : "h-7 w-7";
-  const text = size === "lg" ? "text-[1.75rem]" : "text-xl";
+  const icon = size === "lg" ? "h-8 w-8 sm:h-9 sm:w-9" : "h-7 w-7";
+  const text = size === "lg" ? "text-[1.35rem] sm:text-[1.75rem]" : "text-xl";
   const inner = (
     <>
       <Zap className={`${icon} ${color} shrink-0 fill-current`} strokeWidth={1.5} aria-hidden />

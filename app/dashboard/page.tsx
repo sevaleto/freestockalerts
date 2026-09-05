@@ -97,7 +97,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
         {recent.length === 0 ? (
-          <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+          <div className="rounded-[20px] border border-border bg-white p-6 text-sm text-text-secondary">
             No alerts have triggered yet. Create your first alert to start tracking moves.
           </div>
         ) : (
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
         {alerts.length === 0 ? (
-          <div className="rounded-3xl border border-border bg-white p-6 text-sm text-text-secondary">
+          <div className="rounded-[20px] border border-border bg-white p-6 text-sm text-text-secondary">
             You haven&apos;t created any alerts yet.
           </div>
         ) : (

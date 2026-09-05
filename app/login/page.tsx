@@ -83,7 +83,7 @@ function LoginForm() {
 
   if (checkingSession) {
     return (
-      <div className="w-full max-w-md rounded-3xl border border-border bg-white p-8 shadow-soft">
+      <div className="w-full max-w-md rounded-[20px] border border-border bg-white p-8 shadow-sm">
         <div className="flex flex-col items-center py-8 space-y-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="text-sm text-text-secondary">Checking your session...</p>
@@ -93,13 +93,13 @@ function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-md rounded-3xl border border-border bg-white p-8 shadow-soft">
+    <div className="w-full max-w-md rounded-[20px] border border-border bg-white p-8 shadow-sm">
       {!submitted ? (
         <>
-          <h1 className="text-2xl font-bold text-text-primary">
-            Welcome to FreeStockAlerts
+          <h1 className="font-serif text-3xl text-lp-navy">
+            Welcome back
           </h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-lp-navy/75">
             No password needed. We&apos;ll email you a secure login link every time.
           </p>
           {error && (
@@ -109,15 +109,15 @@ function LoginForm() {
           )}
           {/* Google OAuth */}
           <div className="mt-6">
-            <GoogleSignInButton label="Sign in with Google" next={next} />
+            <GoogleSignInButton label="Continue with Google" next={next} className="h-14 rounded-xl border-lp-border text-base font-semibold text-lp-navy hover:bg-lp-bg" />
           </div>
 
           <div className="relative mt-5 mb-1">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
+              <div className="w-full border-t border-lp-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-slate-400">or</span>
+              <span className="bg-white px-3 text-lp-muted">or</span>
             </div>
           </div>
 
@@ -128,13 +128,13 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-12 border-2 text-base"
+              className="h-14 rounded-xl border-lp-border bg-white text-base"
             />
             <EmailSuggestion email={email} onAccept={setEmail} />
             <Button
               type="submit"
               disabled={loading}
-              className="h-12 w-full bg-emerald-600 text-base font-semibold hover:bg-emerald-700"
+              className="h-12 w-full bg-lp-teal text-base font-semibold hover:bg-lp-teal-dark"
             >
               {loading ? "Sending..." : "Send Magic Link"}
             </Button>
@@ -157,7 +157,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-surface">
+    <div className="flex min-h-screen flex-col bg-lp-bg">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <Logo />
         <Link href="/" className="text-sm text-text-secondary hover:text-text-primary">
@@ -165,7 +165,7 @@ export default function LoginPage() {
         </Link>
       </header>
       <main className="flex flex-1 items-center justify-center px-6 pb-16">
-        <Suspense fallback={<div className="animate-pulse h-64 w-full max-w-md rounded-3xl bg-primary/10" />}>
+        <Suspense fallback={<div className="animate-pulse h-64 w-full max-w-md rounded-[20px] bg-primary/10" />}>
           <LoginForm />
         </Suspense>
       </main>

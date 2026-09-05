@@ -152,7 +152,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-soft">
+        <div className="rounded-[20px] border border-border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-text-primary">Account</h2>
           <div className="mt-6 space-y-4">
             <div className="space-y-2">
@@ -192,7 +192,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-soft">
+        <div className="rounded-[20px] border border-border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-text-primary">
             Notifications
           </h2>
@@ -292,7 +292,7 @@ export default function SettingsPage() {
         )}
       </div>
 
-      <div className="rounded-3xl border border-border bg-white p-6 shadow-soft">
+      <div className="rounded-[20px] border border-border bg-white p-6 shadow-sm">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h2 className="text-lg font-semibold text-text-primary">
