@@ -22,6 +22,16 @@ interface CheckInboxCardProps {
 
 const RESEND_COOLDOWN = 60;
 
+/** Deep link into the visitor's webmail, searched for our sender, when we recognise the domain. */
+function inboxLink(email: string): { label: string; href: string } | null {
+  const domain = email.split("@")[1]?.toLowerCase() ?? "";
+  if (/^(gmail|googlemail)\.com$/.test(domain)) return { label: "Open Gmail", href: "https://mail.google.com/mail/u/0/#search/FreeStockAlerts" };
+  if (/^(outlook|hotmail|live|msn)\./.test(domain)) return { label: "Open Outlook", href: "https://outlook.live.com/mail/0/" };
+  if (/^(yahoo|ymail|rocketmail)\./.test(domain) || /^aol\.com$/.test(domain)) return { label: domain.startsWith("aol") ? "Open AOL Mail" : "Open Yahoo Mail", href: domain.startsWith("aol") ? "https://mail.aol.com/" : "https://mail.yahoo.com/" };
+  if (/^(icloud|me|mac)\.com$/.test(domain)) return { label: "Open iCloud Mail", href: "https://www.icloud.com/mail/" };
+  return null;
+}
+
 export function CheckInboxCard({
   email,
   source,
@@ -138,8 +148,21 @@ export function CheckInboxCard({
           </form>
 
           <p className={`mt-4 text-xs ${faint}`}>
-            Not there? Check Spam or Promotions. Links and codes expire after 1 hour.
+            It&apos;s from <span className="font-medium">FreeStockAlerts.AI</span> (alerts@freestockalerts.ai). Not at the top? Check Spam or
+            Promotions, or search your inbox for &ldquo;FreeStockAlerts&rdquo;. Links and codes expire after 1 hour.
           </p>
+          {inboxLink(email) ? (
+            <a
+              href={inboxLink(email)!.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`mt-3 inline-flex h-10 items-center justify-center rounded-xl px-4 text-sm font-semibold ${
+                dark ? "bg-white text-lp-navy hover:bg-lp-bg" : "bg-lp-teal text-white hover:bg-lp-teal-dark"
+              }`}
+            >
+              {inboxLink(email)!.label} →
+            </a>
+          ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <Button

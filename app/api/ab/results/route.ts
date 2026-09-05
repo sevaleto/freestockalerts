@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const secret = searchParams.get("secret");
 
   // Simple auth — replace with env var if needed
-  if (secret !== process.env.AB_RESULTS_SECRET && secret !== "fsa2026") {
+  if (!process.env.AB_RESULTS_SECRET || secret !== process.env.AB_RESULTS_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

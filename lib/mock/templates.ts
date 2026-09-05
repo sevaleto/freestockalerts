@@ -486,11 +486,11 @@ export const mockTemplates: AlertTemplate[] = [
         sortOrder: 7,
       },
       {
-        ticker: "DXY",
+        ticker: "UUP",
         alertType: "PRICE_ABOVE",
         triggerDirection: "ABOVE",
-        triggerValue: 110,
-        rationale: "Dollar index above 110 — strong dollar stress",
+        triggerValue: 31,
+        rationale: "Dollar ETF (UUP) above $31 — strong-dollar stress on multinationals and emerging markets",
         sortOrder: 8,
       },
       {

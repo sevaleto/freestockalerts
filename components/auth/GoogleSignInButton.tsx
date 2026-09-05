@@ -1,8 +1,9 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useState } from "react";
-import { trackLead } from "@/lib/tracking/events";
+import { useEffect, useState } from "react";
+import { trackInitiateSignup } from "@/lib/tracking/events";
+import { isInAppBrowser } from "@/lib/auth/inAppBrowser";
 import { cn } from "@/lib/utils";
 
 interface GoogleSignInButtonProps {
@@ -34,10 +35,16 @@ export function GoogleSignInButton({
   contentName,
 }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [hidden, setHidden] = useState(false);
+
+  // Google blocks OAuth inside the Facebook/Instagram webview; don't offer a dead end.
+  useEffect(() => {
+    if (isInAppBrowser()) setHidden(true);
+  }, []);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    trackLead("google", undefined, contentName);
+    trackInitiateSignup(contentName);
     if (next) setShortCookie("fsa_next", next);
     if (source) setShortCookie("fsa_src", source);
     const supabase = createClient();
@@ -52,6 +59,8 @@ export function GoogleSignInButton({
     });
     // Browser redirects — loading stays true
   };
+
+  if (hidden) return null;
 
   return (
     <button

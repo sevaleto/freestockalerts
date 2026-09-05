@@ -11,12 +11,16 @@ import { SampleAlertCard } from "@/components/lp/SampleAlertCard";
 import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
 import { ACTIVE_TESTS, HERO_HEADLINES } from "@/lib/ab/variants";
+import { usePendingTemplate } from "@/lib/landing/pendingTemplate";
+import { X } from "lucide-react";
 import { assignVariant } from "@/lib/ab/assign";
 import type { SampleAlert } from "@/lib/lp/pages";
 
 const HOME_SAMPLE: SampleAlert = {
   ticker: "AAPL",
   companyName: "Apple Inc.",
+  subject: "AAPL broke above $230 — here's what moved it",
+  volumeMultiple: 1.6,
   badge: "Price above $230",
   alertType: "Price Alert",
   priceLabel: "Price",
@@ -41,6 +45,8 @@ export function Hero() {
   const [variant, setVariant] = useState<string>("A");
   const inputId = useId();
   const errorId = useId();
+  const [pending, setPending] = usePendingTemplate();
+  const next = pending ? `/welcome/${pending.slug}` : undefined;
 
   useEffect(() => {
     setVariant(assignVariant(ACTIVE_TESTS.hero_headline));
@@ -51,11 +57,11 @@ export function Hero() {
     if (!email) return;
     setLoading(true);
     setError(null);
-    const result = await sendMagicLink(email, "hero");
+    const result = await sendMagicLink(email, "hero", next);
     if (!result.ok) {
       setError(result.message);
     } else {
-      trackLead("email", email);
+      trackLead("email", email, "home_hero");
       setSubmitted(true);
     }
     setLoading(false);
@@ -76,7 +82,7 @@ export function Hero() {
           </div>
           <Link
             href="/login"
-            className="inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-xl border border-lp-border bg-white px-3.5 text-sm font-semibold text-lp-navy hover:bg-lp-mint sm:px-4"
+            className="shrink-0 whitespace-nowrap text-sm font-medium text-lp-muted underline-offset-4 hover:text-lp-navy hover:underline md:inline-flex md:h-10 md:items-center md:rounded-xl md:border md:border-lp-border md:bg-white md:px-4 md:font-semibold md:text-lp-navy md:no-underline md:hover:bg-lp-mint"
           >
             Log in
           </Link>
@@ -97,6 +103,16 @@ export function Hero() {
             <div className="mt-7">
               {!submitted ? (
                 <div id="signup" className="scroll-mt-24">
+                  {pending ? (
+                    <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-lp-teal/30 bg-lp-mint px-4 py-2.5 text-sm text-lp-navy">
+                      <span>
+                        <span className="font-semibold">Activating:</span> {pending.name}. Where should I send it?
+                      </span>
+                      <button type="button" onClick={() => setPending(null)} className="text-lp-muted hover:text-lp-navy" aria-label="Clear selected template">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : null}
                   <form onSubmit={handleSubmit} className="space-y-3" noValidate>
                     <label htmlFor={inputId} className="sr-only">Email address</label>
                     <div className="relative">
@@ -128,7 +144,10 @@ export function Hero() {
                   </form>
                   <GoogleSignInButton
                     label="Continue with Google"
-                    className="mt-3 h-14 rounded-xl border-lp-border bg-white text-lg font-semibold text-lp-navy hover:bg-lp-bg"
+                    className="mt-3 h-12 rounded-xl border-lp-border bg-white text-base font-medium text-lp-navy hover:bg-lp-bg"
+                    source="hero"
+                    contentName="home_hero"
+                    next={next}
                   />
                   <ul className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[15px] text-lp-navy sm:gap-x-2" aria-label="Reassurance">
                     {REASSURANCE.map((item, i) => (
@@ -144,6 +163,7 @@ export function Hero() {
                 <CheckInboxCard
                   email={email}
                   source="hero"
+                  next={next}
                   variant="light"
                   purpose="signup"
                   onChangeEmail={() => setSubmitted(false)}

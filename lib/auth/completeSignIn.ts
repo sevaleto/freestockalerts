@@ -28,13 +28,15 @@ export async function completeSignIn({ user, request, origin, abVariant, sourceO
         ? "google"
         : "unknown";
 
+  let createdNow = false;
   try {
-    const row = await upsertUserForAuth({
+    const { user: row, created } = await upsertUserForAuth({
       authUser: user,
       abVariant,
       source,
       emailVerified: true,
     });
+    createdNow = created;
     await ensureOnAudience(row);
   } catch (e) {
     console.error("[auth] completeSignIn: failed to upsert user record:", e);
@@ -43,26 +45,53 @@ export async function completeSignIn({ user, request, origin, abVariant, sourceO
   const eventId = generateEventId();
   const cookieHeader = request.headers.get("cookie");
   const { fbc, fbp } = extractFbCookies(cookieHeader);
+  const userData = {
+    email: user.email || undefined,
+    ip:
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "",
+    userAgent: request.headers.get("user-agent") || "",
+    fbc,
+    fbp,
+  };
+
+  // Google signups never fired a browser Lead (the click only sends a custom
+  // InitiateSignup). Fire the real Lead here, server-side, with the verified
+  // email, only when this is a brand-new account.
+  if (provider === "google" && createdNow) {
+    sendCAPIEvent({
+      eventName: "Lead",
+      eventId: generateEventId(),
+      eventSourceUrl: `${origin}/api/auth/callback`,
+      userData,
+      customData: { content_name: leadContentName(source), method: "google" },
+    }).catch((err) => console.error("[CAPI] Lead (google) error:", err));
+  }
 
   // Fire async — never block the redirect on Meta
   sendCAPIEvent({
     eventName: "CompleteRegistration",
     eventId,
     eventSourceUrl: `${origin}/api/auth/callback`,
-    userData: {
-      email: user.email || undefined,
-      ip:
-        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-        request.headers.get("x-real-ip") ||
-        "",
-      userAgent: request.headers.get("user-agent") || "",
-      fbc,
-      fbp,
-    },
+    userData,
     customData: { content_name: "dashboard", method: provider ?? "email" },
   }).catch((err) => console.error("[CAPI] CompleteRegistration error:", err));
 
   return eventId;
+}
+
+/** Meta content_name for a signup source, matching what the browser pixel sends on email submits. */
+export function leadContentName(source: SignupSource): string {
+  if (source.startsWith("lp:")) return `lp_${source.slice(3)}`;
+  const map: Record<string, string> = {
+    hero: "home_hero",
+    "final-cta": "home_final_cta",
+    "inline-cta": "home_inline_cta",
+    "template-preview": "home_templates",
+    login: "login",
+  };
+  return map[source] ?? "signup";
 }
 
 export { safeNext } from "@/lib/auth/safeNext";

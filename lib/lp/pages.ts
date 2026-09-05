@@ -38,6 +38,10 @@ export interface LandingPage {
 export interface SampleAlert {
   ticker: string;
   companyName?: string;
+  /** Email subject line shown in the card's header strip. */
+  subject?: string;
+  /** Volume vs. 30-day average, e.g. 1.6. Drives the bar in the card. */
+  volumeMultiple?: number;
   badge: string;
   alertType: string;
   priceLabel: string;
@@ -81,6 +85,8 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
     disclosure: DISCLOSURE,
     sampleAlert: {
       ticker: "NVDA",
+      subject: "NVDA hit a new 52-week high — here's what moved it",
+      volumeMultiple: 1.6,
       badge: "New 52-week high",
       alertType: "Momentum Breakout",
       priceLabel: "High price",
@@ -119,6 +125,8 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
     disclosure: DISCLOSURE,
     sampleAlert: {
       ticker: "CHYM",
+      subject: "CHYM hit a new 52-week high — here's what moved it",
+      volumeMultiple: 2.4,
       badge: "New 52-week high",
       alertType: "Momentum Breakout",
       priceLabel: "High price",
@@ -158,6 +166,8 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
     disclosure: DISCLOSURE,
     sampleAlert: {
       ticker: "BA",
+      subject: "BA reclaimed its 200-day average — here's what moved it",
+      volumeMultiple: 1.3,
       badge: "Reclaimed 200-day",
       alertType: "Turnaround Signal",
       priceLabel: "Price",
@@ -196,6 +206,8 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
     disclosure: DISCLOSURE,
     sampleAlert: {
       ticker: "AMD",
+      subject: "AMD is oversold (RSI 27) — here's what happened",
+      volumeMultiple: 2.1,
       badge: "RSI oversold",
       alertType: "Oversold Bounce",
       priceLabel: "Price",
@@ -234,6 +246,8 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
     disclosure: DISCLOSURE,
     sampleAlert: {
       ticker: "XLE",
+      subject: "Energy (XLE) crossed above its 50-day — what it means",
+      volumeMultiple: 1.2,
       badge: "Crossed 50-day",
       alertType: "Sector Rotation",
       priceLabel: "Price",
