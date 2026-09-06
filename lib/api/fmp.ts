@@ -480,3 +480,109 @@ export const fetchFmpDailyBars = async (ticker: string, from: string): Promise<F
     .filter((b) => b.date && b.close > 0)
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 };
+
+// ---------------------------------------------------------------------------
+// Alert-context enrichment: news, analyst consensus, price targets, earnings.
+// Fetched once per triggered alert (rare) and cached, so the AI paragraph can
+// say why a stock moved and what is next without inventing anything.
+// ---------------------------------------------------------------------------
+
+export interface FmpNewsItem {
+  title: string;
+  publisher: string;
+  site: string;
+  /** YYYY-MM-DD HH:mm:ss as the provider gives it. */
+  publishedDate: string;
+  snippet: string;
+  url: string;
+}
+
+const stripHtml = (s: string) => s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+/** Latest headlines for one symbol, newest first. Snippets are plain text, capped at 220 chars. */
+export const fetchFmpStockNews = async (ticker: string, limit = 5): Promise<FmpNewsItem[]> => {
+  const t = ticker.trim().toUpperCase();
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`news:${t}:${limit}`, `/news/stock?symbols=${encodeURIComponent(t)}&limit=${limit}`);
+  return (Array.isArray(rows) ? rows : [])
+    .map((r) => ({
+      title: stripHtml(String(r.title ?? "")).slice(0, 200),
+      publisher: String(r.publisher ?? r.site ?? "").slice(0, 80),
+      site: String(r.site ?? "").slice(0, 80),
+      publishedDate: String(r.publishedDate ?? "").slice(0, 19),
+      snippet: stripHtml(String(r.text ?? "")).slice(0, 220),
+      url: typeof r.url === "string" ? r.url : "",
+    }))
+    .filter((n) => n.title);
+};
+
+export interface FmpGradesConsensus {
+  strongBuy: number;
+  buy: number;
+  hold: number;
+  sell: number;
+  strongSell: number;
+  consensus: string;
+}
+
+export const fetchFmpGradesConsensus = async (ticker: string): Promise<FmpGradesConsensus | null> => {
+  const t = ticker.trim().toUpperCase();
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`grades-consensus:${t}`, `/grades-consensus?symbol=${encodeURIComponent(t)}`, AVG_VOLUME_TTL_MS);
+  const r = Array.isArray(rows) ? rows[0] : undefined;
+  if (!r) return null;
+  return {
+    strongBuy: toNumber(r.strongBuy) ?? 0,
+    buy: toNumber(r.buy) ?? 0,
+    hold: toNumber(r.hold) ?? 0,
+    sell: toNumber(r.sell) ?? 0,
+    strongSell: toNumber(r.strongSell) ?? 0,
+    consensus: String(r.consensus ?? ""),
+  };
+};
+
+export interface FmpPriceTargetConsensus {
+  high: number;
+  low: number;
+  consensus: number;
+  median: number;
+}
+
+export const fetchFmpPriceTargetConsensus = async (ticker: string): Promise<FmpPriceTargetConsensus | null> => {
+  const t = ticker.trim().toUpperCase();
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`price-target:${t}`, `/price-target-consensus?symbol=${encodeURIComponent(t)}`, AVG_VOLUME_TTL_MS);
+  const r = Array.isArray(rows) ? rows[0] : undefined;
+  const consensus = toNumber(r?.targetConsensus);
+  if (!r || consensus === undefined || consensus <= 0) return null;
+  return {
+    high: toNumber(r.targetHigh) ?? 0,
+    low: toNumber(r.targetLow) ?? 0,
+    consensus,
+    median: toNumber(r.targetMedian) ?? consensus,
+  };
+};
+
+export interface FmpEarningsSnapshot {
+  next: { date: string; epsEstimated: number | null; revenueEstimated: number | null } | null;
+  last: { date: string; epsActual: number; epsEstimated: number | null; revenueActual: number | null; revenueEstimated: number | null } | null;
+}
+
+/** The next scheduled report and the most recent reported one. */
+export const fetchFmpEarningsSnapshot = async (ticker: string, today = new Date()): Promise<FmpEarningsSnapshot> => {
+  const t = ticker.trim().toUpperCase();
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`earnings-snapshot:${t}`, `/earnings?symbol=${encodeURIComponent(t)}&limit=8`, INDICATOR_CACHE_TTL_MS);
+  const list = (Array.isArray(rows) ? rows : []).filter((r) => typeof r.date === "string");
+  const todayKey = today.toISOString().slice(0, 10);
+  const upcoming = list.filter((r) => String(r.date) >= todayKey && toNumber(r.epsActual) === undefined).sort((a, b) => (String(a.date) < String(b.date) ? -1 : 1))[0];
+  const reported = list.filter((r) => toNumber(r.epsActual) !== undefined).sort((a, b) => (String(a.date) > String(b.date) ? -1 : 1))[0];
+  return {
+    next: upcoming ? { date: String(upcoming.date), epsEstimated: toNumber(upcoming.epsEstimated) ?? null, revenueEstimated: toNumber(upcoming.revenueEstimated) ?? null } : null,
+    last: reported
+      ? {
+          date: String(reported.date),
+          epsActual: toNumber(reported.epsActual)!,
+          epsEstimated: toNumber(reported.epsEstimated) ?? null,
+          revenueActual: toNumber(reported.revenueActual) ?? null,
+          revenueEstimated: toNumber(reported.revenueEstimated) ?? null,
+        }
+      : null,
+  };
+};

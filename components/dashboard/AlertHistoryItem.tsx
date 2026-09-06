@@ -32,7 +32,7 @@ export function AlertHistoryItem({
           <p className="font-semibold text-text-primary">{formatPrice(priceAtTrigger)}</p>
         </div>
       </div>
-      <p className="mt-4 text-sm text-text-secondary">{aiSummary}</p>
+      <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-text-secondary">{aiSummary}</p>
     </div>
   );
 }

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
+import { gatherAlertFacts, writeAlertContext } from "@/lib/ai/alertContext";
+import { describeTrigger } from "@/lib/alerts/describe";
 
 export const dynamic = "force-dynamic";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" });
 
 interface SummaryRequest {
   ticker: string;
@@ -15,40 +14,22 @@ interface SummaryRequest {
   volume?: number;
 }
 
+/** On-demand context for one alert, using the same writer the cron uses for emails. */
 export async function POST(request: Request) {
-  const body: SummaryRequest = await request.json().catch(() => ({} as SummaryRequest));
-
+  const body: SummaryRequest = await request.json().catch(() => ({}) as SummaryRequest);
   if (!body.ticker || !body.currentPrice) {
     return NextResponse.json({ summary: "Alert triggered." }, { status: 200 });
   }
-
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_tokens: 150,
-      temperature: 0.7,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a concise stock alert analyst. Write a 1-2 sentence summary explaining why this price movement matters. Be specific, actionable, and avoid fluff. No disclaimers.",
-        },
-        {
-          role: "user",
-          content: `Stock: ${body.ticker}\nAlert type: ${body.alertType}\nTrigger price: $${body.triggerValue}\nCurrent price: $${body.currentPrice}${body.dayChange !== undefined ? `\nDay change: ${body.dayChange > 0 ? "+" : ""}$${body.dayChange} (${body.dayChangePercent ?? 0}%)` : ""}${body.volume ? `\nVolume: ${body.volume.toLocaleString()}` : ""}\n\nWrite a brief, insightful summary of this alert trigger.`,
-        },
-      ],
+    const facts = await gatherAlertFacts({
+      ticker: body.ticker,
+      triggerText: describeTrigger({ ticker: body.ticker, alertType: body.alertType, triggerValue: body.triggerValue }),
+      quote: { price: body.currentPrice, changePercent: body.dayChangePercent, dayChange: body.dayChange, volume: body.volume },
     });
-
-    const summary =
-      completion.choices[0]?.message?.content?.trim() ??
-      "Alert triggered. Price crossed your target level.";
-
-    return NextResponse.json({ summary });
+    const written = await writeAlertContext(facts);
+    return NextResponse.json({ summary: written.text, paragraphs: written.paragraphs, source: written.source });
   } catch (error) {
     console.error("AI summary error:", error);
-    return NextResponse.json({
-      summary: `${body.ticker} crossed $${body.triggerValue}, now trading at $${body.currentPrice}. Monitor for follow-through.`,
-    });
+    return NextResponse.json({ summary: `${body.ticker} alert triggered at $${body.currentPrice}.` });
   }
 }

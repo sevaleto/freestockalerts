@@ -8,6 +8,7 @@
 import type { PrismaClient, StrategySignal } from "@prisma/client";
 import { fetchFmpDailyBars, fetchFmpGrades, fetchFmpGradesLatest, fetchFmpInsiderPurchases, fetchFmpQuote } from "@/lib/api/fmp";
 import { getStrategy } from "@/lib/templates/catalog";
+import { gatherAlertFacts, writeAlertContext } from "@/lib/ai/alertContext";
 import { ANALYST, ANALYST_SLUG, INSIDER, INSIDER_SLUG } from "./config";
 import { deliverSignal } from "./deliver";
 import { daysAgo, isoDay, type DailyBar, type QuoteSnapshot } from "./market";
@@ -116,6 +117,38 @@ async function createSignalIfNew(db: PrismaClient, draft: SignalDraft, cooldownD
     // Unique violation from a concurrent run: treat as already signaled.
     if ((err as { code?: string }).code === "P2002") return { skipped: "already signaled (concurrent run)" };
     throw err;
+  }
+}
+
+/**
+ * Write the two-paragraph AI context for a freshly created signal and store it
+ * in payload.aiContext. Never throws: a failure leaves the signal without it,
+ * and the email then carries only the deterministic explanation.
+ */
+async function enrichSignal(db: PrismaClient, row: StrategySignal, now: Date, log: (m: string) => void): Promise<StrategySignal> {
+  try {
+    const payload = (row.payload ?? {}) as Record<string, unknown>;
+    const facts = await gatherAlertFacts({
+      ticker: row.symbol,
+      companyName: row.companyName,
+      triggerText: row.explanation,
+      quote: {
+        price: row.price,
+        volume: typeof payload.volume === "number" ? payload.volume : undefined,
+        avgVolume: typeof payload.avgVolume === "number" ? payload.avgVolume : undefined,
+        sma50: typeof payload.sma50 === "number" ? payload.sma50 : undefined,
+        marketCap: typeof payload.marketCap === "number" ? payload.marketCap : undefined,
+      },
+      volumeRatio: typeof payload.volumeRatio === "number" ? payload.volumeRatio : null,
+      strategySlug: row.strategySlug,
+      now,
+    });
+    const written = await writeAlertContext(facts);
+    const aiContext = { text: written.text, paragraphs: written.paragraphs, source: written.source, model: written.model, generatedAt: now.toISOString() };
+    return db.strategySignal.update({ where: { id: row.id }, data: { payload: { ...payload, aiContext } as never } });
+  } catch (err) {
+    log(`ai context failed for ${row.symbol}: ${err instanceof Error ? err.message : err}`);
+    return row;
   }
 }
 
@@ -229,8 +262,9 @@ export async function runInsiderScan(opts: ScanOptions): Promise<ScanSummary> {
       }
       summary.signalsCreated++;
       summary.created.push({ symbol, signalKey: ev.signalKey, score: ev.score, confirmation: ev.confirmation! });
+      const enriched = await enrichSignal(db, res.row, now, log);
       if (deliver) {
-        const d = await deliverSignal(db, { ...res.row, payload: res.row.payload }, strategy?.name ?? "Insider Purchase Confirmation", log);
+        const d = await deliverSignal(db, { ...enriched, payload: enriched.payload }, strategy?.name ?? "Insider Purchase Confirmation", log);
         summary.emailsSent += d.sent;
       }
     }
@@ -342,8 +376,9 @@ export async function runAnalystScan(opts: ScanOptions): Promise<ScanSummary> {
       }
       summary.signalsCreated++;
       summary.created.push({ symbol, signalKey: ev.signalKey, score: ev.score, confirmation: ev.confirmation! });
+      const enriched = await enrichSignal(db, res.row, now, log);
       if (deliver) {
-        const d = await deliverSignal(db, { ...res.row, payload: res.row.payload }, strategy?.name ?? "Analyst Upgrade Clusters", log);
+        const d = await deliverSignal(db, { ...enriched, payload: enriched.payload }, strategy?.name ?? "Analyst Upgrade Clusters", log);
         summary.emailsSent += d.sent;
       }
     }

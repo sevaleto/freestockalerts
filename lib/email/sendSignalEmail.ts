@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { SignalEmail } from "@/lib/email/signalEmail";
-import { maxScoreFor, signalRows, signalSource, signalSubject, type SignalLike } from "@/lib/strategies/present";
+import { maxScoreFor, signalAiContext, signalRows, signalSource, signalSubject, type SignalLike } from "@/lib/strategies/present";
 
 interface SendSignalEmailInput {
   to: string;
@@ -29,6 +29,7 @@ export async function sendSignalEmail({ to, strategyName, signal }: SendSignalEm
       maxScore: maxScoreFor(signal.strategySlug),
       sourceLine: signalSource(signal),
       appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+      contextParagraphs: signalAiContext(signal)?.paragraphs ?? [],
     }),
   });
 }

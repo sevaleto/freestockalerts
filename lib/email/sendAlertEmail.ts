@@ -12,6 +12,8 @@ interface SendAlertEmailInput {
   aiSummary: string;
   /** Factual context lines (moving averages, volume vs average, sector vs SPY). */
   contextLines?: string[];
+  /** AI-written context, one entry per paragraph. */
+  contextParagraphs?: string[];
 }
 
 export async function sendAlertEmail(input: SendAlertEmailInput) {
