@@ -611,3 +611,32 @@ export const fetchFmpLatestStockNews = async (limit = 250, page = 0): Promise<Fm
     }))
     .filter((n) => n.title);
 };
+
+// ---------------------------------------------------------------------------
+// Company profile: enough to tell a stock from an ETF or fund.
+// ---------------------------------------------------------------------------
+
+export interface FmpProfileLite {
+  symbol: string;
+  companyName: string | null;
+  isEtf: boolean;
+  isFund: boolean;
+  isActivelyTrading: boolean;
+  marketCap: number | null;
+}
+
+/** Null when FMP has no profile for the symbol. Cached for an hour. */
+export const fetchFmpProfileLite = async (ticker: string): Promise<FmpProfileLite | null> => {
+  const t = ticker.trim().toUpperCase();
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`profile:${t}`, `/profile?symbol=${encodeURIComponent(t)}`, 60 * 60_000);
+  const r = Array.isArray(rows) ? rows[0] : null;
+  if (!r || typeof r.symbol !== "string") return null;
+  return {
+    symbol: r.symbol,
+    companyName: typeof r.companyName === "string" ? r.companyName : null,
+    isEtf: r.isEtf === true,
+    isFund: r.isFund === true,
+    isActivelyTrading: r.isActivelyTrading !== false,
+    marketCap: toNumber(r.marketCap) ?? null,
+  };
+};
