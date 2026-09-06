@@ -41,6 +41,31 @@ Supabase's own email templates are no longer used. Supabase dashboard requiremen
 Site URL `https://www.freestockalerts.ai`; Redirect URLs include
 `https://www.freestockalerts.ai/api/auth/callback` and `http://localhost:3000/api/auth/callback`.
 
+### Google sign-in
+
+Google OAuth is handled by Supabase Auth (`signInWithOAuth({ provider: "google" })` in
+`components/auth/GoogleSignInButton.tsx`); nothing Google-specific lives in this repo or in
+env vars. The pieces, in case they need to be recreated:
+
+- **Google Cloud project `free-stock-alerts`** (Google Auth Platform). Consent screen
+  ("Branding") is app name `FreeStockAlerts`, audience **External**, publishing status
+  **In production**. Scopes: `openid`, `userinfo.email`, `userinfo.profile` only (all
+  non-sensitive, so no verification review). Do not add a logo without planning for
+  Google's brand verification. An **Internal** audience limits sign-in to one Google
+  Workspace domain, which is exactly the bug this replaced.
+- **OAuth client** `FreeStockAlerts Web (Supabase)`, type Web application. Authorized
+  JavaScript origins: `https://www.freestockalerts.ai`, `https://auth.freestockalerts.ai`.
+  Authorized redirect URIs: `https://auth.freestockalerts.ai/auth/v1/callback` (the Supabase
+  custom auth domain, which is what Supabase actually sends) plus
+  `https://wcskxdgcnkhnxkqqtcif.supabase.co/auth/v1/callback` as a fallback.
+- **Supabase → Authentication → Sign In / Providers → Google**: enabled, Client IDs = the
+  client ID above, Client Secret = the secret Google shows once at creation. "Skip nonce
+  checks" stays off.
+
+If the button ever shows "Google sign-in isn't available right now", Supabase refused to
+start the redirect (provider disabled or bad credentials); the underlying error is logged to
+the browser console.
+
 Resend webhook (`/api/webhooks/resend`) must be subscribed to `email.bounced` and
 `email.complained` so bad addresses are suppressed from broadcasts.
 
