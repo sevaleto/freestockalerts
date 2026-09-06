@@ -278,58 +278,67 @@ that brought them with the click revenue credited to each cohort. Code lives in
 
 ## Daily newsletter drafts (Beehiiv)
 
-Every day at 11:00 UTC (4 AM PDT / 3 AM PST) two crons, `/api/newsletter/build/1` and `/2`, create
-**two drafts** in the FreeStockAlerts.AI Beehiiv publication so the morning job is opening Beehiiv
-and clicking Send. One slot per function invocation: an article with web searches can take four
-minutes and the function limit is 300 seconds. The second slot emails the day's report.
-Code lives in `lib/newsletter/`; the log is the `NewsletterIssue` table, shown at `/admin/issues`.
+Two issues every weekday, created as **drafts** in the FreeStockAlerts.AI Beehiiv publication so the
+job is opening Beehiiv and clicking Send. Code lives in `lib/newsletter/`; the log is the
+`NewsletterIssue` table, shown at `/admin/issues`.
 
-Each draft is one article plus copied ads:
+| Slot | Kind | Cron (UTC) | Eastern window | What it is |
+|---|---|---|---|---|
+| 1 | Morning brief | `30 11` and `30 12`, Mon–Fri | 07:00–09:25 | A numbered "things to watch" list (8–10 items) before the opening bell: futures and macro, pre-market movers, today's earnings and economic calendar, analyst calls. Modeled on the CNBC Investing Club "top 10 things to watch". |
+| 2 | Closing recap | `35 20` and `35 21`, Mon–Fri | 16:05–23:30 | A 350–700 word recap of the session: index closes, what drove it, sectors, large-cap movers, yields, what is on deck. Entertaining, easy to read, every paragraph has a number. |
 
-- **Topic.** `topics.ts` pulls the latest stock-tagged headlines from FMP (`/news/stock-latest`),
-  groups them by ticker inside a 30-hour window (72 on Mondays), drops press-release wires and
-  law-firm solicitations, removes tickers covered in the last 14 days, and asks Claude
-  (`claude-sonnet-5`) to pick one event per slot. The answer is re-checked in code (`checkPicks`)
-  and the model gets one retry. Events from the last 60 days are shown to it as "already covered".
-- **Article.** `article.ts` has Claude write a 350–500 word recap of what major outlets reported,
-  with the `web_search` server tool so it reads the coverage, in a delimited text format
-  (`HEADLINE:`, `SUBJECT:`, `SOURCE:` lines, `BODY:`). `validateArticle` enforces length,
-  paragraphs of at most three sentences, two named sources, no markdown, and the compliance list
-  (no "guaranteed", "risk-free", "secret", buy/sell advice, price predictions). One retry with the
-  reason; a second failure still creates the draft, titled `[REVIEW] …` with an editor note on
-  top, and the row is `needs_review`. Only a hard model failure leaves a slot `failed`.
-- **Ads.** `tsiAds.ts` reads yesterday's two Smart Investor issues from the Beehiiv API
+Each cron path (`/api/newsletter/build/1`, `/2`) fires twice so one run lands inside the Eastern
+window in both summer and winter time; the other run is a no-op. Weekends and NYSE holidays (FMP
+`holidays-by-exchange`) build nothing. Each slot runs in its own function invocation (the limit is
+300 seconds; an issue with web searches takes one to four minutes).
+
+- **Facts** (`facts.ts`): FMP economic calendar (US, medium/high impact), today's earnings ($2B+
+  names via batch quotes), analyst grade news from the last day ($2B+), treasury yields with the
+  change versus the prior day, and the stocks in the news (headlines grouped by ticker, classed
+  `news` / `release` / `opinion`; opinion-only tickers dropped; ETFs and unknown symbols filtered).
+  The closing recap adds index proxies (SPY, QQQ, DIA, IWM), sector performance, and biggest
+  gainers, losers and most actives filtered to $2B+. Any feed that fails is named in the prompt.
+- **Writer** (`article.ts`): Claude (`claude-sonnet-5`) with the `web_search` server tool writes
+  from the facts in a delimited format (`HEADLINE:`, `SUBJECT:`, `SOURCE:` lines, `BODY:`). The
+  morning validator checks 8–10 sequential numbered items of 20–120 words; the closing validator
+  checks length, paragraphs of at most four sentences and that the indexes are named. Both check
+  three named sources (dated URLs must be from the last two days), no markdown, and the compliance
+  list (no "guaranteed", "risk-free", "secret", buy/sell advice, price predictions). One retry with
+  the reason; a second failure still creates the draft, titled `[REVIEW] …` with an editor note.
+- **Ads** (`tsiAds.ts`): yesterday's two Smart Investor issues are read from the Beehiiv API
   (`expand[]=free_email_content`), matched by the date in their titles
-  (`09/05/2026 - #1 - Advertiser (Creative)`; dedicated sends are ignored), and extracts the two
-  sponsor tables (`border:1px solid #E5E0D5; background-color:#FAF8F3`) as-is, minus `<style>`
-  tags and classes. Draft 1 gets issue #1's ads, draft 2 gets issue #2's. A missing issue or ad
-  becomes a red placeholder line in the draft and a warning in the report; ads are never borrowed
-  from the other slot. Our own `/admin/ads` snippets are skipped.
-- **Draft.** `render.ts` builds native Beehiiv blocks (editable in the editor) for the article and
-  `html` blocks for the ads: intro → ad 1 → headline → paragraphs → sources → ad 2 → disclaimer.
-  `status: "draft"`, subject line and preview text set, tags `[TICKER, daily-brief]`.
-  `renderMode: "html"` (`--html` in the script) sends one `body_content` document instead.
-- **Report.** `report.ts` emails the run summary (drafts, Beehiiv links, ads found, review reasons,
-  cost) to `NEWSLETTER_REPORT_TO`. Subject starts with `ACTION NEEDED` when a slot is flagged.
+  (`09/05/2026 - #1 - Advertiser (Creative)`; dedicated sends ignored), and the two sponsor tables
+  (`border:1px solid #E5E0D5; background-color:#FAF8F3`) are copied as-is minus `<style>` and
+  classes. The morning brief gets issue #1's ads, the closing recap issue #2's. A missing ad becomes
+  a red placeholder line and a warning; ads are never borrowed from the other slot.
+- **Draft** (`render.ts`): native Beehiiv blocks (editable) for the text, `html` blocks for the
+  ads: intro → ad 1 → headline → items or paragraphs → sources → ad 2 → disclaimer. Numbered items
+  get a bold number. `status: "draft"`, subject line and preview text set, tag `morning-brief` or
+  `closing-recap`.
+- **Report** (`report.ts`): each run that builds something emails a report (drafts, Beehiiv links,
+  ads found, review reasons, cost) to `NEWSLETTER_REPORT_TO`; the subject leads with the issue that
+  just built and starts with `ACTION NEEDED` when it is flagged.
 
 Operations:
 
 ```bash
 set -a; source .env.local; set +a
-npm run newsletter:build -- --spike          # inspect yesterday's Smart Investor HTML + create one throwaway draft
-npm run newsletter:build -- --dry            # full pipeline, no Beehiiv write and no NewsletterIssue rows; previews in .newsletter-out/<date>/
-npm run newsletter:build -- --live --force   # create today's drafts from a laptop
-curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build?dry=1"
+npm run newsletter:build -- --spike            # inspect yesterday's Smart Investor HTML + create one throwaway draft
+npm run newsletter:build -- --dry --slot 1     # full morning pipeline, no Beehiiv write and no rows; preview in .newsletter-out/<date>/
+npm run newsletter:build -- --live --force --slot 2
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build/1?dry=1&force=1"
 curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build/2?force=1"
 ```
 
-A slot that already has a draft is skipped unless `force=1` (the old draft stays in Beehiiv). A slot
-another run is writing (pending, touched in the last six minutes) is left alone; a pending row older
-than ten minutes shows as Stalled and Rebuild picks it up. When the writer finds the story is old news
-(`STALE:` reply, or an event/source date past the allowance) the slot picks another topic once. `/admin/issues` has Rebuild per row, Build today, and a pause toggle
-(`AppSetting.newsletterBuildPaused`). Needs `BEEHIIV_API_KEY` with posts read + write (Create Post
-is a Max/Enterprise feature), `ANTHROPIC_API_KEY` and `FMP_API_KEY`; the route returns 503
-otherwise. Typical cost is a few cents per draft (`costUsd` on each row).
+A slot that already has a draft is skipped unless `force=1` (the old draft stays in Beehiiv); force
+also ignores the time window and the holiday check. A slot another run is writing (pending, touched
+in the last six minutes) is left alone; a pending row older than ten minutes shows as Stalled and
+Rebuild picks it up. `/admin/issues` has Build morning brief / Build closing recap (both force),
+Rebuild per row, and a pause toggle (`AppSetting.newsletterBuildPaused`). Admin builds answer at once
+and start one invocation per slot over HTTP against the public origin. Needs `BEEHIIV_API_KEY` with
+posts read + write (Create Post is a Max/Enterprise feature), `ANTHROPIC_API_KEY` and `FMP_API_KEY`;
+the route returns 503 otherwise. An issue costs roughly $0.30–0.80 in model and search fees
+(`costUsd` on each row).
 
 ## How the alert loop works
 

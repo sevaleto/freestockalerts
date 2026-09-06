@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma/client";
 import { requireAdminPage } from "@/lib/auth/admin";
 import { getSetting } from "@/lib/settings";
-import { NEWSLETTER_PAUSED_KEY } from "@/lib/newsletter/config";
+import { KIND_LABEL, NEWSLETTER_PAUSED_KEY, SLOT_KIND, type Slot } from "@/lib/newsletter/config";
 import { pacificDateKey, toMMDDYYYY } from "@/lib/newsletter/dates";
 import { IssueRowActions, IssuesToolbar } from "@/components/admin/IssueRowActions";
 
@@ -43,7 +43,7 @@ export default async function AdminIssuesPage({ searchParams }: { searchParams: 
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Daily issues</p>
           <h1 className="mt-2 font-serif text-4xl text-lp-navy">Newsletter drafts</h1>
           <p className="mt-3 max-w-2xl text-base text-lp-navy/75">
-            Every day at 4 AM Pacific the app writes two articles about stocks in the news, copies the ads that ran in yesterday&apos;s Smart Investor issues, and creates two drafts in Beehiiv. Nothing is sent until you click Send there.
+            Every weekday the app drafts a pre-market brief around 7:30 AM ET and a closing recap around 4:35 PM ET, copies the ads that ran in yesterday&apos;s Smart Investor issues, and creates the drafts in Beehiiv. Nothing is sent until you click Send there.
           </p>
         </div>
         <IssuesToolbar today={today} paused={paused === "1"} />
@@ -77,7 +77,7 @@ export default async function AdminIssuesPage({ searchParams }: { searchParams: 
       </nav>
 
       {rows.length === 0 ? (
-        <p className="mt-8 rounded-[20px] border border-dashed border-lp-border bg-white p-10 text-center text-sm text-lp-muted">No issues yet. Use &ldquo;Build today&rdquo; or wait for the 4 AM run.</p>
+        <p className="mt-8 rounded-[20px] border border-dashed border-lp-border bg-white p-10 text-center text-sm text-lp-muted">No issues yet. Use the build buttons or wait for the next cron.</p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-[20px] border border-lp-border bg-white shadow-sm">
           <table className="w-full min-w-[1100px] text-left text-sm">
@@ -85,7 +85,7 @@ export default async function AdminIssuesPage({ searchParams }: { searchParams: 
               <tr>
                 <th className="px-5 py-3 font-semibold">Issue</th>
                 <th className="px-3 py-3 font-semibold">Status</th>
-                <th className="px-3 py-3 font-semibold">Article</th>
+                <th className="px-3 py-3 font-semibold">Headline</th>
                 <th className="px-3 py-3 font-semibold">Ads from</th>
                 <th className="px-3 py-3 text-right font-semibold">Ads</th>
                 <th className="px-3 py-3 text-right font-semibold">Cost</th>
@@ -97,7 +97,7 @@ export default async function AdminIssuesPage({ searchParams }: { searchParams: 
                 <tr key={r.id} className="align-top">
                   <td className="whitespace-nowrap px-5 py-4 text-lp-navy">
                     <span className="font-semibold">{toMMDDYYYY(r.issueDate)}</span>
-                    <span className="text-lp-muted"> · #{r.slot}</span>
+                    <span className="text-lp-muted"> · {KIND_LABEL[SLOT_KIND[r.slot as Slot]] ?? `#${r.slot}`}</span>
                     {r.forced ? <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">rebuilt</span> : null}
                   </td>
                   <td className="px-3 py-4">
@@ -108,10 +108,7 @@ export default async function AdminIssuesPage({ searchParams }: { searchParams: 
                     )}
                   </td>
                   <td className="max-w-[420px] px-3 py-4">
-                    <p className="font-semibold text-lp-navy">
-                      {r.ticker ? <span className="text-lp-teal">{r.ticker} </span> : null}
-                      {r.headline ?? <span className="text-lp-muted">{r.error ? "no article" : "…"}</span>}
-                    </p>
+                    <p className="font-semibold text-lp-navy">{r.headline ?? <span className="text-lp-muted">{r.error ? "no issue" : "…"}</span>}</p>
                     {r.eventSummary ? <p className="mt-0.5 text-xs text-lp-muted">{r.eventSummary}</p> : null}
                     {r.reviewReason ? <p className="mt-1 text-xs text-amber-700">Review: {r.reviewReason}</p> : null}
                     {r.error ? <p className="mt-1 text-xs text-red-700">{r.error}</p> : null}

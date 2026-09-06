@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import { Resend } from "resend";
 import { NewsletterRunEmail } from "@/lib/email/newsletterRunEmail";
 import type { BuildResult, SlotResult } from "./build";
-import { reportRecipients, type Slot } from "./config";
+import { KIND_LABEL, reportRecipients, SLOT_KIND, type Slot } from "./config";
 import { shiftDateKey, toMMDDYYYY, type DateKey } from "./dates";
 import { IN_PROGRESS_MS } from "./build";
 
@@ -13,9 +13,8 @@ export async function dayResult(db: PrismaClient, dateKey: DateKey, extra: { war
   const rows = await db.newsletterIssue.findMany({ where: { issueDate: dateKey }, orderBy: { slot: "asc" } });
   const slots: SlotResult[] = rows.map((r) => ({
     slot: r.slot as Slot,
+    kind: SLOT_KIND[r.slot as Slot],
     status: r.status === "pending" && now.getTime() - r.updatedAt.getTime() > IN_PROGRESS_MS ? "failed" : (r.status as SlotResult["status"]),
-    ticker: r.ticker ?? undefined,
-    companyName: r.companyName ?? undefined,
     headline: r.headline ?? undefined,
     subjectLine: r.subjectLine ?? undefined,
     beehiivPostId: r.beehiivPostId ?? undefined,
@@ -30,21 +29,28 @@ export async function dayResult(db: PrismaClient, dateKey: DateKey, extra: { war
   return { dateKey, tsiDateKey: shiftDateKey(dateKey, -1), paused: false, slots, warnings: extra.warnings ?? [], totalCostUsd: Math.round(slots.reduce((n, s) => n + s.costUsd, 0) * 1e6) / 1e6, ms: extra.ms ?? 0 };
 }
 
-export async function sendDayReport(db: PrismaClient, dateKey: DateKey, extra: { warnings?: string[]; ms?: number } = {}) {
-  return sendRunReport(await dayResult(db, dateKey, extra));
+export async function sendDayReport(db: PrismaClient, dateKey: DateKey, extra: { warnings?: string[]; ms?: number; focus?: Slot } = {}) {
+  return sendRunReport(await dayResult(db, dateKey, extra), { focus: extra.focus });
 }
 
-export function reportSubject(result: BuildResult): string {
-  if (result.paused) return `FSA drafts ${toMMDDYYYY(result.dateKey)}: builds are paused`;
+export function reportSubject(result: BuildResult, focus?: Slot): string {
+  const day = toMMDDYYYY(result.dateKey);
+  if (result.paused) return `FSA drafts ${day}: builds are paused`;
+  const focused = focus ? result.slots.find((s) => s.slot === focus) : undefined;
+  if (focused) {
+    const label = KIND_LABEL[focused.kind];
+    if (focused.status === "drafted") return `FSA ${label.toLowerCase()} ${day} ready: ${focused.headline ?? ""}`.trim();
+    if (focused.status === "needs_review") return `ACTION NEEDED: FSA ${label.toLowerCase()} ${day} needs review`;
+    if (focused.status === "failed") return `ACTION NEEDED: FSA ${label.toLowerCase()} ${day} failed`;
+  }
   const ready = result.slots.filter((s) => s.status === "drafted");
   const flagged = result.slots.filter((s) => s.status === "needs_review" || s.status === "failed");
-  const tickers = result.slots.map((s) => s.ticker).filter(Boolean).join(", ");
-  if (flagged.length) return `ACTION NEEDED: FSA drafts ${toMMDDYYYY(result.dateKey)} — ${flagged.length} flagged${tickers ? ` (${tickers})` : ""}`;
-  if (!ready.length && result.slots.every((s) => s.skipped)) return `FSA drafts ${toMMDDYYYY(result.dateKey)}: already built`;
-  return `FSA drafts ${toMMDDYYYY(result.dateKey)}: ${tickers} — ${ready.length} ready`;
+  if (flagged.length) return `ACTION NEEDED: FSA drafts ${day} — ${flagged.length} flagged`;
+  if (!ready.length && result.slots.every((s) => s.skipped)) return `FSA drafts ${day}: nothing new`;
+  return `FSA drafts ${day}: ${ready.length} ready`;
 }
 
-export async function sendRunReport(result: BuildResult, opts: { to?: string[]; appUrl?: string } = {}): Promise<{ sent: boolean; id?: string; error?: string }> {
+export async function sendRunReport(result: BuildResult, opts: { to?: string[]; appUrl?: string; focus?: Slot } = {}): Promise<{ sent: boolean; id?: string; error?: string }> {
   if (!process.env.RESEND_API_KEY) return { sent: false, error: "RESEND_API_KEY not set" };
   const to = opts.to ?? reportRecipients();
   if (!to.length) return { sent: false, error: "no recipients" };
@@ -52,7 +58,7 @@ export async function sendRunReport(result: BuildResult, opts: { to?: string[]; 
   const from = process.env.RESEND_FROM ?? (process.env.NODE_ENV === "production" ? "FreeStockAlerts <alerts@freestockalerts.ai>" : "FreeStockAlerts <onboarding@resend.dev>");
   const appUrl = opts.appUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://www.freestockalerts.ai";
   try {
-    const res = await resend.emails.send({ from, to, subject: reportSubject(result), react: NewsletterRunEmail({ result, adminUrl: `${appUrl}/admin/issues` }) });
+    const res = await resend.emails.send({ from, to, subject: reportSubject(result, opts.focus), react: NewsletterRunEmail({ result, adminUrl: `${appUrl}/admin/issues` }) });
     if (res.error) return { sent: false, error: res.error.message };
     return { sent: true, id: res.data?.id };
   } catch (err) {

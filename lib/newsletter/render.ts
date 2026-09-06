@@ -7,16 +7,16 @@
 import type { BeehiivBlock, CreatePostBody } from "@/lib/beehiiv/client";
 import { escapeHtml } from "@/lib/ads/template";
 import type { Article } from "./article";
-import type { DateKey } from "./dates";
-import { toMMDDYYYY } from "./dates";
+import type { IssueKind, Slot } from "./config";
+import { longDate, toMMDDYYYY, type DateKey } from "./dates";
 
 export type RenderMode = "blocks" | "html";
 
 export interface RenderInput {
   dateKey: DateKey;
-  slot: 1 | 2;
+  slot: Slot;
+  kind: IssueKind;
   article: Article;
-  ticker: string;
   /** Set when the compliance check failed twice; the draft carries an editor note. */
   reviewReason: string | null;
   ads: {
@@ -29,15 +29,15 @@ export interface RenderInput {
   renderMode?: RenderMode;
 }
 
-const INTRO: Record<1 | 2, string> = {
-  1: "Good morning. Here is the stock story the major outlets were covering, in plain English.",
-  2: "One more from the day's headlines: what the major outlets reported, summarized for you.",
+const INTRO: Record<IssueKind, (dateKey: DateKey) => string> = {
+  morning: (d) => `Good morning. Here is what to watch before the bell on ${longDate(d)}.`,
+  closing: (d) => `The closing bell has rung on ${longDate(d)}. Here is what happened, and why.`,
 };
 
 export const FOOTER_DISCLAIMER =
-  "FreeStockAlerts.AI is for informational and educational purposes only and is not investment, financial, or legal advice. This article summarizes third-party reporting; we do not recommend buying or selling any security. Investing involves risk, including the possible loss of principal. Past performance does not guarantee future results. Sponsored messages are paid placements from third parties; we do not endorse and are not responsible for their content.";
+  "FreeStockAlerts.AI is for informational and educational purposes only and is not investment, financial, or legal advice. This issue summarizes market data and third-party reporting; we do not recommend buying or selling any security. Investing involves risk, including the possible loss of principal. Past performance does not guarantee future results. Sponsored messages are paid placements from third parties; we do not endorse and are not responsible for their content.";
 
-export const editorNote = (reason: string) => `EDITOR NOTE (delete before sending): the automated compliance check flagged this article: ${reason}. Review the text before sending.`;
+export const editorNote = (reason: string) => `EDITOR NOTE (delete before sending): the automated check flagged this issue: ${reason}. Review the text before sending.`;
 
 export const adPlaceholderText = (position: 1 | 2, tsiDateKey: DateKey) =>
   `[AD SLOT ${position}: no Smart Investor ad found for ${toMMDDYYYY(tsiDateKey)}. Paste one here or delete this line.]`;
@@ -55,11 +55,15 @@ export function buildBlocks(input: RenderInput): BeehiivBlock[] {
   const { article, ads } = input;
   const blocks: BeehiivBlock[] = [];
   if (input.reviewReason) blocks.push({ type: "paragraph", formattedText: [{ text: editorNote(input.reviewReason), styling: ["bold"], text_color: "#B91C1C" }] });
-  blocks.push({ type: "paragraph", plaintext: INTRO[input.slot] });
+  blocks.push({ type: "paragraph", plaintext: INTRO[input.kind](input.dateKey) });
   blocks.push(ads.first ? { type: "html", html: ads.first } : { type: "paragraph", formattedText: [{ text: adPlaceholderText(1, ads.tsiDateKey), styling: ["italic"], text_color: "#B91C1C" }] });
   blocks.push({ type: "heading", level: 1, text: article.headline, anchorHeader: false, anchorIncludeInToc: false });
   if (article.subtitle) blocks.push({ type: "paragraph", formattedText: [{ text: article.subtitle, styling: ["italic"] }] });
-  for (const p of article.paragraphs) blocks.push({ type: "paragraph", plaintext: p });
+  for (const p of article.paragraphs) {
+    const m = /^(\d{1,2}[.)])\s+(.+)$/.exec(p);
+    // Numbered items (the morning brief) get a bold number so the list scans.
+    blocks.push(m ? { type: "paragraph", formattedText: [{ text: `${m[1]} `, styling: ["bold"] }, { text: m[2] }] } : { type: "paragraph", plaintext: p });
+  }
   if (article.sources.length) blocks.push({ type: "html", html: sourcesHtml(article.sources) });
   blocks.push(ads.second ? { type: "html", html: ads.second } : { type: "paragraph", formattedText: [{ text: adPlaceholderText(2, ads.tsiDateKey), styling: ["italic"], text_color: "#B91C1C" }] });
   blocks.push({ type: "paragraph", formattedText: [{ text: FOOTER_DISCLAIMER, text_color: "#5B6B7F" }] });
@@ -112,6 +116,6 @@ export function buildCreatePostBody(input: RenderInput): CreatePostBody {
       email_preview_text: input.article.previewText || input.article.subtitle || undefined,
       display_subtitle_in_email: false,
     },
-    content_tags: [input.ticker, "daily-brief"],
+    content_tags: [input.kind === "morning" ? "morning-brief" : "closing-recap"],
   };
 }

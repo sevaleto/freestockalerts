@@ -31,13 +31,14 @@ export async function handleBuildRequest(request: Request, slotFromPath?: string
   if (dateParam && !isDateKey(dateParam)) return NextResponse.json({ error: "date must be YYYY-MM-DD" }, { status: 400 });
   const slot = parseSlot(slotFromPath ?? url.searchParams.get("slot"));
   if (slot === "invalid") return NextResponse.json({ error: "slot must be 1 or 2" }, { status: 400 });
-  const lastSlot = NEWSLETTER.slots[NEWSLETTER.slots.length - 1];
   const reportParam = url.searchParams.get("report");
-  const report = !dry && (reportParam ? reportParam === "1" : slot === null || slot === lastSlot);
+  const report = !dry && (reportParam ? reportParam === "1" : true);
   const dateKey = dateParam ?? pacificDateKey(new Date());
   try {
     const result = await buildDailyIssues({ dateKey, slots: slot ? [slot] : undefined, force }, { db: prisma, dry, log: (m) => console.log(`[newsletter${slot ? `:${slot}` : ""}] ${m}`) });
-    const sent = report ? await sendDayReport(prisma, dateKey, { warnings: result.warnings, ms: result.ms }) : { sent: false, error: "no report for this run" };
+    // Report only when something was built this run; a cron firing outside its window stays silent.
+    const built = result.slots.some((s) => !s.skipped);
+    const sent = report && built ? await sendDayReport(prisma, dateKey, { warnings: result.warnings, ms: result.ms, focus: slot ?? undefined }) : { sent: false, error: built ? "report disabled" : "nothing built this run" };
     return NextResponse.json({ ok: true, report: sent, ...result, slots: result.slots.map((s) => (dry ? s : { ...s, body: undefined })) });
   } catch (err) {
     console.error("[newsletter] build failed:", err);
@@ -68,7 +69,6 @@ export async function triggerSlotBuilds(opts: { dateKey?: string; slots: readonl
   const target = selfTarget();
   const headers: Record<string, string> = { ...target.headers };
   if (process.env.CRON_SECRET) headers.Authorization = `Bearer ${process.env.CRON_SECRET}`;
-  const last = opts.slots[opts.slots.length - 1];
   return Promise.all(
     opts.slots.map(async (slot, i) => {
       // Stagger so the second slot sees the first slot's pending row when it picks its topic.
@@ -76,7 +76,7 @@ export async function triggerSlotBuilds(opts: { dateKey?: string; slots: readonl
       const u = new URL(`${target.origin}/api/newsletter/build/${slot}`);
       if (opts.dateKey) u.searchParams.set("date", opts.dateKey);
       if (opts.force) u.searchParams.set("force", "1");
-      u.searchParams.set("report", slot === last ? "1" : "0");
+      u.searchParams.set("report", "1");
       try {
         const res = await fetch(u, { headers, cache: "no-store", redirect: "manual" });
         // 3xx here means Vercel's SSO wall, i.e. the wrong origin; the build did not start.

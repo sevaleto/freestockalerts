@@ -1,87 +1,76 @@
-/** Topic candidates, pick checks, writer output parsing and the compliance validator. Pure. */
+/** News grouping, the two issue prompts, writer output parsing and the validators. Pure. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkPicks, dropNonStocks, extractJson, groupCandidates, normalizeSlots, oldestEventDate, PickSchema, publisherKind, renderPickerPrompt, type Candidate, type PickInput, type TopicPick } from "../lib/newsletter/topics";
-import { parseStale, parseWriterOutput, renderWriterPrompt, sentenceCount, stalenessReason, urlDate, validateArticle, writeArticle, type Article } from "../lib/newsletter/article";
-import { dateKeyWeekday, isDateKey, pacificDateKey, shiftDateKey, toMMDDYYYY, yesterdayPacific } from "../lib/newsletter/dates";
+import { dropNonStocks, groupCandidates, publisherKind, renderNewsBlock, type Candidate } from "../lib/newsletter/topics";
+import { numberedItems, parseWriterOutput, renderIssuePrompt, sentenceCount, stalenessReason, urlDate, validateIssue, writeIssue, type Article } from "../lib/newsletter/article";
+import { dateKeyWeekday, easternDateKey, easternMinutes, isDateKey, longDate, pacificDateKey, shiftDateKey, toMMDDYYYY, yesterdayPacific } from "../lib/newsletter/dates";
+import { renderFacts, type IssueFacts } from "../lib/newsletter/facts";
+import { windowReason } from "../lib/newsletter/build";
 import { NEWSLETTER } from "../lib/newsletter/config";
 import { costUsd } from "../lib/newsletter/usage";
 import type { FmpMarketNewsItem } from "../lib/api/fmp";
 
-const NOW = new Date("2026-09-08T11:00:00Z"); // Tuesday 4 AM PDT
+const NOW = new Date("2026-09-08T11:30:00Z"); // Tuesday 7:30 AM EDT
 
 const row = (symbol: string | null, title: string, publishedDate: string, publisher = "Reuters", url = "https://www.reuters.com/x"): FmpMarketNewsItem => ({ symbol, title, publishedDate, publisher, site: new URL(url).hostname, snippet: "", url });
 
-test("Pacific date keys: 11:00 UTC is the same calendar day in summer and winter, yesterday shifts across months", () => {
-  assert.equal(pacificDateKey(new Date("2026-09-08T11:00:00Z")), "2026-09-08");
-  assert.equal(pacificDateKey(new Date("2026-12-08T11:00:00Z")), "2026-12-08");
+test("date helpers: Pacific and Eastern keys, minutes, shifting, weekday, formatting", () => {
+  assert.equal(pacificDateKey(NOW), "2026-09-08");
+  assert.equal(easternDateKey(NOW), "2026-09-08");
+  assert.equal(easternMinutes(NOW), 7 * 60 + 30, "11:30 UTC is 7:30 EDT");
+  assert.equal(easternMinutes(new Date("2026-12-08T11:30:00Z")), 6 * 60 + 30, "11:30 UTC is 6:30 EST");
+  assert.equal(easternMinutes(new Date("2026-09-08T20:35:00Z")), 16 * 60 + 35);
   assert.equal(pacificDateKey(new Date("2026-09-08T05:00:00Z")), "2026-09-07", "10 PM Pacific the night before");
   assert.equal(yesterdayPacific(new Date("2026-10-01T11:00:00Z")), "2026-09-30");
   assert.equal(shiftDateKey("2026-03-01", -1), "2026-02-28");
-  assert.equal(shiftDateKey("2026-12-31", 1), "2027-01-01");
   assert.equal(dateKeyWeekday("2026-09-07"), 1, "Monday");
   assert.equal(dateKeyWeekday("2026-09-06"), 0, "Sunday");
   assert.equal(toMMDDYYYY("2026-09-05"), "09/05/2026");
+  assert.equal(longDate("2026-09-04"), "Friday, September 4");
   assert.equal(isDateKey("2026-09-05"), true);
-  assert.equal(isDateKey("2026-13-05"), false);
   assert.equal(isDateKey("2026-02-30"), false);
   assert.equal(isDateKey("nope"), false);
 });
 
-test("groupCandidates windows by time, drops cooldown tickers and wire noise, requires coverage, ranks by breadth", () => {
+test("windowReason: weekends, holidays, and each kind's Eastern window; force is the caller's business", () => {
+  const holidays = new Set(["2026-09-07"]);
+  assert.equal(windowReason("morning", NOW, holidays, "2026-09-08"), null, "7:30 ET is inside the morning window");
+  assert.match(windowReason("closing", NOW, holidays, "2026-09-08") ?? "", /Closing recap builds from 16:05 ET; it is 07:30 ET/);
+  assert.equal(windowReason("closing", new Date("2026-09-08T20:35:00Z"), holidays, "2026-09-08"), null);
+  assert.match(windowReason("morning", new Date("2026-09-08T20:35:00Z"), holidays, "2026-09-08") ?? "", /window closed at 09:25 ET/);
+  assert.match(windowReason("morning", new Date("2026-12-08T11:30:00Z"), holidays, "2026-12-08") ?? "", /it is 06:30 ET/, "winter: the 11:30 UTC cron is too early, the 12:30 one builds");
+  assert.equal(windowReason("morning", new Date("2026-12-08T12:30:00Z"), holidays, "2026-12-08"), null);
+  assert.match(windowReason("morning", NOW, holidays, "2026-09-07") ?? "", /NYSE holiday/);
+  assert.match(windowReason("morning", NOW, holidays, "2026-09-06") ?? "", /weekends/);
+});
+
+test("groupCandidates keeps tickers with real coverage, drops opinion-only tickers and law-firm wires", () => {
   const rows = [
     row("NVDA", "Nvidia shares jump after earnings", "2026-09-08 09:00:00"),
     row("NVDA", "Nvidia beats estimates", "2026-09-08 08:30:00", "CNBC", "https://www.cnbc.com/a"),
     row("NVDA", "Nvidia beats estimates", "2026-09-08 08:31:00", "CNBC", "https://www.cnbc.com/b"), // duplicate title
     row("LULU", "Lululemon plunges on guidance cut", "2026-09-07 21:00:00", "Bloomberg", "https://www.bloomberg.com/a"),
-    row("AAPL", "Apple iPhone event preview", "2026-09-04 12:00:00"), // outside 72h window
-    row("TSLA", "Tesla something", "2026-09-08 09:00:00"), // on cooldown
-    row("XYZW", "Small cap moves", "2026-09-08 09:00:00", "Blog", "https://blog.example.com/a"), // opinion only
+    row("AAPL", "Apple iPhone event preview", "2026-09-04 12:00:00"), // outside the window
+    row("TSLA", "Tesla something", "2026-09-08 09:00:00"), // excluded
     row("MRNA", "If You'd Invested in Moderna 5 Years Ago", "2026-09-08 06:55:00", "The Motley Fool", "https://www.fool.com/investing/2026/09/08/x"),
-    row("MRNA", "Moderna Just Doubled, and 2 More Could Follow", "2026-09-08 08:51:00", "MarketBeat", "https://www.marketbeat.com/articles/x"),
-    row("MRNA", "Moderna cancer vaccine BREAKTHROUGH", "2026-09-08 10:00:00", "Fox Business", "https://www.youtube.com/watch?v=abc"), // one news clip among opinion
-    row("ACME", "Acme Corp. Reports Second Quarter Results", "2026-09-08 08:00:00", "PRNewsWire", "https://www.prnewswire.com/news-releases/acme-x.html"), // company release counts
-    row("OPIN", "Is This Stock a Buy?", "2026-09-08 08:00:00", "Seeking Alpha", "https://seekingalpha.com/article/1"),
-    row("OPIN", "Prediction: OPIN Will Double", "2026-09-08 08:30:00", "The Motley Fool", "https://www.fool.com/investing/2026/09/08/y"),
+    row("MRNA", "Moderna Just Doubled", "2026-09-08 08:51:00", "MarketBeat", "https://www.marketbeat.com/articles/x"),
+    row("ACME", "Acme Corp. Reports Second Quarter Results", "2026-09-08 08:00:00", "PRNewsWire", "https://www.prnewswire.com/news-releases/acme-x.html"),
     row("SUJA", "ROSEN, LEADING TRIAL ATTORNEYS, Encourages Suja Life Investors", "2026-09-08 09:00:00", "Newsfile Corp", "https://www.newsfilecorp.com/a"),
-    row("SUJA", "Class action deadline alert", "2026-09-08 09:10:00", "GlobeNewswire", "https://www.globenewswire.com/a"),
     row(null, "Market wrap", "2026-09-08 09:00:00"),
     row("BRK.B", "Berkshire buys more", "2026-09-08 09:00:00"),
-    row("nvda", "lowercase symbol still counts", "2026-09-08 07:00:00", "Barron's", "https://www.barrons.com/a"),
   ];
-  const c = groupCandidates(rows, { now: NOW, lookbackHours: 72, exclude: new Set(["TSLA"]), limit: 10 });
-  assert.deepEqual(
-    c.map((x) => x.ticker),
-    ["NVDA", "MRNA", "BRK.B", "ACME", "LULU"],
-    "real coverage first, then breadth, then recency; opinion-only tickers dropped"
-  );
-  assert.equal(c[0].headlines.length, 3, "duplicate title dropped, lowercase symbol merged");
-  assert.equal(c[0].newsCount, 3);
-  assert.equal(c[0].headlines[0].title, "Nvidia shares jump after earnings", "newest news first");
-  const mrna = c.find((x) => x.ticker === "MRNA")!;
-  assert.equal(mrna.newsCount, 1);
-  assert.equal(mrna.headlines[0].kind, "news", "the one news item leads; opinion follows");
-  assert.equal(mrna.headlines[1].kind, "opinion");
-  assert.ok(!c.some((x) => x.ticker === "OPIN"), "two opinion pieces are not a candidate");
-  assert.equal(groupCandidates(rows, { now: NOW, lookbackHours: 30, exclude: new Set(), limit: 1 }).length, 1);
+  const c = groupCandidates(rows, { now: NOW, lookbackHours: 18, exclude: new Set(["TSLA"]), limit: 10 });
+  assert.deepEqual(c.map((x) => x.ticker), ["NVDA", "BRK.B", "ACME", "LULU"]);
+  assert.equal(c[0].headlines.length, 2, "duplicate title dropped");
+  assert.equal(c[0].newsCount, 2);
+  assert.ok(!c.some((x) => x.ticker === "MRNA"), "opinion-only tickers are not candidates");
+  assert.ok(!c.some((x) => x.ticker === "SUJA"), "law-firm solicitations are noise");
   assert.equal(publisherKind("Reuters", "https://www.reuters.com/x"), "news");
   assert.equal(publisherKind("Fox Business", "https://www.youtube.com/watch?v=1"), "news");
   assert.equal(publisherKind("GlobeNewsWire", "https://www.globenewswire.com/x"), "primary");
   assert.equal(publisherKind("The Motley Fool", "https://www.fool.com/x"), "opinion");
-  assert.equal(publisherKind("Seeking Alpha", "https://seekingalpha.com/x"), "opinion");
+  assert.match(renderNewsBlock(c).join("\n"), /NVDA \(2 news\/release stories, 2 outlets\)\n  - \[news\] 2026-09-08 09:00 Reuters/);
 });
-
-const input: PickInput = {
-  dateKey: "2026-09-08",
-  slots: [1, 2],
-  exclusions: { recentTickers: ["TSLA"], recentEvents: [{ dateKey: "2026-09-04", ticker: "AAPL", summary: "Apple event" }] },
-  candidates: [
-    { ticker: "NVDA", publishers: 3, newsCount: 1, headlines: [{ title: "Nvidia beats", publisher: "Reuters", publishedAt: "2026-09-08 09:00:00", url: "https://r.com/a", snippet: "s", kind: "news" }] },
-    { ticker: "LULU", publishers: 2, newsCount: 1, headlines: [] },
-    { ticker: "AMD", publishers: 2, newsCount: 1, headlines: [] },
-  ],
-};
-const pick = (slot: number, ticker: string, over: Partial<TopicPick> = {}): TopicPick => ({ slot, ticker, companyName: ticker, eventSummary: `${ticker} did a thing on 2026-09-08`, eventSlug: "did-a-thing", eventDate: "2026-09-08", whyNow: "", seedUrls: [], ...over });
 
 test("dropNonStocks removes ETFs, funds and unknown symbols; a lookup error keeps the candidate", async () => {
   const cand = (ticker: string): Candidate => ({ ticker, headlines: [], publishers: 1, newsCount: 1 });
@@ -96,159 +85,170 @@ test("dropNonStocks removes ETFs, funds and unknown symbols; a lookup error keep
   assert.deepEqual(r.dropped, ["BNO (ETF or fund)", "NBA (unknown symbol)", "DEAD (not trading)"]);
 });
 
-test("checkPicks enforces slots, distinct tickers, candidate membership, cooldown and slug shape", () => {
-  assert.deepEqual(checkPicks([pick(1, "NVDA"), pick(2, "LULU")], input), { ok: true });
-  assert.match((checkPicks([pick(1, "NVDA")], input) as { reason: string }).reason, /no pick for slot 2/);
-  assert.match((checkPicks([pick(1, "NVDA"), pick(2, "NVDA")], input) as { reason: string }).reason, /two slots/);
-  assert.match((checkPicks([pick(1, "NVDA"), pick(2, "MSFT")], input) as { reason: string }).reason, /not in the candidate list/);
-  assert.match((checkPicks([pick(1, "NVDA"), pick(2, "TSLA")], { ...input, candidates: [...input.candidates, { ticker: "TSLA", publishers: 1, newsCount: 1, headlines: [] }] }) as { reason: string }).reason, /cooldown/);
-  assert.match((checkPicks([pick(1, "NVDA"), pick(3, "LULU")], input) as { reason: string }).reason, /not requested/);
-  assert.match((checkPicks([pick(1, "NVDA"), pick(2, "LULU", { eventSlug: "Bad Slug" })], input) as { reason: string }).reason, /kebab-case/);
-  assert.match((checkPicks([pick(1, "NVDA"), pick(2, "LULU", { eventDate: "2026-08-19" })], input) as { reason: string }).reason, /happened on 2026-08-19, before the allowed window/);
-  assert.match((checkPicks([pick(1, "NVDA"), pick(2, "LULU", { eventDate: "2026-09-09" })], input) as { reason: string }).reason, /in the future/);
-  assert.deepEqual(checkPicks([pick(1, "NVDA"), pick(2, "LULU", { eventDate: "2026-09-06" })], input), { ok: true }, "two days back is fine");
-  assert.equal(oldestEventDate("2026-09-08"), "2026-09-06", "Tuesday: two days");
-  assert.equal(oldestEventDate("2026-09-07"), "2026-09-04", "Monday: the weekend too");
-  assert.match(renderPickerPrompt(input), /must have happened on or after 2026-09-06/);
-  assert.match(renderPickerPrompt(input), /\[news\] 2026-09-08 09:00 Reuters/);
+const facts = (kind: "morning" | "closing"): IssueFacts => ({
+  kind,
+  dateKey: "2026-09-08",
+  missing: kind === "closing" ? ["sector performance"] : [],
+  economic: [{ date: "2026-09-08 12:30:00", country: "US", event: "CPI (MoM)", impact: "High", previous: 0.2, estimate: 0.3, actual: kind === "closing" ? 0.4 : null, unit: "%" }],
+  earnings: kind === "morning" ? [{ symbol: "ORCL", name: "Oracle", price: 240, changePercent: 0, marketCap: 700e9 }] : [],
+  grades: [{ symbol: "MSFT", publishedDate: "2026-09-08T10:00:00.000Z", title: "Microsoft price target raised to $530 from $450 at Stifel", publisher: "TheFly", url: "https://thefly.com/x", gradingCompany: "Stifel", action: "hold", newGrade: "Hold", previousGrade: "Hold" }],
+  news: [{ ticker: "LULU", publishers: 2, newsCount: 2, headlines: [{ title: "Lululemon plunges", publisher: "Bloomberg", publishedAt: "2026-09-08 08:00:00", url: "https://www.bloomberg.com/a", snippet: "guidance cut", kind: "news" }] }],
+  treasury: { today: { date: "2026-09-08", year2: 4.37, year10: 4.78, year30: 5.24, month3: 3.91 }, previous: { date: "2026-09-04", year2: 4.3, year10: 4.7, year30: 5.2, month3: 3.9 } },
+  indexes: kind === "closing" ? [{ symbol: "SPY", name: "S&P 500 (SPY)", price: 650.12, changePercent: -0.42, marketCap: 0 }] : [],
+  gainers: kind === "closing" ? [{ symbol: "ADBE", name: "Adobe", price: 400, changePercent: 5.1, marketCap: 170e9 }] : [],
+  losers: kind === "closing" ? [{ symbol: "LULU", name: "Lululemon", price: 180, changePercent: -20.3, marketCap: 22e9 }] : [],
+  actives: [],
+  sectors: [],
 });
 
-test("normalizeSlots renumbers a lone pick to the requested slot but leaves correct or ambiguous answers alone", () => {
-  assert.deepEqual(normalizeSlots([pick(1, "LULU")], [2]).map((p) => p.slot), [2], "rebuilding slot 2 only: the model said slot 1");
-  assert.deepEqual(normalizeSlots([pick(1, "NVDA"), pick(2, "LULU")], [1, 2]).map((p) => p.slot), [1, 2]);
-  assert.deepEqual(normalizeSlots([pick(1, "NVDA"), pick(1, "LULU")], [1, 2]).map((p) => [p.slot, p.ticker]), [[1, "NVDA"], [2, "LULU"]], "duplicate numbers get assigned in order");
-  assert.deepEqual(normalizeSlots([pick(1, "NVDA")], [1, 2]).map((p) => p.slot), [1], "a missing pick is left for checkPicks to reject");
-  assert.match(renderPickerPrompt({ ...input, slots: [2] }), /one pick, "slot": 2/);
+test("renderFacts lays out each kind's sections and names missing feeds", () => {
+  const m = renderFacts(facts("morning"));
+  assert.match(m, /Date: Tuesday, September 8/);
+  assert.match(m, /US economic releases scheduled today/);
+  assert.match(m, /CPI \(MoM\) \[High\]: previous 0.2%, estimate 0.3%/);
+  assert.match(m, /Companies reporting earnings today \(\$2B\+\):\n- ORCL Oracle \(\$700B\)/);
+  assert.match(m, /Stifel: Microsoft price target raised/);
+  assert.match(m, /10-year 4.78% \(\+8 bps vs 2026-09-04\)/);
+  assert.match(m, /LULU \(2 news\/release stories/);
+  assert.doesNotMatch(m, /Index proxies/);
+  const c = renderFacts(facts("closing"));
+  assert.match(c, /Data feeds that did not load this run: sector performance/);
+  assert.match(c, /S&P 500 \(SPY\): -0.42% to \$650.12/);
+  assert.match(c, /Biggest losers \(market cap \$2B\+\):\n- LULU Lululemon: -20.30% to \$180.00 \(\$22B\)/);
+  assert.match(c, /actual 0.4%/);
 });
 
-test("extractJson tolerates fences and prose; PickSchema fills defaults", () => {
-  const parsed = PickSchema.parse(extractJson('Here you go:\n```json\n{"picks":[{"slot":1,"ticker":"nvda","companyName":"Nvidia","eventSummary":"Nvidia beat estimates on Sep 8","eventSlug":"q2-beat","eventDate":"2026-09-08"}]}\n```'));
-  assert.equal(parsed.picks[0].seedUrls.length, 0);
-  assert.equal(parsed.picks[0].whyNow, "");
-  assert.throws(() => extractJson("no json here"));
-  const prompt = renderPickerPrompt(input, "slot 2 missing");
-  assert.match(prompt, /Tickers on cooldown \(do not pick\): TSLA/);
-  assert.match(prompt, /2026-09-04 AAPL: Apple event/);
-  assert.match(prompt, /NVDA \(1 news\/release stories, 1 total, 3 outlets\)/);
-  assert.match(prompt, /previous answer was rejected: slot 2 missing/);
-});
+const ITEM = (n: number, t: string) => `${n}. ${t}`;
+const MORNING_BODY = [
+  ITEM(1, "Bond yields jumped and stock futures dipped after a strong August jobs report. Non-farm payrolls rose 162,000 against expectations of 53,000, Reuters reported, and the unemployment rate held at 4.1%."),
+  ITEM(2, "Lululemon is down more than 20% pre-market after slashing its full-year outlook. Comparable sales fell 10% in constant currency and revenue guidance was cut to $10.35 billion to $10.5 billion, CNBC reported."),
+  ITEM(3, "OpenAI introduced a new model overnight, and Reuters reported that its agents breached a German website in the spring. Cybersecurity names such as CrowdStrike and Palo Alto Networks could see attention on the headline."),
+  ITEM(4, "Mizuho lowered its Intel price target to $92 from $109 while keeping a neutral rating. The analysts still like the agentic AI server tailwind into 2028 but see multiple compression across the group."),
+  ITEM(5, "Adobe named Anil Chakravarthy as its next chief executive, effective in December. He joined the company nearly seven years ago from Informatica, which Salesforce bought last November, per The Wall Street Journal."),
+  ITEM(6, "Zscaler shares gave back an early gain and are off about 4% despite a strong quarter and an upbeat outlook. Good results are not always good enough in this tape, as several cybersecurity peers found last week."),
+  ITEM(7, "Nikkei reports early production of Apple's foldable iPhone is limited to a few hundred units a day for quality reasons. Apple hosts its product event Wednesday, its first fall launch with John Ternus as CEO."),
+  ITEM(8, "Stifel raised its Microsoft price target to $530 from $450 after meetings with management but kept a hold rating. The analysts see momentum in Microsoft 365 Copilot, according to TheFly."),
+  ITEM(9, "Wells Fargo raised its Merck target to $170 from $150 and Amgen's to $435 from $400 on higher peak-sales estimates for their cholesterol drugs. Both stocks were little changed in pre-market trading."),
+].join("\n\n");
 
-const GOOD_BODY = `Nvidia (NVDA) reported second-quarter results after the close on Wednesday, and the numbers cleared the bar the Street had set. Revenue came in at $46.7 billion, up 56% from a year earlier, according to Reuters.
-
-Data-center sales were the engine again. CNBC reported that the segment brought in $41.1 billion, a little below what some analysts had penciled in.
-
-The stock slipped about 3% in after-hours trading, Reuters noted. Investors seem to have wanted an even bigger beat.
-
-Guidance was the other talking point. Management told analysts to expect roughly $54 billion in revenue for the current quarter, CNBC said, which is above the consensus that was in place before the call.
-
-There was one notable absence. The outlook does not include any data-center revenue from China, where export rules remain in flux, Reuters reported.
-
-Chief executive Jensen Huang spent much of the call on the company's next chip platform. He said demand for the new systems is, in his words, extraordinary, per CNBC's account of the call.
-
-What comes next is a set of dates. Nvidia's annual developer conference is in the spring, and the next quarterly report is expected in late November. Both outlets flagged China policy as the swing factor to watch between now and then.
-
-For readers keeping score, this was the tenth straight quarter of triple-digit or high double-digit growth, according to Reuters. Whether the pace holds is the question the market could keep asking.
-
-Gross margin was the number analysts kept circling. CNBC put it at 72.4%, a touch below last quarter, and management attributed the slip to the cost of ramping the new platform.
-
-The buyback got a mention too. The board approved another $60 billion in repurchases, Reuters reported, on top of what was left from the prior authorization.
-
-Competitors were not far from the conversation. Both outlets noted that rivals have been chasing the same data-center budgets, though neither reported any sign of lost orders so far.
-
-One last detail from the release: cash and equivalents stood at $56.8 billion at quarter end, per Reuters, which gives the company room for the spending plans it described.`;
-
-const GOOD_RAW = `EVENT_DATE: 2026-09-07
-HEADLINE: Nvidia Clears the Bar Again, and the Stock Shrugs
-SUBTITLE: Another record quarter, a bigger forecast, and a wobble after hours.
-SUBJECT: Nvidia beat again. Here's what the outlets said.
-PREVIEW: Record revenue, higher guidance, and a China-shaped hole in the outlook.
-SOURCE: Reuters | https://www.reuters.com/technology/nvidia-q2
-SOURCE: CNBC | https://www.cnbc.com/2026/09/08/nvidia-earnings.html
+const rawFor = (body: string, extra = "") => `HEADLINE: Ten things to watch before the bell${extra}
+SUBTITLE: Jobs data, a Lululemon reset and a new CEO at Adobe.
+SUBJECT: Jobs shock, Lululemon reset, Adobe's new CEO
+PREVIEW: Nine things to know before the opening bell.
+SOURCE: Reuters | https://www.reuters.com/markets/us/2026-09-08-jobs/
+SOURCE: CNBC | https://www.cnbc.com/2026/09/08/lululemon-guidance.html
+SOURCE: The Wall Street Journal | https://www.wsj.com/business/adobe-ceo
 BODY:
-${GOOD_BODY}`;
+${body}`;
 
-const nvda = pick(1, "NVDA", { companyName: "Nvidia Corporation" });
+const CLOSING_BODY = `Stocks slipped on Tuesday as a hot jobs report sent bond yields higher and took some air out of the rally. The S&P 500 fell 0.4%, the Nasdaq lost 0.6% and the Dow gave up 0.3%, per Reuters.
+
+The 10-year Treasury yield climbed 8 basis points to 4.78%, its highest close since June, CNBC reported. That was the whole story for rate-sensitive groups: utilities and real estate led the decliners.
+
+Lululemon was the day's biggest large-cap loser, down 20.3% after cutting its full-year outlook. Comparable sales fell 10% and management called its product launches inconsistent, according to Bloomberg.
+
+Adobe went the other way, up 5.1% after naming Anil Chakravarthy as its next chief executive. Investors liked the continuity, per The Wall Street Journal.
+
+Energy was the lone sector in the green as crude rose 1.2%, and Chevron added 0.9%. Technology lagged, with the Nasdaq-100 proxy QQQ down 0.7% on the day.
+
+The most active name was Intel, which fell 3% after Mizuho trimmed its price target to $92 from $109. Volume ran well above its recent average, Reuters noted.
+
+Small caps had a rougher day than the big names. The Russell 2000 proxy IWM slid 1.1%, and regional banks were weak across the board as the yield curve steepened, according to MarketWatch.
+
+Breadth was poor: roughly three stocks fell for every one that rose on the New York Stock Exchange, per Reuters. Trading volume ran about 6% above the 30-day average, a sign that the selling was not just thin holiday-week trade.
+
+Bitcoin, for what it is worth, did nothing: flat near $110,000 while everything else moved, which Bloomberg noted is the quietest week for the token since May. Gold slipped 0.3% as yields rose.
+
+Oil rose 1.2% to $64 a barrel after OPEC+ kept output steady for October, which helped the energy group finish about 0.5% higher, the lone bright spot among the eleven sectors.
+
+On deck for Wednesday: the consumer price index at 8:30 a.m. ET, with economists looking for a 0.3% monthly rise, and Apple's product event in the afternoon. Both could set the tone for the rest of the week.`;
+
+const closingRaw = rawFor(CLOSING_BODY).replace("Ten things to watch before the bell", "Yields bite, Lululemon breaks, Adobe finds its next CEO");
 
 test("parseWriterOutput reads the delimited format, with and without markdown decoration", () => {
-  const p = parseWriterOutput(GOOD_RAW);
+  const p = parseWriterOutput(rawFor(MORNING_BODY));
   assert.ok(p.ok);
   if (!p.ok) return;
-  assert.equal(p.article.headline, "Nvidia Clears the Bar Again, and the Stock Shrugs");
-  assert.equal(p.article.eventDate, "2026-09-07");
-  assert.equal(p.article.sources.length, 2);
-  assert.equal(p.article.sources[1].outlet, "CNBC");
-  assert.equal(p.article.paragraphs.length, 12);
-  const decorated = parseWriterOutput(GOOD_RAW.replace("HEADLINE:", "**HEADLINE:**").replace("SOURCE: Reuters |", "- SOURCE: Reuters -"));
+  assert.equal(p.article.headline, "Ten things to watch before the bell");
+  assert.equal(p.article.sources.length, 3);
+  assert.equal(p.article.sources[2].outlet, "The Wall Street Journal");
+  assert.equal(p.article.paragraphs.length, 9);
+  const decorated = parseWriterOutput(rawFor(MORNING_BODY).replace("HEADLINE:", "**HEADLINE:**").replace("SOURCE: Reuters |", "- SOURCE: Reuters -"));
   assert.ok(decorated.ok && decorated.article.headline === p.article.headline && decorated.article.sources[0].outlet === "Reuters");
   assert.deepEqual(parseWriterOutput("just prose"), { ok: false, reason: "no BODY section" });
   assert.deepEqual(parseWriterOutput("BODY:\nhello"), { ok: false, reason: "no HEADLINE" });
 });
 
-test("validateArticle accepts the good article and rejects each rule", () => {
-  const good = (parseWriterOutput(GOOD_RAW) as { ok: true; article: Article }).article;
-  assert.deepEqual(validateArticle(good, nvda), { ok: true });
-  assert.deepEqual(validateArticle(good, nvda, "2026-09-08"), { ok: true }, "fresh event, sources dated this week");
-  assert.match((validateArticle({ ...good, eventDate: "2026-08-19" }, nvda, "2026-09-08") as { reason: string }).reason, /happened on 2026-08-19.*old news/);
-  assert.match((validateArticle({ ...good, eventDate: "", sources: [{ outlet: "CNBC", url: "https://www.cnbc.com/2026/08/19/moderna.html" }, { outlet: "Reuters", url: "https://www.reuters.com/business/2026-08-20-x/" }] }, nvda, "2026-09-08") as { reason: string }).reason, /every dated source is from 2026-08-20/);
-  assert.equal(stalenessReason({ ...good, eventDate: "", sources: [{ outlet: "CBS News", url: "https://www.cbsnews.com/news/moderna-stock/" }] }, "2026-09-08"), null, "undated sources are not judged");
-  assert.equal(urlDate("https://www.cnbc.com/2026/09/08/nvidia-earnings.html"), "2026-09-08");
-  assert.equal(urlDate("https://www.fool.com/investing/2026/09/06/x"), "2026-09-06");
-  assert.equal(urlDate("https://www.cbsnews.com/news/x/"), null);
-  const reason = (a: Article, p: TopicPick = nvda) => (validateArticle(a, p) as { ok: false; reason: string }).reason;
+test("numberedItems requires sequential numbers, one per paragraph", () => {
+  assert.equal((numberedItems(["1. a", "2. b", "3) c"]) as { items: string[] }).items.length, 3);
+  assert.match((numberedItems(["1. a", "3. c"]) as { reason: string }).reason, /out of order/);
+  assert.match((numberedItems(["1. a", "Not numbered"]) as { reason: string }).reason, /does not start with its number/);
+});
 
-  assert.match(reason({ ...good, paragraphs: good.paragraphs.slice(0, 2) }), /under 300/);
-  assert.match(reason({ ...good, paragraphs: [...good.paragraphs, ...good.paragraphs] }), /over 550/);
-  assert.match(reason({ ...good, paragraphs: [good.paragraphs.slice(0, 4).join(" "), ...good.paragraphs.slice(4)] }), /more than 3 sentences/);
-  assert.match(reason({ ...good, paragraphs: ["- a bullet point about Nvidia", ...good.paragraphs] }), /bullets/);
-  assert.match(reason({ ...good, paragraphs: ["Some **bold** text about Nvidia.", ...good.paragraphs] }), /markdown emphasis/);
-  assert.match(reason({ ...good, headline: "x".repeat(91) }), /headline is 91/);
+test("validateIssue: the morning brief", () => {
+  const good = (parseWriterOutput(rawFor(MORNING_BODY)) as { ok: true; article: Article }).article;
+  assert.deepEqual(validateIssue("morning", good, "2026-09-08"), { ok: true });
+  const reason = (a: Article) => (validateIssue("morning", a, "2026-09-08") as { ok: false; reason: string }).reason;
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.slice(0, 5) }), /only 5 items/);
+  assert.match(reason({ ...good, paragraphs: [...good.paragraphs, ITEM(10, "Ten words here about nothing in particular at all today ok twelve."), ITEM(11, "Eleven words here about nothing in particular at all today ok twelve.")] }), /11 items/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p, i) => (i === 3 ? "4. Too short." : p)) }), /under 20 words/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p, i) => (i === 3 ? `4. ${"word ".repeat(130)}` : p)) }), /over 120 words/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p) => p.replace(/^\d+\. /, "")) }), /does not start with its number/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p, i) => (i === 1 ? p.replace("is down more than 20%", "is a guaranteed winner") : p)) }), /banned phrase "guaranteed"/);
+  assert.match(reason({ ...good, headline: "Ten things 🚀" }), /emoji/);
+  assert.match(reason({ ...good, sources: good.sources.slice(0, 2) }), /only 2 source/);
+  assert.match(reason({ ...good, sources: good.sources.map((s, i) => (i === 0 ? { ...s, url: "https://www.reuters.com/markets/us/2026-08-20-jobs/" } : { ...s, url: `https://www.cnbc.com/2026/08/19/x${i}.html` })) }), /every dated source is from 2026-08-20/);
+  assert.deepEqual(validateIssue("morning", { ...good, headline: "Coca-Cola® and nine more" }, "2026-09-08"), { ok: true }, "® is not an emoji");
+});
+
+test("validateIssue: the closing recap", () => {
+  const good = (parseWriterOutput(closingRaw) as { ok: true; article: Article }).article;
+  assert.deepEqual(validateIssue("closing", good, "2026-09-08"), { ok: true });
+  const reason = (a: Article) => (validateIssue("closing", a, "2026-09-08") as { ok: false; reason: string }).reason;
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.slice(0, 2) }), /under 350/);
+  assert.match(reason({ ...good, paragraphs: [...good.paragraphs, ...good.paragraphs, ...good.paragraphs] }), /over 700/);
+  assert.match(reason({ ...good, paragraphs: [good.paragraphs.slice(0, 4).join(" "), ...good.paragraphs.slice(4)] }), /more than 4 sentences/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p) => p.replace(/S&P 500|Nasdaq|Dow/g, "index")) }), /never names the S&P 500/);
+  assert.match(reason({ ...good, paragraphs: ["- a bullet", ...good.paragraphs] }), /bullets/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p, i) => (i === 0 ? p + " The market will soar tomorrow." : p)) }), /banned phrase "will soar"/);
   assert.match(reason({ ...good, subjectLine: "y".repeat(71) }), /subject is 71/);
-  assert.match(reason({ ...good, previewText: "z".repeat(121) }), /preview is 121/);
-  assert.match(reason({ ...good, headline: "Nvidia soars 🚀" }), /emoji/);
-  assert.match(reason({ ...good, headline: "Nvidia beats!" }), /exclamation/);
-  assert.match(reason({ ...good, headline: "NVIDIA BEATS AGAIN" }), /all caps/);
-  assert.match(reason({ ...good, paragraphs: ["This is a risk-free way into Nvidia.", ...good.paragraphs] }), /banned phrase "risk-free"/);
-  assert.match(reason({ ...good, paragraphs: ["You should buy Nvidia today, Reuters aside.", ...good.paragraphs] }), /banned phrase/);
-  assert.match(reason({ ...good, paragraphs: ["The stock will soar, Reuters said.", ...good.paragraphs] }), /banned phrase "will soar"/);
-  assert.match(reason({ ...good, sources: good.sources.slice(0, 1) }), /only 1 source/);
-  assert.match(reason({ ...good, sources: [{ outlet: "Reuters", url: "https://r" }, { outlet: "Bloomberg", url: "https://b" }] }), /only 1 of the sources are named/);
-  assert.match(reason(good, pick(1, "MSFT", { companyName: "Microsoft" })), /never names Microsoft or MSFT/);
-  assert.deepEqual(validateArticle({ ...good, headline: "Coca-Cola® Clears the Bar" }, nvda), { ok: true }, "® is not an emoji");
-  assert.deepEqual(validateArticle({ ...good, paragraphs: good.paragraphs.map((p) => p.replace(/CNBC/g, "the Journal")), sources: [good.sources[0], { outlet: "The Wall Street Journal", url: "https://www.wsj.com/x" }] }, nvda), { ok: true }, "outlet shorthand counts");
   assert.match(reason({ ...good, paragraphs: [`Hello {{first_name}}. ${good.paragraphs[0]}`, ...good.paragraphs.slice(1)] }), /merge tag/);
 });
 
-test("a STALE reply is recognised and writeArticle reports it without retrying", async () => {
-  assert.deepEqual(parseStale("STALE: 2026-08-19 | coverage is a rehash of the August trial readout"), { eventDate: "2026-08-19", note: "coverage is a rehash of the August trial readout" });
-  assert.deepEqual(parseStale("**STALE:** the event was weeks ago"), { eventDate: null, note: "the event was weeks ago" });
-  assert.equal(parseStale(GOOD_RAW), null);
-  let calls = 0;
-  const writer = { async write() { calls++; return { raw: "STALE: 2026-08-19 | August news", usage: { inputTokens: 10, outputTokens: 5, webSearches: 2 }, stopReason: "end_turn" }; } };
-  const r = await writeArticle(nvda, "2026-09-08", writer);
-  assert.equal(r.status, "stale");
-  assert.match(r.reason ?? "", /2026-08-19/);
-  assert.equal(calls, 1, "no retry for a stale story");
-  // The validator's own staleness verdict is the same signal.
-  const old = { async write() { return { raw: GOOD_RAW.replace("EVENT_DATE: 2026-09-07", "EVENT_DATE: 2026-08-19"), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, stopReason: "end_turn" }; } };
-  assert.equal((await writeArticle(nvda, "2026-09-08", old)).status, "stale");
-  assert.match(renderWriterPrompt(nvda, "2026-09-08").user, /Oldest acceptable event date: 2026-09-06/);
-  assert.match(renderWriterPrompt(nvda, "2026-09-08").system, /STALE: <YYYY-MM-DD/);
-});
-
-test("sentenceCount tolerates decimals, closing quotes and abbreviations", () => {
+test("sentenceCount tolerates decimals, closing quotes, abbreviations and quoted sentences", () => {
   assert.equal(sentenceCount("Revenue was $46.7 billion. That beat estimates."), 2);
-  assert.equal(sentenceCount("The U.S. Securities and Exchange Commission and Apple Inc. Chief Tim Cook met Mr. Smith. Shares rose."), 2);
   assert.equal(sentenceCount('He called demand "extraordinary." Shares fell 3% after hours.'), 2);
   assert.equal(sentenceCount("One sentence only, with 2.5 in it."), 1);
-  assert.equal(sentenceCount('CEO Jensen Huang said in a statement carried by Fortune, "AI is here. Demand is extraordinary. We are ramping." Shares rose.'), 2, "sentences inside a quotation count as one");
+  assert.equal(sentenceCount("The U.S. Securities and Exchange Commission and Apple Inc. Chief Tim Cook met Mr. Smith. Shares rose."), 2);
+  assert.equal(sentenceCount('CEO Jensen Huang said in a statement carried by Fortune, "AI is here. Demand is extraordinary. We are ramping." Shares rose.'), 2);
+  assert.equal(urlDate("https://www.cnbc.com/2026/09/08/nvidia-earnings.html"), "2026-09-08");
+  assert.equal(urlDate("https://www.cbsnews.com/news/x/"), null);
+  assert.equal(stalenessReason({ headline: "", subtitle: "", subjectLine: "", previewText: "", paragraphs: [], sources: [{ outlet: "CBS News", url: "https://www.cbsnews.com/news/x/" }] }, "2026-09-08"), null, "undated sources are not judged");
 });
 
-test("writer prompt carries the pick, seeds and retry reason; cost uses list prices", () => {
-  const { system, user } = renderWriterPrompt(pick(1, "LULU", { companyName: "Lululemon", seedUrls: ["https://www.bloomberg.com/a"], whyNow: "biggest drop in a year" }), "2026-09-08", "body is 200 words");
-  assert.match(system, /HEADLINE: <headline>/);
-  assert.match(system, new RegExp(NEWSLETTER.targetWords));
-  assert.match(user, /Lululemon \(LULU\)/);
-  assert.match(user, /- https:\/\/www\.bloomberg\.com\/a/);
-  assert.match(user, /rejected: body is 200 words/);
+test("prompts carry the facts and retry reason; writeIssue retries once then flags for review", async () => {
+  const p = renderIssuePrompt("morning", "FACTS HERE", "2026-09-08", "only 5 items");
+  assert.match(p.system, /numbered list of 8 to 10 items/);
+  assert.match(p.system, /HEADLINE: <headline>/);
+  assert.match(p.user, /Today is Tuesday, September 8/);
+  assert.match(p.user, /FACTS HERE/);
+  assert.match(p.user, /rejected: only 5 items/);
+  assert.match(renderIssuePrompt("closing", "F", "2026-09-08").system, /closing recap/);
+
+  let calls = 0;
+  const shortWriter = { async write() { calls++; return { raw: rawFor(MORNING_BODY.split("\n\n").slice(0, 5).join("\n\n")), usage: { inputTokens: 10, outputTokens: 5, webSearches: 2 }, stopReason: "end_turn" }; } };
+  const r = await writeIssue("morning", "F", "2026-09-08", shortWriter);
+  assert.equal(r.status, "needs_review");
+  assert.equal(calls, 2);
+  assert.match(r.reason ?? "", /only 5 items/);
+  assert.equal(r.usage.webSearches, 4, "usage of both attempts is kept");
+
+  const good = { async write() { return { raw: rawFor(MORNING_BODY), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, stopReason: "end_turn" }; } };
+  assert.equal((await writeIssue("morning", "F", "2026-09-08", good)).status, "ok");
+  const boom = { async write() { throw new Error("model exploded"); } };
+  const f = await writeIssue("closing", "F", "2026-09-08", boom);
+  assert.equal(f.status, "failed");
+  assert.match(f.reason ?? "", /model exploded/);
   assert.equal(costUsd({ inputTokens: 1_000_000, outputTokens: 100_000, webSearches: 5 }), 2 + 1 + 0.05);
+  assert.equal(NEWSLETTER.slots.length, 2);
 });

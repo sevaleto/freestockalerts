@@ -1,8 +1,9 @@
-/** The build orchestrator against the throwaway Postgres with fake Beehiiv, picker, writer and news. */
+/** The build orchestrator against the throwaway Postgres with fake Beehiiv, writer and facts. */
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { PrismaClient } from "@prisma/client";
-import type { FmpMarketNewsItem } from "../lib/api/fmp";
+import type { IssueFacts } from "../lib/newsletter/facts";
+import type { IssuePrompt } from "../lib/newsletter/article";
 
 const url = process.env.TEST_DATABASE_URL ?? "";
 const enabled = /test/.test(url);
@@ -11,38 +12,49 @@ before(() => {
   if (enabled) process.env.DATABASE_URL = url;
 });
 
-const DATE = "2099-01-05"; // a Monday far in the future, so real rows never collide
-const news: FmpMarketNewsItem[] = [
-  { symbol: "NVDA", title: "Nvidia beats", publisher: "Reuters", site: "reuters.com", publishedDate: "2099-01-05 09:00:00", snippet: "", url: "https://www.reuters.com/a" },
-  { symbol: "NVDA", title: "Nvidia guidance", publisher: "CNBC", site: "cnbc.com", publishedDate: "2099-01-05 08:00:00", snippet: "", url: "https://www.cnbc.com/a" },
-  { symbol: "LULU", title: "Lululemon falls", publisher: "Bloomberg", site: "bloomberg.com", publishedDate: "2099-01-04 20:00:00", snippet: "", url: "https://www.bloomberg.com/a" },
-  { symbol: "AMD", title: "AMD deal", publisher: "Reuters", site: "reuters.com", publishedDate: "2099-01-05 07:00:00", snippet: "", url: "https://www.reuters.com/b" },
-];
-const NOW = new Date("2099-01-05T11:00:00Z");
+// 2099-01-06 is a Wednesday far in the future, so real rows never collide.
+const DATE = "2099-01-06";
+const MORNING = new Date("2099-01-06T12:30:00Z"); // 7:30 AM EST
+const EVENING = new Date("2099-01-06T21:35:00Z"); // 4:35 PM EST
 
-const paragraph = (ticker: string, i: number) =>
-  `${ticker} was the name every desk was talking about on Monday morning, and Reuters led its coverage with the numbers behind the move number ${i + 1}. ` +
-  `CNBC followed with a look at what management said on the call, quoting two analysts who had been skeptical going in. ` +
-  `Both outlets flagged the same open question for the next quarter, which is where the story for ${ticker} goes from here.`;
-const raw = (ticker: string, extra = "") => `EVENT_DATE: ${DATE}
-HEADLINE: ${ticker} did a thing${extra}
+const facts = async (kind: "morning" | "closing", dateKey: string): Promise<IssueFacts> => ({
+  kind,
+  dateKey,
+  missing: [],
+  economic: [],
+  earnings: [],
+  grades: [],
+  news: [],
+  treasury: { today: null, previous: null },
+  indexes: [],
+  gainers: [],
+  losers: [],
+  actives: [],
+  sectors: [],
+});
+
+const item = (n: number, t: string) => `${n}. ${t} Reuters reported the figure at 8:30 a.m. ET, and CNBC added that analysts had expected a smaller number, which is why futures moved about 0.4%.`;
+const MORNING_BODY = Array.from({ length: 9 }, (_, i) => item(i + 1, `Item ${i + 1} covers a stock moving 3% pre-market on real news.`)).join("\n\n");
+const CLOSING_BODY = Array.from({ length: 8 }, (_, i) => `Paragraph ${i + 1}: the S&P 500 fell 0.4% and the Nasdaq lost 0.6%, per Reuters. CNBC reported that the 10-year yield rose 8 basis points to 4.78%. Lululemon dropped 20% after cutting its outlook, Bloomberg said, while Adobe gained 5% on its new chief executive.`).join("\n\n");
+
+const raw = (kind: "morning" | "closing", extra = "") => `HEADLINE: ${kind === "morning" ? "Nine things to watch before the bell" : "Yields bite and Lululemon breaks"}${extra}
 SUBTITLE: A deck.
-SUBJECT: ${ticker} did a thing
+SUBJECT: ${kind === "morning" ? "Before the bell" : "After the bell"}
 PREVIEW: Preview text.
-SOURCE: Reuters | https://www.reuters.com/${ticker}
-SOURCE: CNBC | https://www.cnbc.com/${ticker}
+SOURCE: Reuters | https://www.reuters.com/markets/us/2099-01-06-x/
+SOURCE: CNBC | https://www.cnbc.com/2099/01/06/x.html
+SOURCE: Bloomberg | https://www.bloomberg.com/news/x
 BODY:
-${Array.from({ length: 7 }, (_, i) => paragraph(ticker, i)).join("\n\n")}`;
+${kind === "morning" ? MORNING_BODY : CLOSING_BODY}`;
 
-/** Slot 1 → NVDA, slot 2 → LULU, whichever slots are requested. */
-const fakePicker = { async pick(input: { slots: number[] }) { const t: Record<number, string> = { 1: "NVDA", 2: "LULU" }; return { picks: input.slots.map((slot) => ({ slot, ticker: t[slot], companyName: t[slot], eventSummary: `${t[slot]} event on ${DATE}`, eventSlug: "event", eventDate: DATE, whyNow: "", seedUrls: [] })), usage: { inputTokens: 1000, outputTokens: 100, webSearches: 0 }, raw: "" }; } };
-const goodWriter = { async write(pick: { ticker: string }) { return { raw: raw(pick.ticker), usage: { inputTokens: 5000, outputTokens: 800, webSearches: 3 }, stopReason: "end_turn" }; } };
+const kindOf = (p: IssuePrompt): "morning" | "closing" => (/pre-market brief/.test(p.system) ? "morning" : "closing");
+const goodWriter = { async write(p: IssuePrompt) { return { raw: raw(kindOf(p)), usage: { inputTokens: 5000, outputTokens: 800, webSearches: 3 }, stopReason: "end_turn" }; } };
+const holidays = async () => ["2099-01-01"];
 
 const AD = `<table style="border:1px solid #E5E0D5; background-color:#FAF8F3;"><tr><td><a href="https://sponsor.example.com/x">Sponsor</a></td></tr></table>`;
-const profile = async (t: string) => ({ symbol: t, companyName: t, isEtf: false, isFund: false, isActivelyTrading: true, marketCap: 1e9 });
 const tsiAds = async () => ({
-  bySlot: new Map([[1 as const, { post: { id: "post_si1", title: "01/04/2099 - #1 - Wyatt (Gold / V3)", status: "confirmed", publish_date: 1 }, title: { dateKey: "2099-01-04", kind: "newsletter" as const, number: 1, advertisers: [{ name: "Wyatt", creative: "Gold / V3" }] }, ads: [{ index: 1, html: AD, linkCount: 1, isHouseAd: false, empty: false }, { index: 2, html: AD, linkCount: 1, isHouseAd: false, empty: false }], contentSource: "email" as const }]]),
-  warnings: ["No Smart Investor newsletter #2 found for 2099-01-04"],
+  bySlot: new Map([[1 as const, { post: { id: "post_si1", title: "01/05/2099 - #1 - Wyatt (Gold / V3)", status: "confirmed", publish_date: 1 }, title: { dateKey: "2099-01-05", kind: "newsletter" as const, number: 1, advertisers: [{ name: "Wyatt", creative: "Gold / V3" }] }, ads: [{ index: 1, html: AD, linkCount: 1, isHouseAd: false, empty: false }, { index: 2, html: AD, linkCount: 1, isHouseAd: false, empty: false }], contentSource: "email" as const }]]),
+  warnings: ["No Smart Investor newsletter #2 found for 2099-01-05"],
 });
 
 const beehiiv = () => {
@@ -55,179 +67,125 @@ const beehiiv = () => {
   return { calls, fetchImpl };
 };
 
-test("buildDailyIssues drafts both slots, records rows, skips on rerun, and rebuilds on force", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
+const deps = (prisma: PrismaClient, bh: ReturnType<typeof beehiiv>, now: Date, over: Record<string, unknown> = {}) => ({ db: prisma, fetchImpl: bh.fetchImpl, writer: goodWriter, facts, tsiAds, holidays, now, ...over });
+
+test("the morning cron builds only the brief, the evening cron only the recap; reruns skip; force rebuilds", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
   const prisma = new PrismaClient({ datasourceUrl: url });
   const { buildDailyIssues } = await import("../lib/newsletter/build");
-  const { loadExclusions } = await import("../lib/newsletter/topics");
   await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
   await prisma.appSetting.deleteMany({ where: { key: "newsletterBuildPaused" } });
   try {
     const bh = beehiiv();
-    const r = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
-    assert.deepEqual(r.slots.map((s) => [s.slot, s.status, s.ticker, s.adsFound]), [[1, "drafted", "NVDA", 2], [2, "drafted", "LULU", 0]]);
-    assert.equal(bh.calls.length, 2, "one create per slot");
-    assert.match(bh.calls[0].url, /\/publications\/pub_[^/]+\/posts$/);
-    const created = bh.calls.map((c) => c.body as { title: string; status: string; blocks: { type: string; html?: string }[] });
-    assert.ok(created.some((c) => c.title === "NVDA did a thing" && c.blocks.filter((b) => b.type === "html" && b.html === AD).length === 2));
-    assert.ok(created.every((c) => c.status === "draft"));
-    assert.ok(r.warnings.some((w) => /#2 found/.test(w)));
-    assert.ok(r.totalCostUsd > 0);
+    // 7:30 AM: both slots requested (as the plain route would), only the morning brief is in its window.
+    const am = await buildDailyIssues({ dateKey: DATE }, deps(prisma, bh, MORNING));
+    assert.deepEqual(am.slots.map((s) => [s.slot, s.kind, s.status, s.adsFound]), [[1, "morning", "drafted", 2], [2, "closing", "skipped", 0]]);
+    assert.match(am.slots[1].note ?? "", /Closing recap builds from 16:05 ET/);
+    assert.equal(bh.calls.length, 1);
+    const created = bh.calls[0].body as { title: string; status: string; content_tags: string[]; blocks: { type: string; html?: string; formattedText?: { text: string; styling?: string[] }[] }[] };
+    assert.equal(created.title, "Nine things to watch before the bell");
+    assert.equal(created.status, "draft");
+    assert.deepEqual(created.content_tags, ["morning-brief"]);
+    assert.equal(created.blocks.filter((b) => b.type === "html" && b.html === AD).length, 2, "both Smart Investor ads copied");
+    assert.ok(created.blocks.some((b) => b.type === "paragraph" && b.formattedText?.[0].text === "1. " && b.formattedText[0].styling?.includes("bold")), "numbered items get a bold number");
+    assert.ok(am.warnings.some((w) => /#2 found/.test(w)));
+
+    // 4:35 PM: the recap builds; the brief is already drafted.
+    const pm = await buildDailyIssues({ dateKey: DATE }, deps(prisma, bh, EVENING));
+    assert.deepEqual(pm.slots.map((s) => [s.slot, s.status]), [[1, "skipped"], [2, "drafted"]]);
+    assert.equal(bh.calls.length, 2);
+    assert.deepEqual((bh.calls[1].body as { content_tags: string[] }).content_tags, ["closing-recap"]);
 
     const rows = await prisma.newsletterIssue.findMany({ where: { issueDate: DATE }, orderBy: { slot: "asc" } });
-    assert.match(rows[0].beehiivPostId ?? "", /^post_fsa_[12]$/, "slots build in parallel, so either id");
-    assert.notEqual(rows[0].beehiivPostId, rows[1].beehiivPostId);
+    assert.equal(rows[0].eventKey, `morning:${DATE}`);
     assert.equal(rows[0].tsiAdvertisers, "Wyatt (Gold / V3)");
     assert.equal(rows[0].webSearches, 3);
-    assert.equal(rows[1].adsFound, 0);
-    assert.equal(rows[1].tsiPostId, null);
-    assert.match(rows[0].articleText ?? "", /NVDA was the name every desk/);
+    assert.equal(rows[1].adsFound, 0, "no Smart Investor #2 yesterday: placeholders");
+    assert.match(rows[1].articleText ?? "", /S&P 500 fell 0.4%/);
 
-    // A slot another run is writing right now (fresh pending row) is left alone without force.
-    await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { status: "pending", beehiivPostId: null, updatedAt: new Date(NOW.getTime() - 2 * 60_000) } });
-    const overlapping = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
-    assert.equal(overlapping.slots.find((s) => s.slot === 2)?.status, "pending");
-    assert.equal(overlapping.slots.find((s) => s.slot === 2)?.skipped, true);
-    assert.equal(bh.calls.length, 2, "no new draft while the other run is mid-build");
-    // A stale pending row (the run died) is rebuilt.
-    await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { updatedAt: new Date(NOW.getTime() - 30 * 60_000) } });
-    const stale = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
-    assert.equal(stale.slots.find((s) => s.slot === 2)?.status, "drafted");
-    assert.equal(bh.calls.length, 3);
-
-    // Second run: nothing to do.
-    const again = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
-    assert.ok(again.slots.every((s) => s.skipped));
-    assert.equal(bh.calls.length, 3);
-
-    // The next day, both tickers are on cooldown and both events are listed.
-    const ex = await loadExclusions(prisma, "2099-01-06");
-    assert.deepEqual(ex.recentTickers.sort(), ["LULU", "NVDA"]);
-    assert.equal(ex.recentEvents.length, 2);
-    // Ignoring today's slot 1 drops its ticker from the cooldown list.
-    assert.deepEqual((await loadExclusions(prisma, DATE, [{ issueDate: DATE, slot: 1 }])).recentTickers, ["LULU"]);
-
-    // Force rebuild of slot 2 only: a new draft, row overwritten and marked forced, slot 1 untouched.
-    const forced = await buildDailyIssues({ dateKey: DATE, slots: [2], force: true }, { db: prisma, fetchImpl: bh.fetchImpl, picker: { async pick(i) { const p = await fakePicker.pick(i); return { ...p, picks: p.picks.map((x) => ({ ...x, ticker: "AMD", companyName: "AMD" })) }; } }, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
-    assert.equal(forced.slots[0].status, "drafted");
-    assert.equal(forced.slots[0].ticker, "AMD");
-    assert.equal(bh.calls.length, 4);
-    const slot2 = await prisma.newsletterIssue.findUnique({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } } });
-    assert.equal(slot2?.ticker, "AMD");
-    assert.equal(slot2?.forced, true);
-    assert.equal(slot2?.beehiivPostId, "post_fsa_4");
-    assert.equal((await prisma.newsletterIssue.count({ where: { issueDate: DATE } })), 2);
-  } finally {
-    await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
-    await prisma.$disconnect();
-  }
-});
-
-test("a failing writer on one slot leaves the other drafted; twice-invalid text becomes needs_review with a [REVIEW] draft", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
-  const prisma = new PrismaClient({ datasourceUrl: url });
-  const { buildDailyIssues } = await import("../lib/newsletter/build");
-  await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
-  try {
-    const bh = beehiiv();
-    const writer = { async write(pick: { ticker: string }) { if (pick.ticker === "LULU") throw new Error("model exploded"); return goodWriter.write(pick); } };
-    const r = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer, news: async () => news, tsiAds, profile, now: NOW });
-    assert.equal(r.slots[0].status, "drafted");
-    assert.equal(r.slots[1].status, "failed");
-    assert.match(r.slots[1].error ?? "", /model exploded/);
-    assert.equal(bh.calls.length, 1);
-    const failed = await prisma.newsletterIssue.findUnique({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } } });
-    assert.equal(failed?.status, "failed");
-    assert.match(failed?.error ?? "", /2 attempt/);
-
-    // A failed slot is rebuilt on the next plain run (no force needed), this time with text that never passes validation.
-    const banned = { async write(pick: { ticker: string }) { return { raw: raw(pick.ticker, " with a secret"), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, stopReason: "end_turn" }; } };
-    const r2 = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: banned, news: async () => news, tsiAds, profile, now: NOW });
-    const s2 = r2.slots.find((s) => s.slot === 2)!;
-    assert.equal(s2.status, "needs_review");
-    assert.match(s2.reviewReason ?? "", /banned phrase "secret"/);
-    assert.ok(s2.beehiivPostId);
-    assert.equal((bh.calls[bh.calls.length - 1].body as { title: string }).title, "[REVIEW] LULU did a thing with a secret");
-    assert.equal(r2.slots.find((s) => s.slot === 1)?.skipped, true);
-  } finally {
-    await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
-    await prisma.$disconnect();
-  }
-});
-
-test("a stale first pick is re-picked once and the slot still lands a draft", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
-  const prisma = new PrismaClient({ datasourceUrl: url });
-  const { buildDailyIssues } = await import("../lib/newsletter/build");
-  await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
-  try {
-    const bh = beehiiv();
-    const pickerCalls: number[][] = [];
-    const picker = { async pick(input: { slots: number[]; candidates: { ticker: string }[] }) { pickerCalls.push(input.slots); const first = input.candidates[0]?.ticker ?? "AMD"; return { picks: input.slots.map((slot, i) => ({ slot, ticker: input.slots.length === 2 ? ["NVDA", "LULU"][i] : first, companyName: first, eventSummary: `${first} event`, eventSlug: "event", eventDate: DATE, whyNow: "", seedUrls: [] })), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, raw: "" }; } };
-    const writer = { async write(pick: { ticker: string }) { if (pick.ticker === "NVDA") return { raw: "STALE: 2098-12-01 | old news", usage: { inputTokens: 1, outputTokens: 1, webSearches: 1 }, stopReason: "end_turn" }; return goodWriter.write(pick); } };
-    const r = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker, writer, news: async () => news, tsiAds, profile, now: NOW });
-    const s1 = r.slots.find((s) => s.slot === 1)!;
-    assert.equal(s1.status, "drafted");
-    assert.notEqual(s1.ticker, "NVDA", "the stale ticker was replaced");
-    assert.equal(s1.ticker, "AMD", "the re-pick excluded NVDA and the other slot's LULU");
-    assert.equal(r.slots.find((s) => s.slot === 2)?.status, "drafted");
-    assert.deepEqual(pickerCalls, [[1, 2], [1]]);
+    // A slot another run is writing right now is left alone; a stale pending row is rebuilt.
+    await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { status: "pending", beehiivPostId: null, updatedAt: new Date(EVENING.getTime() - 2 * 60_000) } });
+    const overlapping = await buildDailyIssues({ dateKey: DATE, slots: [2] }, deps(prisma, bh, EVENING));
+    assert.equal(overlapping.slots[0].status, "pending");
     assert.equal(bh.calls.length, 2);
-    const row = await prisma.newsletterIssue.findUnique({ where: { issueDate_slot: { issueDate: DATE, slot: 1 } } });
-    assert.equal(row?.ticker, "AMD");
-    assert.equal(row?.webSearches, 4, "usage of the stale attempt is kept");
+    await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { updatedAt: new Date(EVENING.getTime() - 30 * 60_000) } });
+    const stale = await buildDailyIssues({ dateKey: DATE, slots: [2] }, deps(prisma, bh, EVENING));
+    assert.equal(stale.slots[0].status, "drafted");
+    assert.equal(bh.calls.length, 3);
+
+    // Force: rebuild the brief in the evening, outside its window.
+    const forced = await buildDailyIssues({ dateKey: DATE, slots: [1], force: true }, deps(prisma, bh, EVENING));
+    assert.equal(forced.slots[0].status, "drafted");
+    assert.equal(bh.calls.length, 4);
+    const slot1 = await prisma.newsletterIssue.findUnique({ where: { issueDate_slot: { issueDate: DATE, slot: 1 } } });
+    assert.equal(slot1?.forced, true);
+    assert.equal(slot1?.beehiivPostId, "post_fsa_4");
+    assert.equal(await prisma.newsletterIssue.count({ where: { issueDate: DATE } }), 2);
   } finally {
     await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
     await prisma.$disconnect();
   }
 });
 
-test("a slot whose pick duplicates another slot's ticker today re-picks before writing", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
+test("weekends and NYSE holidays build nothing unless forced", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
   const prisma = new PrismaClient({ datasourceUrl: url });
   const { buildDailyIssues } = await import("../lib/newsletter/build");
   await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
   try {
-    // Slot 1's invocation writes its pending NVDA row after this run loaded its exclusions
-    // (the profile lookup runs between the two), which is exactly the race.
-    let planted = false;
-    const racingProfile = async (t: string) => {
-      if (!planted) {
-        planted = true;
-        await prisma.newsletterIssue.create({ data: { issueDate: DATE, slot: 1, status: "pending", ticker: "NVDA", updatedAt: new Date(NOW.getTime() - 60_000) } });
-      }
-      return profile(t);
-    };
     const bh = beehiiv();
-    const pickerCalls: string[][] = [];
-    const picker = { async pick(input: { slots: number[]; candidates: { ticker: string }[]; exclusions: { recentTickers: string[] } }) { pickerCalls.push(input.exclusions.recentTickers); const t = input.candidates.find((c) => !input.exclusions.recentTickers.includes(c.ticker))?.ticker ?? "NVDA"; return { picks: input.slots.map((slot) => ({ slot, ticker: t, companyName: t, eventSummary: `${t} event`, eventSlug: "event", eventDate: DATE, whyNow: "", seedUrls: [] })), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, raw: "" }; } };
-    // Simulate the race: the first pick ignores exclusions and lands on NVDA too.
-    // Without the row in its exclusions, this run's first pick is NVDA as well.
-    let first = true;
-    const racing = { async pick(input: Parameters<typeof picker.pick>[0]) { if (first) { first = false; pickerCalls.push(input.exclusions.recentTickers); return { picks: [{ slot: 2, ticker: "NVDA", companyName: "Nvidia", eventSummary: "NVDA event", eventSlug: "event", eventDate: DATE, whyNow: "", seedUrls: [] }], usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, raw: "" }; } return picker.pick(input); } };
-    const r = await buildDailyIssues({ dateKey: DATE, slots: [2] }, { db: prisma, fetchImpl: bh.fetchImpl, picker: racing, writer: goodWriter, news: async () => news, tsiAds, profile: racingProfile, now: NOW });
-    const s2 = r.slots[0];
-    assert.equal(s2.status, "drafted");
-    assert.notEqual(s2.ticker, "NVDA", "the clash was detected and another topic picked");
-    assert.ok(pickerCalls[1].includes("NVDA"), "the re-pick excluded the clashing ticker");
-    assert.equal((await prisma.newsletterIssue.findUnique({ where: { issueDate_slot: { issueDate: DATE, slot: 1 } } }))?.ticker, "NVDA", "slot 1 untouched");
+    const sat = await buildDailyIssues({ dateKey: "2099-01-03" }, deps(prisma, bh, new Date("2099-01-03T12:30:00Z")));
+    assert.ok(sat.slots.every((s) => s.status === "skipped" && /weekends/.test(s.note ?? "")));
+    const holiday = await buildDailyIssues({ dateKey: "2099-01-01" }, deps(prisma, bh, new Date("2099-01-01T12:30:00Z")));
+    assert.ok(holiday.slots.every((s) => /NYSE holiday/.test(s.note ?? "")));
+    assert.equal(bh.calls.length, 0);
+    assert.equal(await prisma.newsletterIssue.count({ where: { issueDate: { startsWith: "2099-" } } }), 0, "nothing recorded for skipped days");
+    const forcedSat = await buildDailyIssues({ dateKey: "2099-01-03", slots: [1], force: true }, deps(prisma, bh, new Date("2099-01-03T12:30:00Z")));
+    assert.equal(forcedSat.slots[0].status, "drafted");
   } finally {
     await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
     await prisma.$disconnect();
   }
 });
 
-test("the pause setting stops a plain run but not a forced one; dry runs write nothing to Beehiiv", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
+test("a failing writer leaves the other issue alone; twice-invalid text becomes needs_review with a [REVIEW] draft", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
+  const prisma = new PrismaClient({ datasourceUrl: url });
+  const { buildDailyIssues } = await import("../lib/newsletter/build");
+  await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
+  try {
+    const bh = beehiiv();
+    const boom = { async write() { throw new Error("model exploded"); } };
+    const r = await buildDailyIssues({ dateKey: DATE, slots: [1] }, deps(prisma, bh, MORNING, { writer: boom }));
+    assert.equal(r.slots[0].status, "failed");
+    assert.match(r.slots[0].error ?? "", /Morning brief failed after 2 attempt\(s\): model exploded/);
+    assert.equal(bh.calls.length, 0);
+
+    // The failed slot is rebuilt on the next plain run, this time with text that never passes validation.
+    const banned = { async write(p: IssuePrompt) { return { raw: raw(kindOf(p), " with a secret"), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, stopReason: "end_turn" }; } };
+    const r2 = await buildDailyIssues({ dateKey: DATE, slots: [1] }, deps(prisma, bh, MORNING, { writer: banned }));
+    assert.equal(r2.slots[0].status, "needs_review");
+    assert.match(r2.slots[0].reviewReason ?? "", /banned phrase "secret"/);
+    assert.ok(r2.slots[0].beehiivPostId);
+    assert.equal((bh.calls[0].body as { title: string }).title, "[REVIEW] Nine things to watch before the bell with a secret");
+  } finally {
+    await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
+    await prisma.$disconnect();
+  }
+});
+
+test("the pause setting stops a plain run but not a forced one; dry runs write nothing", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
   const prisma = new PrismaClient({ datasourceUrl: url });
   const { buildDailyIssues } = await import("../lib/newsletter/build");
   await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
   await prisma.appSetting.upsert({ where: { key: "newsletterBuildPaused" }, create: { key: "newsletterBuildPaused", value: "1" }, update: { value: "1" } });
   try {
     const bh = beehiiv();
-    const paused = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
+    const paused = await buildDailyIssues({ dateKey: DATE }, deps(prisma, bh, MORNING));
     assert.equal(paused.paused, true);
     assert.equal(paused.slots.length, 0);
-    const dry = await buildDailyIssues({ dateKey: DATE, force: true }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW, dry: true });
+    const dry = await buildDailyIssues({ dateKey: DATE, force: true }, deps(prisma, bh, MORNING, { dry: true }));
     assert.equal(dry.paused, false);
     assert.equal(bh.calls.length, 0);
     assert.ok(dry.slots.every((s) => s.status === "drafted" && s.body && !s.beehiivPostId));
-    assert.equal(await prisma.newsletterIssue.count({ where: { issueDate: DATE } }), 0, "a dry run leaves no rows, so the real run is not skipped");
+    assert.equal(await prisma.newsletterIssue.count({ where: { issueDate: DATE } }), 0, "a dry run leaves no rows");
   } finally {
     await prisma.appSetting.deleteMany({ where: { key: "newsletterBuildPaused" } });
     await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });

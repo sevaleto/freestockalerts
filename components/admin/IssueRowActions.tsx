@@ -22,6 +22,8 @@ function pollRefresh(refresh: () => void) {
   }, 15_000);
 }
 
+const KIND_LABEL: Record<number, string> = { 1: "morning brief", 2: "closing recap" };
+
 /** Open in Beehiiv, or rebuild this slot (a new draft; the old one stays in Beehiiv). */
 export function IssueRowActions({ issueDate, slot, beehiivPostUrl, status }: { issueDate: string; slot: number; beehiivPostUrl: string | null; status: string }) {
   const router = useRouter();
@@ -29,7 +31,7 @@ export function IssueRowActions({ issueDate, slot, beehiivPostUrl, status }: { i
 
   async function rebuild() {
     const note = status === "drafted" || status === "needs_review" ? " The current draft stays in Beehiiv; delete it there if you keep the new one." : "";
-    if (!window.confirm(`Rebuild issue ${slot} for ${issueDate}? This picks a topic, writes the article and creates a new Beehiiv draft (a few minutes).${note}`)) return;
+    if (!window.confirm(`Rebuild the ${KIND_LABEL[slot] ?? `issue ${slot}`} for ${issueDate}? This gathers today's data, writes it and creates a new Beehiiv draft (a few minutes).${note}`)) return;
     setBusy(true);
     try {
       const error = await postBuild({ date: issueDate, slot, force: true });
@@ -57,16 +59,16 @@ export function IssueRowActions({ issueDate, slot, beehiivPostUrl, status }: { i
   );
 }
 
-/** Build today's two issues on demand, and pause or resume the morning cron. */
+/** Build either issue on demand (ignores the time window), and pause or resume the crons. */
 export function IssuesToolbar({ today, paused }: { today: string; paused: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState<"build" | "pause" | null>(null);
 
-  async function buildToday() {
-    if (!window.confirm(`Build today's issues (${today}) now? Slots that already have a draft are skipped. Each issue shows up here as it finishes (a few minutes); the run report is emailed at the end.`)) return;
+  async function buildNow(slot: 1 | 2) {
+    if (!window.confirm(`Build today's ${KIND_LABEL[slot]} (${today}) now? If one already exists, a new draft is created and the old one stays in Beehiiv. It shows up here when it finishes (a few minutes); the report is emailed.`)) return;
     setBusy("build");
     try {
-      const error = await postBuild({ date: today });
+      const error = await postBuild({ date: today, slot, force: true });
       if (error) window.alert(error);
       else {
         router.refresh();
@@ -94,8 +96,11 @@ export function IssuesToolbar({ today, paused }: { today: string; paused: boolea
       <button type="button" disabled={busy !== null} onClick={togglePause} className={btn}>
         {busy === "pause" ? "Saving…" : paused ? "Resume builds" : "Pause builds"}
       </button>
-      <button type="button" disabled={busy !== null} onClick={buildToday} className="inline-flex h-11 items-center rounded-xl bg-lp-teal px-5 text-sm font-semibold text-white shadow-sm hover:bg-lp-teal-dark disabled:opacity-50">
-        {busy === "build" ? "Building…" : "Build today"}
+      <button type="button" disabled={busy !== null} onClick={() => buildNow(1)} className="inline-flex h-11 items-center rounded-xl bg-lp-teal px-5 text-sm font-semibold text-white shadow-sm hover:bg-lp-teal-dark disabled:opacity-50">
+        {busy === "build" ? "Building…" : "Build morning brief"}
+      </button>
+      <button type="button" disabled={busy !== null} onClick={() => buildNow(2)} className="inline-flex h-11 items-center rounded-xl bg-lp-navy px-5 text-sm font-semibold text-white shadow-sm hover:bg-lp-navy/90 disabled:opacity-50">
+        {busy === "build" ? "Building…" : "Build closing recap"}
       </button>
     </div>
   );
