@@ -73,6 +73,9 @@ export interface BuildOptions {
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 
+/** A pending row younger than this belongs to a run that is still going (Vercel functions stop at 300s). */
+export const IN_PROGRESS_MS = 6 * 60_000;
+
 export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Promise<BuildResult> {
   const started = Date.now();
   const now = deps.now ?? new Date();
@@ -94,14 +97,16 @@ export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Pro
     return finish();
   }
 
-  // Idempotency: a slot with a draft is not rebuilt unless forced.
+  // Idempotency: a slot with a draft is not rebuilt unless forced, and a slot another
+  // run is writing right now (pending, touched in the last few minutes) is left alone.
   const existing = await deps.db.newsletterIssue.findMany({ where: { issueDate: dateKey, slot: { in: requested } } });
   const slots: Slot[] = [];
   for (const slot of requested) {
     const row = existing.find((r) => r.slot === slot);
-    if (row && !opts.force && (row.status === "drafted" || row.status === "needs_review")) {
-      log(`slot ${slot}: already ${row.status} (${row.beehiivPostId ?? "no id"}); skipped`);
-      result.slots.push({ slot, status: "skipped", skipped: true, ticker: row.ticker ?? undefined, headline: row.headline ?? undefined, beehiivPostId: row.beehiivPostId ?? undefined, beehiivPostUrl: row.beehiivPostUrl ?? undefined, adsFound: row.adsFound, costUsd: 0 });
+    const inProgress = row?.status === "pending" && now.getTime() - row.updatedAt.getTime() < IN_PROGRESS_MS;
+    if (row && !opts.force && (row.status === "drafted" || row.status === "needs_review" || inProgress)) {
+      log(`slot ${slot}: already ${inProgress ? "building" : row.status} (${row.beehiivPostId ?? "no id"}); skipped`);
+      result.slots.push({ slot, status: inProgress ? "pending" : "skipped", skipped: true, ticker: row.ticker ?? undefined, headline: row.headline ?? undefined, beehiivPostId: row.beehiivPostId ?? undefined, beehiivPostUrl: row.beehiivPostUrl ?? undefined, adsFound: row.adsFound, costUsd: 0 });
       continue;
     }
     slots.push(slot);

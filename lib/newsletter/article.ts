@@ -149,10 +149,15 @@ const MARKDOWN_LINE_RE = /^\s*(?:[#*•]|- |\d+\.\s)/m;
 
 const ABBREVIATIONS = /\b(?:U\.S|U\.K|U\.N|E\.U|Inc|Corp|Co|Ltd|Mr|Ms|Mrs|Dr|Sen|Rep|Gov|Jr|Sr|St|vs|No|Jan|Feb|Aug|Sept|Oct|Nov|Dec|a\.m|p\.m)\./gi;
 
-/** Roughly count sentences; common abbreviations are masked first, and the cap below is one above the target. */
+/**
+ * Roughly count sentences. Common abbreviations and the inside of quotations
+ * are masked first (a quoted statement may hold several sentences and still
+ * be one sentence of the paragraph); the cap below is one above the target.
+ */
 export const sentenceCount = (p: string) =>
   p
     .replace(ABBREVIATIONS, (m) => m.replace(/\./g, "\u0000"))
+    .replace(/["“][^"”]{1,400}["”]/g, (m) => m.replace(/[.!?](?=\s)/g, "\u0000"))
     .split(/(?<=[.!?]["”')]?)\s+(?=[A-Z"“$(])/)
     .filter((s) => s.trim()).length;
 

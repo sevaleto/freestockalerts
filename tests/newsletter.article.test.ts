@@ -178,6 +178,7 @@ test("sentenceCount tolerates decimals, closing quotes and abbreviations", () =>
   assert.equal(sentenceCount("The U.S. Securities and Exchange Commission and Apple Inc. Chief Tim Cook met Mr. Smith. Shares rose."), 2);
   assert.equal(sentenceCount('He called demand "extraordinary." Shares fell 3% after hours.'), 2);
   assert.equal(sentenceCount("One sentence only, with 2.5 in it."), 1);
+  assert.equal(sentenceCount('CEO Jensen Huang said in a statement carried by Fortune, "AI is here. Demand is extraordinary. We are ramping." Shares rose.'), 2, "sentences inside a quotation count as one");
 });
 
 test("writer prompt carries the pick, seeds and retry reason; cost uses list prices", () => {

@@ -80,10 +80,22 @@ test("buildDailyIssues drafts both slots, records rows, skips on rerun, and rebu
     assert.equal(rows[1].tsiPostId, null);
     assert.match(rows[0].articleText ?? "", /NVDA was the name every desk/);
 
+    // A slot another run is writing right now (fresh pending row) is left alone without force.
+    await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { status: "pending", beehiivPostId: null, updatedAt: new Date(NOW.getTime() - 2 * 60_000) } });
+    const overlapping = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
+    assert.equal(overlapping.slots.find((s) => s.slot === 2)?.status, "pending");
+    assert.equal(overlapping.slots.find((s) => s.slot === 2)?.skipped, true);
+    assert.equal(bh.calls.length, 2, "no new draft while the other run is mid-build");
+    // A stale pending row (the run died) is rebuilt.
+    await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { updatedAt: new Date(NOW.getTime() - 30 * 60_000) } });
+    const stale = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
+    assert.equal(stale.slots.find((s) => s.slot === 2)?.status, "drafted");
+    assert.equal(bh.calls.length, 3);
+
     // Second run: nothing to do.
     const again = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
     assert.ok(again.slots.every((s) => s.skipped));
-    assert.equal(bh.calls.length, 2);
+    assert.equal(bh.calls.length, 3);
 
     // The next day, both tickers are on cooldown and both events are listed.
     const ex = await loadExclusions(prisma, "2099-01-06");
@@ -96,11 +108,11 @@ test("buildDailyIssues drafts both slots, records rows, skips on rerun, and rebu
     const forced = await buildDailyIssues({ dateKey: DATE, slots: [2], force: true }, { db: prisma, fetchImpl: bh.fetchImpl, picker: { async pick(i) { const p = await fakePicker.pick(i); return { ...p, picks: p.picks.map((x) => ({ ...x, ticker: "AMD", companyName: "AMD" })) }; } }, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
     assert.equal(forced.slots[0].status, "drafted");
     assert.equal(forced.slots[0].ticker, "AMD");
-    assert.equal(bh.calls.length, 3);
+    assert.equal(bh.calls.length, 4);
     const slot2 = await prisma.newsletterIssue.findUnique({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } } });
     assert.equal(slot2?.ticker, "AMD");
     assert.equal(slot2?.forced, true);
-    assert.equal(slot2?.beehiivPostId, "post_fsa_3");
+    assert.equal(slot2?.beehiivPostId, "post_fsa_4");
     assert.equal((await prisma.newsletterIssue.count({ where: { issueDate: DATE } })), 2);
   } finally {
     await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
