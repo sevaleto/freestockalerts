@@ -21,6 +21,8 @@ interface AlertEmailProps {
   aiSummary: string;
   appUrl: string;
   contextLines?: string[];
+  /** The AI-written context, one entry per paragraph. Falls back to aiSummary when absent. */
+  contextParagraphs?: string[];
 }
 
 export function AlertEmail({
@@ -33,7 +35,9 @@ export function AlertEmail({
   aiSummary,
   appUrl,
   contextLines = [],
+  contextParagraphs,
 }: AlertEmailProps) {
+  const paragraphs = contextParagraphs && contextParagraphs.length ? contextParagraphs : aiSummary.split(/\n\s*\n/).filter(Boolean);
   return (
     <Html>
       <Head />
@@ -78,7 +82,11 @@ export function AlertEmail({
               borderRadius: "12px",
             }}
           >
-            <Text style={{ margin: 0, color: "#0F172A" }}>{aiSummary}</Text>
+            {paragraphs.map((p, i) => (
+              <Text key={i} style={{ margin: i === 0 ? 0 : "12px 0 0", color: "#0F172A", lineHeight: "22px" }}>
+                {p}
+              </Text>
+            ))}
           </Section>
           <Section style={{ marginTop: "20px" }}>
             <Link

@@ -12,12 +12,14 @@ interface SignalEmailProps {
   maxScore: number | null;
   sourceLine: string;
   appUrl: string;
+  /** AI-written context, one entry per paragraph; omitted when not generated. */
+  contextParagraphs?: string[];
 }
 
 const navy = "#0F172A";
 
 /** Email for an event-strategy signal (insider purchase, analyst cluster). Same look as the alert email. */
-export function SignalEmail({ strategyName, strategySlug, symbol, subject, explanation, rows, score, maxScore, sourceLine, appUrl }: SignalEmailProps) {
+export function SignalEmail({ strategyName, strategySlug, symbol, subject, explanation, rows, score, maxScore, sourceLine, appUrl, contextParagraphs = [] }: SignalEmailProps) {
   return (
     <Html>
       <Head />
@@ -32,6 +34,17 @@ export function SignalEmail({ strategyName, strategySlug, symbol, subject, expla
             <Text style={{ margin: 0, fontSize: "13px", fontWeight: 600, color: navy }}>Why it triggered</Text>
             <Text style={{ margin: "6px 0 0", color: navy }}>{explanation}</Text>
           </Section>
+
+          {contextParagraphs.length ? (
+            <Section style={{ marginTop: "12px", padding: "16px", backgroundColor: "#F1F6FD", borderRadius: "12px" }}>
+              <Text style={{ margin: 0, fontSize: "13px", fontWeight: 600, color: navy }}>Context</Text>
+              {contextParagraphs.map((p, i) => (
+                <Text key={i} style={{ margin: i === 0 ? "6px 0 0" : "12px 0 0", color: navy, lineHeight: "22px" }}>
+                  {p}
+                </Text>
+              ))}
+            </Section>
+          ) : null}
 
           <Section style={{ marginTop: "16px" }}>
             {rows.map((r) => (

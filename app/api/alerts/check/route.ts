@@ -7,47 +7,11 @@ import { isSameMarketDay } from "@/lib/utils/marketHours";
 import { buildAlertContext } from "@/lib/alerts/context";
 import { describeTrigger } from "@/lib/alerts/describe";
 import { alertTypeOptions } from "@/lib/mock/alertTypes";
-import OpenAI from "openai";
+import { gatherAlertFacts, writeAlertContext } from "@/lib/ai/alertContext";
 
 export const dynamic = "force-dynamic";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" });
-
 const humanAlertType = (alertType: string) => alertTypeOptions.find((o) => o.id === alertType)?.name ?? alertType.replace(/_/g, " ");
-
-async function generateSummary(
-  ticker: string,
-  alertType: string,
-  triggerValue: number,
-  currentPrice: number,
-  dayChange?: number,
-  dayChangePercent?: number,
-  triggerText = "",
-  contextLines: string[] = []
-): Promise<string> {
-  const fallback = `${ticker} ${triggerText || `crossed $${triggerValue}`}, now at $${currentPrice}.${contextLines.length ? ` ${contextLines.join(" ")}` : ""}`;
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_tokens: 160,
-      temperature: 0.5,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You write the two-sentence context paragraph in a stock alert email for individual investors. Sentence one: what happened, using the trigger and the context lines provided. Sentence two: what investors typically watch next in this situation. Descriptive only: do not recommend buying or selling, do not predict direction, do not invent numbers that are not given, no disclaimers.",
-        },
-        {
-          role: "user",
-          content: `Stock: ${ticker}\nAlert: ${triggerText || alertType}\nCurrent price: $${currentPrice}${dayChange !== undefined ? `\nDay change: ${dayChange > 0 ? "+" : ""}$${dayChange} (${dayChangePercent ?? 0}%)` : ""}${contextLines.length ? `\nContext:\n- ${contextLines.join("\n- ")}` : ""}\n\nContext paragraph:`,
-        },
-      ],
-    });
-    return completion.choices[0]?.message?.content?.trim() || fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 // Vercel crons send GET requests
 export async function GET(request: Request) {
@@ -92,7 +56,7 @@ async function runAlertCheck(request: Request) {
   }
 
   // ?dryRun=1 — evaluate every active alert and report what WOULD fire,
-  // without sending email, calling OpenAI, or writing to the database.
+  // without sending email, calling the model, or writing to the database.
   // Also bypasses the market-hours gate so it can be used any time.
   const dryRun = new URL(request.url).searchParams.get("dryRun") === "1";
 
@@ -112,6 +76,9 @@ async function runAlertCheck(request: Request) {
       triggerDirection: true,
       cooldownMinutes: true,
       triggeredAt: true,
+      note: true,
+      companyName: true,
+      template: { select: { slug: true } },
     },
   });
 
@@ -201,19 +168,33 @@ async function runAlertCheck(request: Request) {
           return { dryRun: true, alertId: alert.id, wouldEmail: emailAllowed };
         }
 
-        // Descriptive context (moving averages, volume vs average, sector vs SPY), then the summary.
+        // Descriptive context (moving averages, volume vs average, sector vs SPY), then the
+        // two-paragraph AI context written from gathered facts (news, analysts, earnings).
         const triggerText = describeTrigger({ ticker: alert.ticker, alertType: alert.alertType, triggerValue: alert.triggerValue, triggerDirection: alert.triggerDirection });
         const context = quote ? await buildAlertContext({ ...quote, ticker: alert.ticker }) : { lines: [] };
-        const aiSummary = await generateSummary(
-          alert.ticker,
-          alert.alertType,
-          alert.triggerValue,
-          result.priceAtTrigger,
-          quote?.change,
-          quote?.changePercent,
+        const facts = await gatherAlertFacts({
+          ticker: alert.ticker,
+          companyName: quote?.companyName ?? alert.companyName,
           triggerText,
-          context.lines
-        );
+          quote: {
+            price: result.priceAtTrigger,
+            changePercent: quote?.changePercent,
+            dayChange: quote?.change,
+            volume: quote?.volume,
+            sma50: quote?.sma50,
+            sma200: quote?.sma200,
+            fiftyTwoWeekHigh: quote?.fiftyTwoWeekHigh,
+            fiftyTwoWeekLow: quote?.fiftyTwoWeekLow,
+            marketCap: quote?.marketCap,
+          },
+          contextLines: context.lines,
+          volumeRatio: context.volumeRatio,
+          note: alert.note,
+          strategySlug: alert.template?.slug ?? null,
+          now,
+        });
+        const written = await writeAlertContext(facts);
+        const aiSummary = written.text;
 
         // Send email notification (Resend returns { data, error } — it does
         // not throw on API errors, so check `error` explicitly).
@@ -230,6 +211,7 @@ async function runAlertCheck(request: Request) {
               dayChange: quote ? `${quote.change > 0 ? "+" : ""}${quote.change?.toFixed(2) ?? "0.00"}` : "N/A",
               volume: quote?.volume ? `${quote.volume.toLocaleString()}${context.volumeRatio ? ` (${context.volumeRatio.toFixed(1)}x avg)` : ""}` : "N/A",
               aiSummary,
+              contextParagraphs: written.paragraphs,
               contextLines: context.lines,
             });
             if (error) {

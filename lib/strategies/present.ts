@@ -98,6 +98,21 @@ export function signalRows(s: SignalLike): SignalRow[] {
   return rows;
 }
 
+/** Written by the scan after the signal is created; absent on signals from before the feature. */
+export interface SignalAiContext {
+  text: string;
+  paragraphs: string[];
+  source: "claude" | "fallback";
+  model: string | null;
+  generatedAt: string;
+}
+
+export function signalAiContext(s: SignalLike): SignalAiContext | null {
+  const p = s.payload as { aiContext?: SignalAiContext } | null;
+  const c = p?.aiContext;
+  return c && Array.isArray(c.paragraphs) && c.paragraphs.length ? c : null;
+}
+
 export function signalSource(s: SignalLike): string {
   const p = s.payload as { source?: string };
   return `${p.source ?? "Financial Modeling Prep"}. Data as of ${formatDataTimestamp(s.dataAsOf)}.`;

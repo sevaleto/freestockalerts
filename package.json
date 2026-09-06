@@ -12,6 +12,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "refresh:strategies": "tsx scripts/refresh-strategies.ts",
     "scan:strategies": "tsx scripts/scan-strategies.ts",
+    "preview:context": "tsx scripts/preview-alert-context.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:db": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://$USER@localhost:5432/freestockalerts_test} node --import tsx --test tests/db.*.test.ts",
@@ -21,7 +22,7 @@
     "update:disposable": "tsx scripts/update-disposable-domains.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
+    "@anthropic-ai/sdk": "^0.124.0",
     "@prisma/client": "^5.19.0",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -45,7 +46,6 @@
     "lucide-react": "^0.441.0",
     "next": "^15.5.25",
     "next-themes": "^0.4.6",
-    "openai": "^6.25.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "recharts": "^2.12.0",

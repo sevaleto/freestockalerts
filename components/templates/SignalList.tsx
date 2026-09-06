@@ -1,5 +1,5 @@
 import { ExternalLink, Inbox } from "lucide-react";
-import { formatDataTimestamp, maxScoreFor, signalRows, type SignalLike } from "@/lib/strategies/present";
+import { formatDataTimestamp, maxScoreFor, signalAiContext, signalRows, type SignalLike } from "@/lib/strategies/present";
 
 interface SignalListProps {
   signals: SignalLike[];
@@ -58,6 +58,13 @@ export function SignalList({ signals, lastScanAt, strategyName, title = "Recent 
                   </span>
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-lp-navy">{s.explanation}</p>
+                {!compact && signalAiContext(s) ? (
+                  <div className="mt-3 space-y-2 rounded-lg border border-lp-blue/15 bg-[#F1F6FD] p-3 text-sm leading-relaxed text-lp-navy/85">
+                    {signalAiContext(s)!.paragraphs.map((p, i) => (
+                      <p key={i}>{p}</p>
+                    ))}
+                  </div>
+                ) : null}
                 <dl className="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
                   {shown
                     .filter((r) => r.label !== "Company")
