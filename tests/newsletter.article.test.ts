@@ -144,29 +144,15 @@ SOURCE: The Wall Street Journal | https://www.wsj.com/business/adobe-ceo
 BODY:
 ${body}`;
 
-const CLOSING_BODY = `Stocks slipped on Tuesday as a hot jobs report sent bond yields higher and took some air out of the rally. The S&P 500 fell 0.4%, the Nasdaq lost 0.6% and the Dow gave up 0.3%, per Reuters.
+const CLOSING_BODY = [
+  ITEM(1, "Stocks slipped on Tuesday as a hot jobs report sent bond yields higher. The S&P 500 fell 0.4%, the Nasdaq lost 0.6% and the Dow gave up 0.3%, per Reuters, while the 10-year Treasury yield climbed 8 basis points to 4.78%, its highest close since June."),
+  ITEM(2, "Lululemon was the day's biggest large-cap loser, down 20.3% after cutting its full-year outlook. Comparable sales fell 10% and management called its product launches inconsistent, according to Bloomberg. Revenue guidance now sits at $10.35 billion to $10.5 billion."),
+  ITEM(3, "Adobe rose 5.1% after naming Anil Chakravarthy as its next chief executive, effective in December. He joined from Informatica nearly seven years ago, and investors liked the continuity, per The Wall Street Journal."),
+  ITEM(4, "Intel fell 3% after Mizuho trimmed its price target to $92 from $109 while keeping a neutral rating. The analysts still like the agentic AI server tailwind into 2028 but see multiple compression across the group, CNBC reported."),
+  ITEM(5, "On deck for Wednesday: the consumer price index at 8:30 a.m. ET, with economists looking for a 0.3% monthly rise, and Apple's product event in the afternoon, its first fall launch under John Ternus, according to Barron's."),
+].join("\n\n");
 
-The 10-year Treasury yield climbed 8 basis points to 4.78%, its highest close since June, CNBC reported. That was the whole story for rate-sensitive groups: utilities and real estate led the decliners.
-
-Lululemon was the day's biggest large-cap loser, down 20.3% after cutting its full-year outlook. Comparable sales fell 10% and management called its product launches inconsistent, according to Bloomberg.
-
-Adobe went the other way, up 5.1% after naming Anil Chakravarthy as its next chief executive. Investors liked the continuity, per The Wall Street Journal.
-
-Energy was the lone sector in the green as crude rose 1.2%, and Chevron added 0.9%. Technology lagged, with the Nasdaq-100 proxy QQQ down 0.7% on the day.
-
-The most active name was Intel, which fell 3% after Mizuho trimmed its price target to $92 from $109. Volume ran well above its recent average, Reuters noted.
-
-Small caps had a rougher day than the big names. The Russell 2000 proxy IWM slid 1.1%, and regional banks were weak across the board as the yield curve steepened, according to MarketWatch.
-
-Breadth was poor: roughly three stocks fell for every one that rose on the New York Stock Exchange, per Reuters. Trading volume ran about 6% above the 30-day average, a sign that the selling was not just thin holiday-week trade.
-
-Bitcoin, for what it is worth, did nothing: flat near $110,000 while everything else moved, which Bloomberg noted is the quietest week for the token since May. Gold slipped 0.3% as yields rose.
-
-Oil rose 1.2% to $64 a barrel after OPEC+ kept output steady for October, which helped the energy group finish about 0.5% higher, the lone bright spot among the eleven sectors.
-
-On deck for Wednesday: the consumer price index at 8:30 a.m. ET, with economists looking for a 0.3% monthly rise, and Apple's product event in the afternoon. Both could set the tone for the rest of the week.`;
-
-const closingRaw = rawFor(CLOSING_BODY).replace("Ten things to watch before the bell", "Yields bite, Lululemon breaks, Adobe finds its next CEO");
+const closingRaw = rawFor(CLOSING_BODY).replace("Ten things to watch before the bell", "Five stories that mattered");
 
 test("parseWriterOutput reads the delimited format, with and without markdown decoration", () => {
   const p = parseWriterOutput(rawFor(MORNING_BODY));
@@ -204,18 +190,17 @@ test("validateIssue: the morning brief", () => {
   assert.deepEqual(validateIssue("morning", { ...good, headline: "Coca-Cola® and nine more" }, "2026-09-08"), { ok: true }, "® is not an emoji");
 });
 
-test("validateIssue: the closing recap", () => {
+test("validateIssue: the closing recap is exactly five numbered items and opens with the market close", () => {
   const good = (parseWriterOutput(closingRaw) as { ok: true; article: Article }).article;
   assert.deepEqual(validateIssue("closing", good, "2026-09-08"), { ok: true });
   const reason = (a: Article) => (validateIssue("closing", a, "2026-09-08") as { ok: false; reason: string }).reason;
-  assert.match(reason({ ...good, paragraphs: good.paragraphs.slice(0, 2) }), /under 350/);
-  assert.match(reason({ ...good, paragraphs: [...good.paragraphs, ...good.paragraphs, ...good.paragraphs] }), /over 700/);
-  assert.match(reason({ ...good, paragraphs: [good.paragraphs.slice(0, 4).join(" "), ...good.paragraphs.slice(4)] }), /more than 4 sentences/);
-  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p) => p.replace(/S&P 500|Nasdaq|Dow/g, "index")) }), /never names the S&P 500/);
-  assert.match(reason({ ...good, paragraphs: ["- a bullet", ...good.paragraphs] }), /bullets/);
-  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p, i) => (i === 0 ? p + " The market will soar tomorrow." : p)) }), /banned phrase "will soar"/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.slice(0, 4) }), /only 4 items; exactly 5 needed/);
+  assert.match(reason({ ...good, paragraphs: [...good.paragraphs, ITEM(6, "A sixth item with enough words to pass the length rule, mentioning a 2% move in some stock, which the validator still rejects because five is the number.")] }), /6 items; at most 5/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p, i) => (i === 0 ? "1. Stocks slipped on Tuesday after a hot jobs report sent yields higher, and the mood on trading desks was sour all afternoon, per Reuters and CNBC, with the 10-year yield up 8 basis points to 4.78% and volume running above average." : p)) }), /item 1 of the recap must be the market close/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p, i) => (i === 2 ? "3. Adobe rose after naming a new CEO." : p)) }), /under 30 words/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p, i) => (i === 1 ? p + " The stock will soar tomorrow." : p)) }), /banned phrase "will soar"/);
   assert.match(reason({ ...good, subjectLine: "y".repeat(71) }), /subject is 71/);
-  assert.match(reason({ ...good, paragraphs: [`Hello {{first_name}}. ${good.paragraphs[0]}`, ...good.paragraphs.slice(1)] }), /merge tag/);
+  assert.match(reason({ ...good, paragraphs: good.paragraphs.map((p) => p.replace(/^\d+\. /, "")) }), /does not start with its number/);
 });
 
 test("sentenceCount tolerates decimals, closing quotes, abbreviations and quoted sentences", () => {
@@ -236,7 +221,7 @@ test("prompts carry the facts and retry reason; writeIssue retries once then fla
   assert.match(p.user, /Today is Tuesday, September 8/);
   assert.match(p.user, /FACTS HERE/);
   assert.match(p.user, /rejected: only 5 items/);
-  assert.match(renderIssuePrompt("closing", "F", "2026-09-08").system, /closing recap/);
+  assert.match(renderIssuePrompt("closing", "F", "2026-09-08").system, /numbered list of exactly 5 items/);
 
   let calls = 0;
   const shortWriter = { async write() { calls++; return { raw: rawFor(MORNING_BODY.split("\n\n").slice(0, 5).join("\n\n")), usage: { inputTokens: 10, outputTokens: 5, webSearches: 2 }, stopReason: "end_turn" }; } };

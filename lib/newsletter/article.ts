@@ -73,13 +73,15 @@ ${COMPLIANCE}
 
 ${OUTPUT_FORMAT}`;
 
-export const CLOSING_SYSTEM_PROMPT = `You write the closing recap of a daily stock newsletter for self-directed individual investors (FreeStockAlerts.AI). It goes out right after the closing bell and tells the reader what happened in the stock market today, and why.
+export const CLOSING_SYSTEM_PROMPT = `You write the closing recap of a daily stock newsletter for self-directed individual investors (FreeStockAlerts.AI). It goes out right after the closing bell and tells the reader the ${NEWSLETTER.closing.maxItems} business and finance stories from today that mattered to people who follow the stock market.
 
-Shape: ${NEWSLETTER.closing.minWords} to ${NEWSLETTER.closing.maxWords} words in short paragraphs of one to ${NEWSLETTER.closing.maxSentencesPerParagraph} sentences, one blank line between paragraphs. Open with the day in one vivid sentence and the index closes (S&P 500, Nasdaq, Dow, with percentage moves). Then the story of the session: what drove it, which sectors led and lagged, the biggest large-cap movers and the reason for each, bond yields and anything macro. Close with what is on deck tomorrow. Every paragraph carries a specific number.
+Shape: a numbered list of exactly ${NEWSLETTER.closing.maxItems} items, each ${NEWSLETTER.closing.minItemWords} to ${NEWSLETTER.closing.maxItemWords} words, one blank line between items, each starting with its number and a period ("1. "). Item 1 is how the market closed and why (S&P 500, Nasdaq and Dow with their percentage moves, the driver of the session). Items 2 to ${NEWSLETTER.closing.maxItems} are the day's biggest business and finance stories, one per item: an earnings report and the stock's reaction, a deal, a data release and how the market took it, a regulatory or legal decision, a large stock move with its cause, a notable analyst call, a big macro or Fed headline. Every item carries a specific number and names the company or the market it affects.
 
-Research: use web_search to confirm the official index closes and the reasons behind the biggest moves (searches like "stock market today" and the tickers in the facts below). Name outlets in the text ("per Reuters", "CNBC reported"). Every number must come from the facts below or something you read; when a fact conflicts with what you read, prefer the fresher source. Only today's session and today's news; [opinion] sites may point you to a story but are never cited as the source of a fact.
+What qualifies: something that happened today (during the session or after the prior close) and matters to a stock investor. Skip human-interest features, profiles, explainers and evergreen pieces. Facts come from [news] and [release] sources and your searches; [opinion] sites (Motley Fool, Seeking Alpha, 24/7 Wall St, MarketBeat and the like) may point you to a story but are never cited as the source of a fact.
 
-Voice: interesting, entertaining, easy to read. A storyteller who respects the reader's intelligence: concrete, a little wry, never breathless. Short sentences. No jargon left unexplained.
+Research: use web_search to confirm the official index closes and the stories behind the biggest moves (searches like "stock market today" and the tickers in the facts below). Name outlets in the text ("per Reuters", "CNBC reported"). Every number must come from the facts below or something you read; when a fact conflicts with what you read, prefer the fresher source.
+
+Voice: a sharp desk editor recapping the day for one reader. Interesting, easy to read, concrete, a dry aside now and then, never breathless. Plain English, no jargon left unexplained.
 
 ${COMPLIANCE}
 
@@ -90,7 +92,7 @@ export function renderIssuePrompt(kind: IssueKind, factsText: string, dateKey: D
   lines.push(`Today is ${longDate(dateKey)} (${dateKey}).`);
   lines.push("", "Facts gathered by the desk:", factsText);
   if (retryReason) lines.push("", `Your previous draft was rejected: ${retryReason}. Fix that and write it again in the required format.`);
-  lines.push("", kind === "morning" ? "Research the morning, then write the brief in the required format." : "Research the session, then write the recap in the required format.");
+  lines.push("", kind === "morning" ? "Research the morning, then write the brief in the required format." : "Research the session, then write the five-item recap in the required format.");
   return { system: kind === "morning" ? MORNING_SYSTEM_PROMPT : CLOSING_SYSTEM_PROMPT, user: lines.join("\n") };
 }
 
@@ -227,31 +229,25 @@ function validateCommon(a: Article, body: string): string | null {
   return null;
 }
 
+/** Both issues are numbered lists; the counts and item lengths differ by kind. */
 export function validateIssue(kind: IssueKind, a: Article, issueDate: DateKey): { ok: true } | { ok: false; reason: string } {
   const body = a.paragraphs.join("\n\n");
   const stale = stalenessReason(a, issueDate);
   if (stale) return { ok: false, reason: stale };
-  if (kind === "morning") {
-    const items = numberedItems(a.paragraphs);
-    if (!items.ok) return items;
-    const n = items.items.length;
-    if (n < NEWSLETTER.morning.minItems) return { ok: false, reason: `only ${n} items; ${NEWSLETTER.morning.minItems} to ${NEWSLETTER.morning.maxItems} needed` };
-    if (n > NEWSLETTER.morning.maxItems) return { ok: false, reason: `${n} items; at most ${NEWSLETTER.morning.maxItems}` };
-    const short = items.items.find((t) => wordCount(t) < NEWSLETTER.morning.minItemWords);
-    if (short) return { ok: false, reason: `an item is under ${NEWSLETTER.morning.minItemWords} words: "${short.slice(0, 50)}..."` };
-    const long = items.items.find((t) => wordCount(t) > NEWSLETTER.morning.maxItemWords);
-    if (long) return { ok: false, reason: `an item is over ${NEWSLETTER.morning.maxItemWords} words: "${long.slice(0, 50)}..."` };
-    // Most items should carry a figure; a couple of pure news items (a CEO change, a product delay) are fine.
-    const numberless = items.items.filter((t) => !/\d/.test(t)).length;
-    if (numberless > Math.floor(n / 2)) return { ok: false, reason: `${numberless} of ${n} items carry no number at all` };
-  } else {
-    const words = wordCount(body);
-    if (words < NEWSLETTER.closing.minWords) return { ok: false, reason: `body is ${words} words, under ${NEWSLETTER.closing.minWords}` };
-    if (words > NEWSLETTER.closing.maxWords) return { ok: false, reason: `body is ${words} words, over ${NEWSLETTER.closing.maxWords}` };
-    const long = a.paragraphs.find((p) => sentenceCount(p) > NEWSLETTER.closing.maxSentencesPerParagraph + 1);
-    if (long) return { ok: false, reason: `a paragraph has more than ${NEWSLETTER.closing.maxSentencesPerParagraph} sentences: "${long.slice(0, 60)}..."` };
-    if (!/S&P|Nasdaq|\bDow\b/.test(body)) return { ok: false, reason: "the recap never names the S&P 500, Nasdaq or Dow" };
-  }
+  const rules = NEWSLETTER[kind];
+  const items = numberedItems(a.paragraphs);
+  if (!items.ok) return items;
+  const n = items.items.length;
+  if (n < rules.minItems) return { ok: false, reason: `only ${n} items; ${rules.minItems === rules.maxItems ? `exactly ${rules.maxItems}` : `${rules.minItems} to ${rules.maxItems}`} needed` };
+  if (n > rules.maxItems) return { ok: false, reason: `${n} items; at most ${rules.maxItems}` };
+  const short = items.items.find((t) => wordCount(t) < rules.minItemWords);
+  if (short) return { ok: false, reason: `an item is under ${rules.minItemWords} words: "${short.slice(0, 50)}..."` };
+  const long = items.items.find((t) => wordCount(t) > rules.maxItemWords);
+  if (long) return { ok: false, reason: `an item is over ${rules.maxItemWords} words: "${long.slice(0, 50)}..."` };
+  // Most items should carry a figure; a couple of pure news items (a CEO change, a product delay) are fine.
+  const numberless = items.items.filter((t) => !/\d/.test(t)).length;
+  if (numberless > Math.floor(n / 2)) return { ok: false, reason: `${numberless} of ${n} items carry no number at all` };
+  if (kind === "closing" && !/S&P|Nasdaq|\bDow\b/.test(items.items[0])) return { ok: false, reason: "item 1 of the recap must be the market close (S&P 500, Nasdaq, Dow)" };
   const common = validateCommon(a, body);
   return common ? { ok: false, reason: common } : { ok: true };
 }

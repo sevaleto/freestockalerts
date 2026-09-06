@@ -43,7 +43,7 @@ export default async function AdminIssuesPage({ searchParams }: { searchParams: 
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Daily issues</p>
           <h1 className="mt-2 font-serif text-4xl text-lp-navy">Newsletter drafts</h1>
           <p className="mt-3 max-w-2xl text-base text-lp-navy/75">
-            Every weekday the app drafts a pre-market brief around 7:30 AM ET and a closing recap around 4:35 PM ET, copies the ads that ran in yesterday&apos;s Smart Investor issues, and creates the drafts in Beehiiv. Nothing is sent until you click Send there.
+            Every weekday the app drafts a pre-market brief (things to watch) around 7:30 AM ET and a closing recap (the five business stories that mattered) around 4:35 PM ET, copies the ads that ran in yesterday&apos;s Smart Investor issues, and creates the drafts in Beehiiv. Nothing is sent until you click Send there.
           </p>
         </div>
         <IssuesToolbar today={today} paused={paused === "1"} />

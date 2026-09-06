@@ -40,9 +40,11 @@ export const NEWSLETTER = {
     newsLookbackHours: 18,
   },
   closing: {
-    minWords: 350,
-    maxWords: 700,
-    maxSentencesPerParagraph: 4,
+    /** Numbered items, like the brief: the day's five business stories that mattered to stock investors. */
+    minItems: 5,
+    maxItems: 5,
+    minItemWords: 30,
+    maxItemWords: 130,
     newsLookbackHours: 14,
   },
   maxHeadlineChars: 90,

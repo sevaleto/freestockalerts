@@ -285,7 +285,7 @@ job is opening Beehiiv and clicking Send. Code lives in `lib/newsletter/`; the l
 | Slot | Kind | Cron (UTC) | Eastern window | What it is |
 |---|---|---|---|---|
 | 1 | Morning brief | `30 11` and `30 12`, Mon–Fri | 07:00–09:25 | A numbered "things to watch" list (8–10 items) before the opening bell: futures and macro, pre-market movers, today's earnings and economic calendar, analyst calls. Modeled on the CNBC Investing Club "top 10 things to watch". |
-| 2 | Closing recap | `35 20` and `35 21`, Mon–Fri | 16:05–23:30 | A 350–700 word recap of the session: index closes, what drove it, sectors, large-cap movers, yields, what is on deck. Entertaining, easy to read, every paragraph has a number. |
+| 2 | Closing recap | `35 20` and `35 21`, Mon–Fri | 16:05–23:30 | Exactly five numbered items: item 1 is how the market closed and why (S&P 500, Nasdaq, Dow); items 2–5 are the day's business and finance stories that mattered to stock investors (earnings, deals, data, regulatory, big movers, analyst calls). Same voice as the brief. |
 
 Each cron path (`/api/newsletter/build/1`, `/2`) fires twice so one run lands inside the Eastern
 window in both summer and winter time; the other run is a no-op. Weekends and NYSE holidays (FMP
@@ -301,7 +301,7 @@ window in both summer and winter time; the other run is a no-op. Weekends and NY
 - **Writer** (`article.ts`): Claude (`claude-sonnet-5`) with the `web_search` server tool writes
   from the facts in a delimited format (`HEADLINE:`, `SUBJECT:`, `SOURCE:` lines, `BODY:`). The
   morning validator checks 8–10 sequential numbered items of 20–120 words; the closing validator
-  checks length, paragraphs of at most four sentences and that the indexes are named. Both check
+  checks exactly five items of 30–130 words with the index close in item 1. Both check
   three named sources (dated URLs must be from the last two days), no markdown, and the compliance
   list (no "guaranteed", "risk-free", "secret", buy/sell advice, price predictions). One retry with
   the reason; a second failure still creates the draft, titled `[REVIEW] …` with an editor note.
@@ -312,8 +312,9 @@ window in both summer and winter time; the other run is a no-op. Weekends and NY
   classes. The morning brief gets issue #1's ads, the closing recap issue #2's. A missing ad becomes
   a red placeholder line and a warning; ads are never borrowed from the other slot.
 - **Draft** (`render.ts`): native Beehiiv blocks (editable) for the text, `html` blocks for the
-  ads: intro → ad 1 → headline → items or paragraphs → sources → ad 2 → disclaimer. Numbered items
-  get a bold number. `status: "draft"`, subject line and preview text set, tag `morning-brief` or
+  ads: intro → ad 1 → headline → items → sources → ad 2 → disclaimer. Items get a bold number; the
+  headlines are fixed ("Top 9 things to watch Monday, September 8" / "5 market stories that
+  mattered Monday, September 8"). `status: "draft"`, subject line and preview text set, tag `morning-brief` or
   `closing-recap`.
 - **Report** (`report.ts`): each run that builds something emails a report (drafts, Beehiiv links,
   ads found, review reasons, cost) to `NEWSLETTER_REPORT_TO`; the subject leads with the issue that

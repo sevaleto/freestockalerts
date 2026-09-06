@@ -238,11 +238,9 @@ async function buildSlot(job: SlotJob): Promise<SlotResult> {
   }
 
   const reviewReason = written.status === "needs_review" ? written.reason : null;
-  // The brief's headline is fixed, like the CNBC list it is modeled on: "Top 9 things to watch Monday, September 8".
-  if (kind === "morning") {
-    const items = numberedItems(written.article.paragraphs);
-    if (items.ok) written.article.headline = `Top ${items.items.length} things to watch ${longDate(dateKey)}`;
-  }
+  // Both headlines are fixed, like the CNBC list the brief is modeled on.
+  const items = numberedItems(written.article.paragraphs);
+  if (items.ok) written.article.headline = kind === "morning" ? `Top ${items.items.length} things to watch ${longDate(dateKey)}` : `${items.items.length} market stories that mattered ${longDate(dateKey)}`;
   const body = buildCreatePostBody({
     dateKey,
     slot,

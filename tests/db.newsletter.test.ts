@@ -35,7 +35,7 @@ const facts = async (kind: "morning" | "closing", dateKey: string): Promise<Issu
 
 const item = (n: number, t: string) => `${n}. ${t} Reuters reported the figure at 8:30 a.m. ET, and CNBC added that analysts had expected a smaller number, which is why futures moved about 0.4%.`;
 const MORNING_BODY = Array.from({ length: 9 }, (_, i) => item(i + 1, `Item ${i + 1} covers a stock moving 3% pre-market on real news.`)).join("\n\n");
-const CLOSING_BODY = Array.from({ length: 8 }, (_, i) => `Paragraph ${i + 1}: the S&P 500 fell 0.4% and the Nasdaq lost 0.6%, per Reuters. CNBC reported that the 10-year yield rose 8 basis points to 4.78%. Lululemon dropped 20% after cutting its outlook, Bloomberg said, while Adobe gained 5% on its new chief executive.`).join("\n\n");
+const CLOSING_BODY = Array.from({ length: 5 }, (_, i) => `${i + 1}. ${i === 0 ? "The S&P 500 fell 0.4% and the Nasdaq lost 0.6% while the Dow slipped 0.3%, per Reuters." : `Story ${i + 1}: Lululemon dropped 20% after cutting its outlook, Bloomberg said.`} CNBC reported that the 10-year yield rose 8 basis points to 4.78%, and Adobe gained 5% on its new chief executive, according to The Wall Street Journal.`).join("\n\n");
 
 const raw = (kind: "morning" | "closing", extra = "") => `HEADLINE: ${kind === "morning" ? "Nine things to watch before the bell" : "Yields bite and Lululemon breaks"}${extra}
 SUBTITLE: A deck.
@@ -100,7 +100,8 @@ test("the morning cron builds only the brief, the evening cron only the recap; r
     assert.equal(rows[0].tsiAdvertisers, "Wyatt (Gold / V3)");
     assert.equal(rows[0].webSearches, 3);
     assert.equal(rows[1].adsFound, 0, "no Smart Investor #2 yesterday: placeholders");
-    assert.match(rows[1].articleText ?? "", /S&P 500 fell 0.4%/);
+    assert.match(rows[1].articleText ?? "", /^1\. The S&P 500 fell 0.4%/);
+    assert.equal(rows[1].headline, "5 market stories that mattered Tuesday, January 6");
 
     // A slot another run is writing right now is left alone; a stale pending row is rebuilt.
     await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { status: "pending", beehiivPostId: null, updatedAt: new Date(EVENING.getTime() - 2 * 60_000) } });
