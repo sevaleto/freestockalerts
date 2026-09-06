@@ -45,26 +45,37 @@ export async function handleBuildRequest(request: Request, slotFromPath?: string
   }
 }
 
-/** The origin to call ourselves on: the deployment URL skips Cloudflare's 100-second limit. */
-export const selfOrigin = () => (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
+/**
+ * How to call ourselves. Deployment URLs sit behind Vercel's SSO protection,
+ * so they only work with the automation bypass secret; otherwise use the public
+ * origin. Cloudflare drops that connection after 100 seconds, which is fine: the
+ * invocation keeps running and the caller does not need the response.
+ */
+export function selfTarget(): { origin: string; headers: Record<string, string> } {
+  const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (bypass && process.env.VERCEL_URL) return { origin: `https://${process.env.VERCEL_URL}`, headers: { "x-vercel-protection-bypass": bypass } };
+  return { origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000", headers: {} };
+}
 
 /**
  * Start one build invocation per slot over HTTP (each gets its own function
  * and budget) and wait for them. Used by the admin route from inside after().
  */
 export async function triggerSlotBuilds(opts: { dateKey?: string; slots: readonly Slot[]; force: boolean }): Promise<{ slot: Slot; status: number | null; error?: string }[]> {
-  const headers: Record<string, string> = {};
+  const target = selfTarget();
+  const headers: Record<string, string> = { ...target.headers };
   if (process.env.CRON_SECRET) headers.Authorization = `Bearer ${process.env.CRON_SECRET}`;
   const last = opts.slots[opts.slots.length - 1];
   return Promise.all(
     opts.slots.map(async (slot) => {
-      const u = new URL(`${selfOrigin()}/api/newsletter/build/${slot}`);
+      const u = new URL(`${target.origin}/api/newsletter/build/${slot}`);
       if (opts.dateKey) u.searchParams.set("date", opts.dateKey);
       if (opts.force) u.searchParams.set("force", "1");
       u.searchParams.set("report", slot === last ? "1" : "0");
       try {
-        const res = await fetch(u, { headers, cache: "no-store" });
-        return { slot, status: res.status };
+        const res = await fetch(u, { headers, cache: "no-store", redirect: "manual" });
+        // 3xx here means Vercel's SSO wall, i.e. the wrong origin; the build did not start.
+        return { slot, status: res.status, ...(res.status >= 300 && res.status < 400 ? { error: "redirected (deployment protection); set VERCEL_AUTOMATION_BYPASS_SECRET or NEXT_PUBLIC_APP_URL" } : {}) };
       } catch (err) {
         return { slot, status: null, error: err instanceof Error ? err.message : String(err) };
       }
