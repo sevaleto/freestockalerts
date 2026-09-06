@@ -179,6 +179,40 @@ test("a stale first pick is re-picked once and the slot still lands a draft", { 
   }
 });
 
+test("a slot whose pick duplicates another slot's ticker today re-picks before writing", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
+  const prisma = new PrismaClient({ datasourceUrl: url });
+  const { buildDailyIssues } = await import("../lib/newsletter/build");
+  await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
+  try {
+    // Slot 1's invocation writes its pending NVDA row after this run loaded its exclusions
+    // (the profile lookup runs between the two), which is exactly the race.
+    let planted = false;
+    const racingProfile = async (t: string) => {
+      if (!planted) {
+        planted = true;
+        await prisma.newsletterIssue.create({ data: { issueDate: DATE, slot: 1, status: "pending", ticker: "NVDA", updatedAt: new Date(NOW.getTime() - 60_000) } });
+      }
+      return profile(t);
+    };
+    const bh = beehiiv();
+    const pickerCalls: string[][] = [];
+    const picker = { async pick(input: { slots: number[]; candidates: { ticker: string }[]; exclusions: { recentTickers: string[] } }) { pickerCalls.push(input.exclusions.recentTickers); const t = input.candidates.find((c) => !input.exclusions.recentTickers.includes(c.ticker))?.ticker ?? "NVDA"; return { picks: input.slots.map((slot) => ({ slot, ticker: t, companyName: t, eventSummary: `${t} event`, eventSlug: "event", eventDate: DATE, whyNow: "", seedUrls: [] })), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, raw: "" }; } };
+    // Simulate the race: the first pick ignores exclusions and lands on NVDA too.
+    // Without the row in its exclusions, this run's first pick is NVDA as well.
+    let first = true;
+    const racing = { async pick(input: Parameters<typeof picker.pick>[0]) { if (first) { first = false; pickerCalls.push(input.exclusions.recentTickers); return { picks: [{ slot: 2, ticker: "NVDA", companyName: "Nvidia", eventSummary: "NVDA event", eventSlug: "event", eventDate: DATE, whyNow: "", seedUrls: [] }], usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, raw: "" }; } return picker.pick(input); } };
+    const r = await buildDailyIssues({ dateKey: DATE, slots: [2] }, { db: prisma, fetchImpl: bh.fetchImpl, picker: racing, writer: goodWriter, news: async () => news, tsiAds, profile: racingProfile, now: NOW });
+    const s2 = r.slots[0];
+    assert.equal(s2.status, "drafted");
+    assert.notEqual(s2.ticker, "NVDA", "the clash was detected and another topic picked");
+    assert.ok(pickerCalls[1].includes("NVDA"), "the re-pick excluded the clashing ticker");
+    assert.equal((await prisma.newsletterIssue.findUnique({ where: { issueDate_slot: { issueDate: DATE, slot: 1 } } }))?.ticker, "NVDA", "slot 1 untouched");
+  } finally {
+    await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
+    await prisma.$disconnect();
+  }
+});
+
 test("the pause setting stops a plain run but not a forced one; dry runs write nothing to Beehiiv", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
   const prisma = new PrismaClient({ datasourceUrl: url });
   const { buildDailyIssues } = await import("../lib/newsletter/build");
