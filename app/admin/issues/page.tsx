@@ -16,6 +16,8 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = { drafted: "Draft ready", needs_review: "Needs review", failed: "Failed", pending: "Building", skipped: "Skipped" };
+/** A pending row nobody has touched for this long belongs to a run that died; Rebuild picks it up. */
+const STALLED_MS = 10 * 60_000;
 
 const usd = (n: number) => `$${n.toFixed(3)}`;
 
@@ -99,7 +101,11 @@ export default async function AdminIssuesPage({ searchParams }: { searchParams: 
                     {r.forced ? <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">rebuilt</span> : null}
                   </td>
                   <td className="px-3 py-4">
-                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLE[r.status] ?? "bg-slate-100 text-slate-600"}`}>{STATUS_LABEL[r.status] ?? r.status}</span>
+                    {r.status === "pending" && Date.now() - r.updatedAt.getTime() > STALLED_MS ? (
+                      <span className="inline-block rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">Stalled</span>
+                    ) : (
+                      <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLE[r.status] ?? "bg-slate-100 text-slate-600"}`}>{STATUS_LABEL[r.status] ?? r.status}</span>
+                    )}
                   </td>
                   <td className="max-w-[420px] px-3 py-4">
                     <p className="font-semibold text-lp-navy">
