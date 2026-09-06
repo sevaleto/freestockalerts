@@ -85,7 +85,7 @@ export async function upsertUserForAuth(input: UpsertInput) {
         ...attributionColumns(input.attribution),
       },
     });
-    return { user: created, created: true };
+    return { user: created, created: true, firstVerification: true };
   }
 
   const user = await prisma.user.update({
@@ -99,7 +99,10 @@ export async function upsertUserForAuth(input: UpsertInput) {
       ...(input.lastLinkSentAt ? { lastLinkSentAt: input.lastLinkSentAt } : {}),
     },
   });
-  return { user, created: false };
+  // A lead captured at form submit already has a row; the first sign-in that
+  // flips emailVerified is when the registration actually completes.
+  const firstVerification = !!input.emailVerified && !existing.emailVerified;
+  return { user, created: false, firstVerification };
 }
 
 // Audience membership is gated on the deliverability verdict; see lib/email/verification.ts

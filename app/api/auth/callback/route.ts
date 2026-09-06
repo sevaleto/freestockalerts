@@ -112,6 +112,6 @@ export async function GET(request: Request) {
   });
 
   const redirectUrl = new URL(next, origin);
-  redirectUrl.searchParams.set("capi_eid", eventId);
+  if (eventId) redirectUrl.searchParams.set("capi_eid", eventId);
   return clearHandoff(NextResponse.redirect(redirectUrl.toString()));
 }

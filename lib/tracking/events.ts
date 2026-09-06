@@ -113,8 +113,9 @@ export function trackLead(
 }
 
 /**
- * User successfully authenticated and lands on dashboard.
- * Accepts optional event_id from CAPI (passed via URL param capi_eid).
+ * A brand-new account finished registering and landed on the dashboard.
+ * Pass the CAPI event_id (URL param capi_eid) so Meta dedupes this against the
+ * server event; callers should not fire this for returning sign-ins.
  * Returns true when the Meta pixel was present and the event was queued.
  */
 export function trackCompleteRegistration(capiEventId?: string): boolean {
