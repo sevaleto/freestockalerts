@@ -26,7 +26,17 @@ model User {
   emailVerdict           String?   // raw verdict: Email Oversight Result name, or magic-link | google | bounce | complaint | precheck:<reason>
   emailCheckedAt         DateTime? // when emailStatus was last written
   emailCheckAttempts     Int       @default(0) // Email Oversight calls made (Retry/Unknown are retried up to 3 times)
+  // First-touch acquisition data captured at signup (URL params on the page the lead converted on).
+  utmSource              String?
+  utmMedium              String?
+  utmCampaign            String?
+  utmTerm                String?
+  utmContent             String?
+  fbclid                 String?
+  landingPath            String?
+  referrer               String?
   alerts                 Alert[]
+  subscriber             Subscriber?
   templateSubs           TemplateSubscription[]
   preferences            UserPreferences?
 
@@ -369,4 +379,199 @@ model PrivacyRequest {
 
   @@index([ts])
   @@index([email])
+}
+
+// ---------------------------------------------------------------------------
+// Email ads: admin-created sponsored snippets rotated into the bottom of alert
+// and signal emails. Rotation is fair and weighted (fewest impressions per
+// unit of weight serves next), so every active ad gets its share.
+// ---------------------------------------------------------------------------
+
+model EmailAd {
+  id            String         @id @default(cuid())
+  /// Internal label (campaign / advertiser), never rendered.
+  name          String
+  /// Header line, e.g. "Special Report"; rendered with a trailing colon.
+  leadIn        String
+  headline      String
+  /// One of the preset hex colors in lib/ads/template.ts.
+  headlineColor String
+  /// Plain text; blank lines separate paragraphs.
+  body          String
+  ctaText       String
+  ctaUrl        String
+  /// Optional 230px-wide image shown beside the copy.
+  imageUrl      String?
+  /// active | paused
+  status        String         @default("active")
+  weight        Int            @default(1)
+  startAt       DateTime?
+  endAt         DateTime?
+  impressions   Int            @default(0)
+  clicks        Int            @default(0)
+  /// Revenue assumed per counted click, stamped on each click at click time.
+  valueCents    Int            @default(250)
+  lastShownAt   DateTime?
+  createdBy     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  clickEvents   EmailAdClick[]
+
+  @@index([status])
+}
+
+model EmailAdClick {
+  id        String   @id @default(cuid())
+  adId      String
+  ad        EmailAd  @relation(fields: [adId], references: [id], onDelete: Cascade)
+  ts        DateTime @default(now())
+  /// sha256(salt + ip); no raw IP stored.
+  ipHash    String?
+  userAgent String?
+  /// Counted toward `EmailAd.clicks`; false for bot user agents and repeat clicks within a day.
+  counted   Boolean  @default(true)
+  /// alert | beehiiv_fsa | beehiiv_si | unknown
+  channel   String   @default("unknown")
+  /// Raw subscriber token from the link (u_<userId> or Beehiiv sub_…); kept so a click can be attached later.
+  token     String?
+  subscriberId String?
+  subscriber   Subscriber? @relation(fields: [subscriberId], references: [id], onDelete: SetNull)
+  /// Value credited to this click (0 when not counted).
+  valueCents Int     @default(0)
+
+  @@index([adId, ts])
+  @@index([subscriberId, ts])
+  @@index([token])
+}
+
+// ---------------------------------------------------------------------------
+// Subscribers: one row per email across the app and both Beehiiv newsletters,
+// with first-touch attribution and the ad clicks credited to them.
+// ---------------------------------------------------------------------------
+
+model Subscriber {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  firstName           String?
+  userId              String?   @unique
+  user                User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appCreatedAt        DateTime?
+  beehiivFsaId        String?   @unique
+  beehiivFsaStatus    String?
+  beehiivFsaCreatedAt DateTime?
+  beehiivSiId         String?   @unique
+  beehiivSiStatus     String?
+  beehiivSiCreatedAt  DateTime?
+  /// Lifetime click counts Beehiiv reports per subscription (every link in every issue). Refreshed each sync.
+  beehiivFsaClicks       Int       @default(0)
+  beehiivFsaUniqueClicks Int       @default(0)
+  beehiivSiClicks        Int       @default(0)
+  beehiivSiUniqueClicks  Int       @default(0)
+  /// Counts at the moment tracking started for this subscriber; clicks before that are not credited.
+  beehiivFsaClicksBaseline       Int @default(0)
+  beehiivFsaUniqueClicksBaseline Int @default(0)
+  beehiivSiClicksBaseline        Int @default(0)
+  beehiivSiUniqueClicksBaseline  Int @default(0)
+  beehiivStatsAt         DateTime?
+  /// First time this subscriber's Beehiiv stats were read (the baseline moment).
+  trackingStartedAt      DateTime?
+  /// Earliest signup across sources; cohort month comes from this.
+  firstSeenAt         DateTime
+  /// Which source the attribution below came from: app | beehiiv_fsa | beehiiv_si
+  attributionSource   String?
+  utmSource           String?
+  utmMedium           String?
+  utmCampaign         String?
+  utmTerm             String?
+  utmContent          String?
+  referringSite       String?
+  landingPath         String?
+  /// "<source>|<medium>|<campaign>" (lowercased); joins CohortCost.
+  cohortKey           String
+  /// Alert-email ad clicks through our redirect (per-ad value stamped at click time).
+  countedClicks       Int       @default(0)
+  clickValueCents     Int       @default(0)
+  lastClickAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  clicks              EmailAdClick[]
+
+  @@index([cohortKey])
+  @@index([firstSeenAt])
+  @@index([utmSource])
+}
+
+/// Key/value admin settings, e.g. newsletterClickValueCents.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+/// A sent Beehiiv issue with its email stats, so the admin can see which links earned the clicks.
+model NewsletterPost {
+  id          String           @id
+  /// fsa | si
+  publication String
+  title       String
+  subtitle    String?
+  webUrl      String?
+  publishDate DateTime?
+  recipients  Int              @default(0)
+  delivered   Int              @default(0)
+  uniqueOpens Int              @default(0)
+  clicks      Int              @default(0)
+  uniqueClicks Int             @default(0)
+  /// Beehiiv's human-verified subset (excludes link scanners).
+  verifiedClicks       Int     @default(0)
+  uniqueVerifiedClicks Int     @default(0)
+  syncedAt    DateTime         @default(now())
+  links       NewsletterLink[]
+
+  @@index([publication, publishDate])
+}
+
+model NewsletterLink {
+  id                String         @id @default(cuid())
+  postId            String
+  post              NewsletterPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url               String
+  baseUrl           String
+  emailClicks       Int            @default(0)
+  emailUniqueClicks Int            @default(0)
+  verifiedClicks       Int         @default(0)
+  uniqueVerifiedClicks Int         @default(0)
+  webClicks         Int            @default(0)
+
+  @@unique([postId, url])
+}
+
+/// Ad spend per cohort and month, entered by hand on /admin/cohorts.
+model CohortCost {
+  id        String   @id @default(cuid())
+  cohortKey String
+  /// YYYY-MM
+  month     String
+  costCents Int
+  note      String?
+  updatedAt DateTime @updatedAt
+
+  @@unique([cohortKey, month])
+}
+
+/// One row per sync invocation; the cursor lets a long Beehiiv pass continue across cron runs.
+model SubscriberSyncRun {
+  id           String    @id @default(cuid())
+  /// beehiiv_fsa | beehiiv_si | app
+  source       String
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  pagesFetched Int       @default(0)
+  rowsUpserted Int       @default(0)
+  cursor       String?
+  /// True when the pass reached the end of the list.
+  completed    Boolean   @default(false)
+  error        String?
+
+  @@index([source, startedAt])
 }

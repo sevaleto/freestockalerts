@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { CookieConsentProvider } from "@/lib/cookies/CookieConsentContext";
 import { CookieConsent } from "@/components/shared/CookieConsent";
 import { TrackingScripts } from "@/components/shared/TrackingScripts";
+import { CaptureAttribution } from "@/components/shared/CaptureAttribution";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -64,6 +65,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-white text-text-primary antialiased">
         <CookieConsentProvider>
           {children}
+          <CaptureAttribution />
           <TrackingScripts />
           <CookieConsent />
           <Toaster />

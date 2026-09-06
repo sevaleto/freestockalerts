@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { trackInitiateSignup } from "@/lib/tracking/events";
 import { isInAppBrowser } from "@/lib/auth/inAppBrowser";
 import { cn } from "@/lib/utils";
+import { getAttribution } from "@/lib/tracking/attributionClient";
 
 interface GoogleSignInButtonProps {
   /** Label text — defaults to "Continue with Google" */
@@ -47,6 +48,8 @@ export function GoogleSignInButton({
     trackInitiateSignup(contentName);
     if (next) setShortCookie("fsa_next", next);
     if (source) setShortCookie("fsa_src", source);
+    const attribution = getAttribution();
+    if (attribution) setShortCookie("fsa_attr", JSON.stringify(attribution));
     const supabase = createClient();
     const siteUrl =
       process.env.NEXT_PUBLIC_APP_URL || window.location.origin;

@@ -1,6 +1,7 @@
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma/client";
 import { isLpSlug, type LpSlug } from "@/lib/lp/pages";
+import type { Attribution } from "@/lib/tracking/attribution";
 
 export type SignupSource =
   | "hero"
@@ -36,7 +37,23 @@ interface UpsertInput {
   source?: SignupSource;
   emailVerified?: boolean;
   lastLinkSentAt?: Date;
+  /** First-touch UTM/fbclid from the page the lead converted on; written only when the row is created, so nobody can rewrite an existing account's cohort by re-submitting its email. */
+  attribution?: Attribution | null;
 }
+
+const attributionColumns = (a: Attribution | null | undefined) =>
+  a
+    ? {
+        utmSource: a.utmSource ?? null,
+        utmMedium: a.utmMedium ?? null,
+        utmCampaign: a.utmCampaign ?? null,
+        utmTerm: a.utmTerm ?? null,
+        utmContent: a.utmContent ?? null,
+        fbclid: a.fbclid ?? null,
+        landingPath: a.landingPath ?? null,
+        referrer: a.referrer ?? null,
+      }
+    : {};
 
 /**
  * Create or update the Prisma User for a Supabase auth user.
@@ -64,6 +81,7 @@ export async function upsertUserForAuth(input: UpsertInput) {
         signupVariant: variantTag,
         signupSource: input.source ?? null,
         lastLinkSentAt: input.lastLinkSentAt ?? null,
+        ...attributionColumns(input.attribution),
       },
     });
     return { user: created, created: true };

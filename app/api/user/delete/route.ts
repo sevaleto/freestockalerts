@@ -11,7 +11,9 @@ export async function DELETE() {
   }
 
   try {
-    // Delete user data from our DB (cascade will remove alerts, history, prefs, subscriptions)
+    // Delete user data from our DB (cascade will remove alerts, history, prefs, subscriptions).
+    // The subscriber mirror (email, attribution, click log link) goes too; its FK only nulls out.
+    await prisma.subscriber.deleteMany({ where: { OR: [{ userId: user.id }, ...(user.email ? [{ email: user.email.toLowerCase() }] : [])] } }).catch(() => {});
     await prisma.user.delete({ where: { id: user.id } }).catch(() => {
       // User may not exist in our DB yet (only in Supabase auth)
     });

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { safeNext } from "@/lib/auth/safeNext";
+import { getAttribution } from "@/lib/tracking/attributionClient";
 
 /** Browser-side guard for post-login destinations (same rules as the server). */
 export const clientSafeNext = safeNext;
@@ -24,7 +25,7 @@ export async function sendMagicLink(
     const res = await fetch("/api/auth/magic-link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source, next, turnstileToken }),
+      body: JSON.stringify({ email, source, next, turnstileToken, attribution: getAttribution() }),
     });
     const body = await res.json().catch(() => ({}));
     if (res.ok && body?.ok) return { ok: true, isNewUser: !!body.isNewUser };
