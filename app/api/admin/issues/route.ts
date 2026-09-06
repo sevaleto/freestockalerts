@@ -5,7 +5,7 @@ import { isDateKey } from "@/lib/newsletter/dates";
 import { triggerSlotBuilds } from "@/lib/newsletter/http";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 /**
  * POST { date?, slot?, force? } — build (or rebuild) issue drafts from the admin page.

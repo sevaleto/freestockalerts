@@ -1,7 +1,7 @@
 import { handleBuildRequest } from "@/lib/newsletter/http";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 /**
  * GET /api/newsletter/build[?slot=1|2&force=1&date=YYYY-MM-DD&dry=1&report=0|1]

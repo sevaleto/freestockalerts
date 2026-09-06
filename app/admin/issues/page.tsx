@@ -17,7 +17,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = { drafted: "Draft ready", needs_review: "Needs review", failed: "Failed", pending: "Building", skipped: "Skipped" };
 /** A pending row nobody has touched for this long belongs to a run that died; Rebuild picks it up. */
-const STALLED_MS = 10 * 60_000;
+const STALLED_MS = 15 * 60_000;
 
 const usd = (n: number) => `$${n.toFixed(3)}`;
 
