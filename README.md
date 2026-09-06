@@ -278,7 +278,7 @@ that brought them with the click revenue credited to each cohort. Code lives in
 
 ## Daily newsletter drafts (Beehiiv)
 
-Every weekday at 11:00 UTC (4 AM PDT / 3 AM PST) `/api/newsletter/build` creates **two drafts** in
+Every day at 11:00 UTC (4 AM PDT / 3 AM PST) `/api/newsletter/build` creates **two drafts** in
 the FreeStockAlerts.AI Beehiiv publication so the morning job is opening Beehiiv and clicking Send.
 Code lives in `lib/newsletter/`; the log is the `NewsletterIssue` table, shown at `/admin/issues`.
 

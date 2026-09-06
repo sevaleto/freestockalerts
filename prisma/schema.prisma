@@ -635,7 +635,7 @@ model HeadlineVariant {
   @@unique([pageId, key])
 }
 
-/// One AI-drafted FreeStockAlerts issue slot per weekday: the exclusion list for
+/// One AI-drafted FreeStockAlerts issue slot per day: the exclusion list for
 /// topic picking and the idempotency key for the cron (lib/newsletter/build.ts).
 model NewsletterIssue {
   id             String   @id @default(cuid())

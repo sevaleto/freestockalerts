@@ -11,7 +11,7 @@ export const maxDuration = 300;
 
 /**
  * GET /api/newsletter/build
- * Weekday cron (vercel.json, 11:00 UTC = 4 AM PDT / 3 AM PST). Builds the day's
+ * Daily cron (vercel.json, 11:00 UTC = 4 AM PDT / 3 AM PST). Builds the day's
  * two FreeStockAlerts drafts in Beehiiv and emails the run report.
  * Query: force=1 (rebuild existing slots), date=YYYY-MM-DD, slot=1|2, dry=1 (no Beehiiv write, no report).
  */

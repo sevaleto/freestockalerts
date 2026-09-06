@@ -18,7 +18,7 @@
     },
     {
       "path": "/api/newsletter/build",
-      "schedule": "0 11 * * 1-5"
+      "schedule": "0 11 * * *"
     }
   ]
 }
