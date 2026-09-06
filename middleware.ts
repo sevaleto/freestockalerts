@@ -44,6 +44,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // All paths except static files and the API routes that never need a session refresh.
-    "/((?!_next/static|_next/image|favicon.ico|api/auth/callback|api/auth/magic-link|api/webhooks|api/email|api/alerts/check|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/auth/callback|api/auth/magic-link|api/webhooks|api/email|api/alerts/check|api/ads/click|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
   ],
 };

@@ -6,6 +6,8 @@ import { SignalEmail } from "@/lib/email/signalEmail";
 import { MagicLinkEmail, magicLinkSubject } from "@/lib/email/magicLinkEmail";
 import { maxScoreFor, signalAiContext, signalRows, signalSource, signalSubject, type SignalLike } from "@/lib/strategies/present";
 import { ANALYST_SLUG, INSIDER_SLUG } from "@/lib/strategies/config";
+import { renderAdHtml } from "@/lib/ads/template";
+import { adClickUrl } from "@/lib/ads/serve";
 
 /**
  * Local preview of every email the app sends, rendered with sample data.
@@ -16,6 +18,32 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Email previews", robots: { index: false, follow: false } };
 
 const APP_URL = "https://www.freestockalerts.ai";
+
+/** What a sponsored snippet looks like at the bottom of an email (lib/ads/template.ts). */
+const SAMPLE_AD_HTML = renderAdHtml(
+  {
+    leadIn: "Special Report",
+    headline: "7 Dividend Stocks Paying Up to 9.8%",
+    headlineColor: "#1a2b5c",
+    body: "Income investors are turning to a small group of companies that have raised their payouts for years while the broader market chases growth.\n\nThis free report walks through seven of them, with the yield, the payout ratio and the risks for each. Past performance does not guarantee future results.",
+    ctaText: "Get the free report",
+    ctaUrl: "https://www.tradingtips.com/",
+    imageUrl: "https://www.freestockalerts.ai/og-image.png",
+  },
+  adClickUrl("sample", { channel: "alert", token: "u_sample", appUrl: APP_URL }),
+);
+const SAMPLE_AD_TEXT_ONLY = renderAdHtml(
+  {
+    leadIn: "Additional Reading",
+    headline: "The 5-Minute Pre-Market Checklist",
+    headlineColor: "#2d5a27",
+    body: "A short routine some traders run before the open: what moved overnight, which names report today, and where the key levels sit.",
+    ctaText: "Read the checklist",
+    ctaUrl: "https://www.tradingtips.com/",
+    imageUrl: null,
+  },
+  adClickUrl("sample", { channel: "alert", token: "u_sample", appUrl: APP_URL }),
+);
 
 const insiderSignal: SignalLike = {
   strategySlug: INSIDER_SLUG,
@@ -108,7 +136,7 @@ const analystSignal: SignalLike = {
   },
 };
 
-function signalEmail(signal: SignalLike, strategyName: string) {
+function signalEmail(signal: SignalLike, strategyName: string, adHtml: string | null) {
   const subject = signalSubject(signal);
   return {
     subject: `🔔 ${subject}`,
@@ -124,6 +152,7 @@ function signalEmail(signal: SignalLike, strategyName: string) {
       sourceLine: signalSource(signal),
       appUrl: APP_URL,
       contextParagraphs: signalAiContext(signal)?.paragraphs ?? [],
+      adHtml,
     }),
   };
 }
@@ -134,7 +163,7 @@ export default async function EmailPreviewPage() {
   const samples = [
     {
       id: "alert-52wk",
-      name: "Price / technical alert (52-week high)",
+      name: "Price / technical alert (52-week high, with image ad)",
       file: "lib/email/alertEmail.tsx",
       subject: "🔔 NVDA Alert: 52-Week High",
       node: AlertEmail({
@@ -151,11 +180,12 @@ export default async function EmailPreviewPage() {
         ],
         appUrl: APP_URL,
         contextLines: ["Above its 50-day average ($214.80) and above its 200-day ($178.30).", "Volume 1.6× its 30-session average (above the 1.5× participation mark)."],
+        adHtml: SAMPLE_AD_HTML,
       }),
     },
     {
       id: "alert-sma",
-      name: "Price / technical alert (200-day reclaim, sector ETF)",
+      name: "Price / technical alert (200-day reclaim, text-only ad)",
       file: "lib/email/alertEmail.tsx",
       subject: "🔔 XLE Alert: SMA Cross Above",
       node: AlertEmail({
@@ -177,10 +207,11 @@ export default async function EmailPreviewPage() {
           "Last 21 sessions: +6.1% vs SPY +2.9% (+3.2 pts).",
           "Reads as improving leadership: above the 200-day average and ahead of the index over the last month.",
         ],
+        adHtml: SAMPLE_AD_TEXT_ONLY,
       }),
     },
-    { id: "signal-insider", name: "Insider Purchase Confirmation signal", file: "lib/email/signalEmail.tsx", ...signalEmail(insiderSignal, "Insider Purchase Confirmation") },
-    { id: "signal-analyst", name: "Analyst Upgrade Clusters signal", file: "lib/email/signalEmail.tsx", ...signalEmail(analystSignal, "Analyst Upgrade Clusters") },
+    { id: "signal-insider", name: "Insider Purchase Confirmation signal", file: "lib/email/signalEmail.tsx", ...signalEmail(insiderSignal, "Insider Purchase Confirmation", SAMPLE_AD_HTML) },
+    { id: "signal-analyst", name: "Analyst Upgrade Clusters signal (no ad active)", file: "lib/email/signalEmail.tsx", ...signalEmail(analystSignal, "Analyst Upgrade Clusters", null) },
     {
       id: "magic-new",
       name: "Magic link (new user)",
@@ -228,7 +259,7 @@ export default async function EmailPreviewPage() {
                 <span className="font-semibold">Subject:</span> {s.subject}
               </p>
               <div className="mt-3 overflow-hidden rounded-[20px] border border-lp-border bg-white shadow-sm">
-                <iframe title={s.name} srcDoc={s.html} className="h-[820px] w-full bg-white" sandbox="" />
+                <iframe title={s.name} srcDoc={s.html} className="h-[1080px] w-full bg-white" sandbox="" />
               </div>
             </section>
           ))}

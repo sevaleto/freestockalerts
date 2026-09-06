@@ -9,6 +9,7 @@ import {
   History,
   Settings,
   LogOut,
+  Megaphone,
   Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,8 +26,10 @@ const navItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+/** `showAdmin` adds the email-ads link; the server layout decides who is an admin. */
+export function Sidebar({ showAdmin = false }: { showAdmin?: boolean }) {
   const pathname = usePathname();
+  const items = showAdmin ? [...navItems, { href: "/admin/ads", label: "Email Ads", icon: Megaphone }] : navItems;
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -40,8 +43,8 @@ export function Sidebar() {
 
   const navLinks = (
     <nav className="flex flex-1 flex-col gap-1">
-      {navItems.map((item) => {
-        const isActive = pathname === item.href;
+      {items.map((item) => {
+        const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
         return (
           <Link
             key={item.href}
