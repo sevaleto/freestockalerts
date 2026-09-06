@@ -1,5 +1,6 @@
 import { Body, Container, Head, Heading, Hr, Html, Link, Preview, Section, Text } from "@react-email/components";
 import type { BuildResult, SlotResult } from "@/lib/newsletter/build";
+import { KIND_LABEL } from "@/lib/newsletter/config";
 
 const navy = "#0F172A";
 const muted = "#64748B";
@@ -30,7 +31,7 @@ export function NewsletterRunEmail({ result, adminUrl }: { result: BuildResult; 
         <Container style={{ padding: "24px" }}>
           <Heading style={{ margin: 0, fontSize: "20px", color: navy }}>FreeStockAlerts.AI drafts for {result.dateKey}</Heading>
           <Text style={{ fontSize: "13px", color: muted, marginTop: "6px" }}>
-            Ads copied from The Smart Investor issues dated {result.tsiDateKey}. Run took {Math.round(result.ms / 1000)}s and cost ${result.totalCostUsd.toFixed(3)}.
+            Ads copied from The Smart Investor issues dated {result.tsiDateKey}. Today&apos;s issues so far cost ${result.totalCostUsd.toFixed(3)}.
           </Text>
 
           {result.paused ? <Text style={{ color: "#D97706", fontWeight: 600 }}>Builds are paused in the admin. Nothing was created.</Text> : null}
@@ -38,12 +39,9 @@ export function NewsletterRunEmail({ result, adminUrl }: { result: BuildResult; 
           {result.slots.map((s) => (
             <Section key={s.slot} style={{ marginTop: "16px", padding: "16px", backgroundColor: "#F8FAFC", borderRadius: "12px" }}>
               <Text style={{ margin: 0, fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: STATUS_COLOR[s.status] }}>
-                Issue {s.slot}: {STATUS_LABEL[s.status]}
+                {KIND_LABEL[s.kind]}: {STATUS_LABEL[s.status]}
               </Text>
-              <Text style={{ margin: "6px 0 0", fontSize: "16px", fontWeight: 600, color: navy }}>
-                {s.ticker ? `${s.ticker}: ` : ""}
-                {s.headline ?? (s.error ? "No article" : "")}
-              </Text>
+              <Text style={{ margin: "6px 0 0", fontSize: "16px", fontWeight: 600, color: navy }}>{s.headline ?? (s.error ? "No issue" : s.note ?? "")}</Text>
               {s.subjectLine ? <Text style={{ margin: "4px 0 0", fontSize: "13px", color: muted }}>Subject: {s.subjectLine}</Text> : null}
               {s.beehiivPostUrl ? (
                 <Text style={{ margin: "8px 0 0" }}>

@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import { adPlaceholderText, blocksToHtml, buildBlocks, buildCreatePostBody, FOOTER_DISCLAIMER, type RenderInput } from "../lib/newsletter/render";
 
 const article = {
-  eventDate: "2026-09-08",
   headline: "Nvidia Clears the Bar Again",
   subtitle: "Another record quarter.",
   subjectLine: "Nvidia beat again",
@@ -16,7 +15,7 @@ const article = {
   ],
 };
 const AD = `<table style="border:1px solid #E5E0D5; background-color:#FAF8F3;"><tr><td>Sponsor</td></tr></table>`;
-const base: RenderInput = { dateKey: "2026-09-08", slot: 1, article, ticker: "NVDA", reviewReason: null, ads: { first: AD, second: `${AD}<!-- 2 -->`, tsiDateKey: "2026-09-07" } };
+const base: RenderInput = { dateKey: "2026-09-08", slot: 1, kind: "morning", article, reviewReason: null, ads: { first: AD, second: `${AD}<!-- 2 -->`, tsiDateKey: "2026-09-07" } };
 
 test("blocks come in send order: intro, ad 1, heading, deck, paragraphs, sources, ad 2, disclaimer", () => {
   const blocks = buildBlocks(base);
@@ -58,7 +57,8 @@ test("create body is a draft with subject, preview, tags; html mode uses body_co
   assert.equal(body.status, "draft");
   assert.equal(body.email_settings?.email_subject_line, "Nvidia beat again");
   assert.equal(body.email_settings?.email_preview_text, article.previewText);
-  assert.deepEqual(body.content_tags, ["NVDA", "daily-brief"]);
+  assert.deepEqual(body.content_tags, ["morning-brief"]);
+  assert.deepEqual(buildCreatePostBody({ ...base, slot: 2, kind: "closing" }).content_tags, ["closing-recap"]);
   assert.ok(body.blocks && !body.body_content);
   const html = buildCreatePostBody({ ...base, renderMode: "html" });
   assert.ok(!html.blocks && html.body_content);
@@ -69,8 +69,13 @@ test("create body is a draft with subject, preview, tags; html mode uses body_co
   assert.match(blocksToHtml(buildBlocks({ ...base, reviewReason: "x" })), /<strong>.*EDITOR NOTE/);
 });
 
-test("slot 2 gets its own intro line", () => {
+test("each kind gets its own dated intro line, and numbered items get a bold number", () => {
   const b1 = buildBlocks(base)[0];
-  const b2 = buildBlocks({ ...base, slot: 2 })[0];
+  const b2 = buildBlocks({ ...base, slot: 2, kind: "closing" })[0];
   assert.ok(b1.type === "paragraph" && b2.type === "paragraph" && b1.plaintext !== b2.plaintext);
+  assert.match((b1 as { plaintext: string }).plaintext, /before the bell on Tuesday, September 8/);
+  assert.match((b2 as { plaintext: string }).plaintext, /closing bell has rung on Tuesday, September 8/);
+  const numbered = buildBlocks({ ...base, article: { ...article, paragraphs: ["1. First item about Nvidia.", "2. Second item."] } });
+  const first = numbered[4]; // intro, ad 1, heading, deck, then the first item
+  assert.ok(first.type === "paragraph" && first.formattedText?.[0].text === "1. " && first.formattedText[0].styling?.includes("bold") && first.formattedText[1].text === "First item about Nvidia.");
 });

@@ -1,50 +1,66 @@
 /**
- * Everything tunable about the daily newsletter drafts in one place: model,
- * length targets, dedup windows, schedule assumptions, list prices.
+ * Everything tunable about the two daily issues in one place: kinds and their
+ * windows, model settings, length targets, list prices.
  */
 import { anthropicConfigured } from "@/lib/ai/config";
 import { beehiivConfigured } from "@/lib/beehiiv/config";
+
+export type Slot = 1 | 2;
+export type IssueKind = "morning" | "closing";
+
+/** Slot 1 goes out before the opening bell, slot 2 right after the close. */
+export const SLOT_KIND: Record<Slot, IssueKind> = { 1: "morning", 2: "closing" };
+export const KIND_LABEL: Record<IssueKind, string> = { morning: "Morning brief", closing: "Closing recap" };
+
+/** Build windows in Eastern minutes since midnight; outside them a cron run does nothing (force overrides). */
+export const KIND_WINDOW_ET: Record<IssueKind, { from: number; to: number }> = {
+  morning: { from: 7 * 60, to: 9 * 60 + 25 },
+  closing: { from: 16 * 60 + 5, to: 23 * 60 + 30 },
+};
 
 export const NEWSLETTER = {
   /** Anthropic model id. Manny chose Sonnet 5 for the articles (2026-09-06). */
   model: "claude-sonnet-5",
   /** Sonnet 5 rejects `temperature`; thinking is adaptive and effort is set per call. */
   effort: "medium" as const,
-  /** Adaptive thinking counts against max_tokens, so these leave room to think. */
-  pickerMaxTokens: 8000,
+  /** Adaptive thinking counts against max_tokens, so this leaves room to think. */
   writerMaxTokens: 16000,
-  /** Server-side web searches the writer may run per article. */
-  webSearchMaxUses: 5,
+  /** Server-side web searches the writer may run per issue. */
+  webSearchMaxUses: 8,
   /** How many times a `pause_turn` is resumed before giving up. */
   pauseTurnResumes: 3,
 
-  /** Article length, body only. */
-  minWords: 300,
-  maxWords: 550,
-  targetWords: "350 to 500",
-  maxSentencesPerParagraph: 3,
+  morning: {
+    /** Numbered items, like "top 10 things to watch". */
+    minItems: 8,
+    maxItems: 10,
+    minItemWords: 20,
+    maxItemWords: 120,
+    /** Headlines from this many hours back feed the brief. */
+    newsLookbackHours: 18,
+  },
+  closing: {
+    minWords: 350,
+    maxWords: 700,
+    maxSentencesPerParagraph: 4,
+    newsLookbackHours: 14,
+  },
   maxHeadlineChars: 90,
   maxSubjectChars: 70,
   maxPreviewChars: 120,
-  minSources: 2,
+  minSources: 3,
+  /** Cited coverage older than this, judged from dates in the source URLs, is stale for a same-day issue. */
+  maxSourceAgeDays: 2,
 
-  /** A ticker covered in this window is not picked again (hard filter). */
-  tickerCooldownDays: 14,
-  /** Event summaries from this window are shown to the picker as "already covered". */
-  eventLookbackDays: 60,
-  /** Headlines older than this are not candidates. Monday looks back over the weekend. */
-  newsLookbackHours: 30,
-  mondayNewsLookbackHours: 72,
-  /** How many FMP headlines to pull (pages of 250) and how many tickers to show the picker. */
+  /** Market-cap floor for movers and earnings names shown to the writer. */
+  minMarketCap: 2e9,
+  /** How many FMP headlines to pull (pages of 250) and how many tickers to show the writer. */
   newsFetchLimit: 250,
   newsFetchPages: 2,
-  candidateLimit: 14,
-  /** The event itself must have happened within this many days of the issue date (one more on Mondays). */
-  maxEventAgeDays: 2,
-  /** Cited coverage older than this, judged from dates in the source URLs, means the story is stale. */
-  maxSourceAgeDays: 4,
+  newsTickerLimit: 16,
 
   timezone: "America/Los_Angeles",
+  marketTimezone: "America/New_York",
   slots: [1, 2] as const,
 
   /** List prices for the cost line: $ per 1M tokens, $ per web search. */
@@ -52,8 +68,6 @@ export const NEWSLETTER = {
   priceOutputPerM: 10.0,
   pricePerSearch: 0.01,
 } as const;
-
-export type Slot = (typeof NEWSLETTER.slots)[number];
 
 export const NEWSLETTER_PAUSED_KEY = "newsletterBuildPaused";
 

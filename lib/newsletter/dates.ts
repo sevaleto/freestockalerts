@@ -40,3 +40,24 @@ export function toMMDDYYYY(key: DateKey): string {
 export function shortDate(key: DateKey): string {
   return new Date(`${key}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
+
+const etParts = new Intl.DateTimeFormat("en-US", { timeZone: NEWSLETTER.marketTimezone, hour: "2-digit", minute: "2-digit", hour12: false, year: "numeric", month: "2-digit", day: "2-digit" });
+
+/** Minutes since midnight in New York for an instant. */
+export function easternMinutes(d: Date): number {
+  const parts = etParts.formatToParts(d);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0");
+  return (get("hour") % 24) * 60 + get("minute");
+}
+
+/** The calendar date in New York for an instant. */
+export function easternDateKey(d: Date): DateKey {
+  const parts = etParts.formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+/** "Friday, September 4" for headlines and prompts. */
+export function longDate(key: DateKey): string {
+  return new Date(`${key}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+}

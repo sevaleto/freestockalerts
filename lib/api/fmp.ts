@@ -640,3 +640,123 @@ export const fetchFmpProfileLite = async (ticker: string): Promise<FmpProfileLit
     marketCap: toNumber(r.marketCap) ?? null,
   };
 };
+
+// ---------------------------------------------------------------------------
+// Market-day context for the newsletter: calendars, movers, rates, holidays.
+// ---------------------------------------------------------------------------
+
+export interface FmpEconomicEvent {
+  /** "YYYY-MM-DD HH:mm:ss" UTC as FMP gives it. */
+  date: string;
+  country: string;
+  event: string;
+  impact: string;
+  previous: number | null;
+  estimate: number | null;
+  actual: number | null;
+  unit: string;
+}
+
+export const fetchFmpEconomicCalendar = async (from: string, to: string): Promise<FmpEconomicEvent[]> => {
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`econ:${from}:${to}`, `/economic-calendar?from=${from}&to=${to}`, 10 * 60_000);
+  return (Array.isArray(rows) ? rows : []).map((r) => ({
+    date: String(r.date ?? ""),
+    country: String(r.country ?? ""),
+    event: String(r.event ?? ""),
+    impact: String(r.impact ?? ""),
+    previous: toNumber(r.previous) ?? null,
+    estimate: toNumber(r.estimate) ?? null,
+    actual: toNumber(r.actual) ?? null,
+    unit: String(r.unit ?? ""),
+  }));
+};
+
+export interface FmpEarningsEvent {
+  symbol: string;
+  date: string;
+  epsEstimated: number | null;
+  epsActual: number | null;
+  revenueEstimated: number | null;
+}
+
+export const fetchFmpEarningsCalendar = async (from: string, to: string): Promise<FmpEarningsEvent[]> => {
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`earn:${from}:${to}`, `/earnings-calendar?from=${from}&to=${to}`, 30 * 60_000);
+  return (Array.isArray(rows) ? rows : [])
+    .filter((r) => typeof r.symbol === "string")
+    .map((r) => ({ symbol: String(r.symbol), date: String(r.date ?? ""), epsEstimated: toNumber(r.epsEstimated) ?? null, epsActual: toNumber(r.epsActual) ?? null, revenueEstimated: toNumber(r.revenueEstimated) ?? null }));
+};
+
+export interface FmpMover {
+  symbol: string;
+  name: string;
+  price: number;
+  changePercent: number;
+}
+
+/** Today's biggest gainers, losers or most active names (all caps; the caller filters by size). */
+export const fetchFmpMovers = async (kind: "biggest-gainers" | "biggest-losers" | "most-actives"): Promise<FmpMover[]> => {
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`movers:${kind}`, `/${kind}`, 5 * 60_000);
+  return (Array.isArray(rows) ? rows : [])
+    .filter((r) => typeof r.symbol === "string")
+    .map((r) => ({ symbol: String(r.symbol), name: String(r.name ?? r.symbol), price: toNumber(r.price) ?? 0, changePercent: toNumber(r.changesPercentage) ?? 0 }));
+};
+
+export interface FmpTreasuryDay {
+  date: string;
+  year2: number | null;
+  year10: number | null;
+  year30: number | null;
+  month3: number | null;
+}
+
+export const fetchFmpTreasuryRates = async (from: string, to: string): Promise<FmpTreasuryDay[]> => {
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`treasury:${from}:${to}`, `/treasury-rates?from=${from}&to=${to}`, 30 * 60_000);
+  return (Array.isArray(rows) ? rows : []).map((r) => ({ date: String(r.date ?? ""), year2: toNumber(r.year2) ?? null, year10: toNumber(r.year10) ?? null, year30: toNumber(r.year30) ?? null, month3: toNumber(r.month3) ?? null }));
+};
+
+export interface FmpSectorChange {
+  sector: string;
+  exchange: string;
+  averageChange: number;
+}
+
+export const fetchFmpSectorSnapshot = async (date: string): Promise<FmpSectorChange[]> => {
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`sectors:${date}`, `/sector-performance-snapshot?date=${date}`, 10 * 60_000);
+  return (Array.isArray(rows) ? rows : []).map((r) => ({ sector: String(r.sector ?? ""), exchange: String(r.exchange ?? ""), averageChange: toNumber(r.averageChange) ?? 0 }));
+};
+
+export interface FmpGradeNews {
+  symbol: string;
+  publishedDate: string;
+  title: string;
+  publisher: string;
+  url: string;
+  gradingCompany: string;
+  action: string;
+  newGrade: string;
+  previousGrade: string;
+}
+
+/** Analyst upgrades, downgrades and price-target changes, newest first. */
+export const fetchFmpGradesNews = async (limit = 100): Promise<FmpGradeNews[]> => {
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`grades-news:${limit}`, `/grades-latest-news?page=0&limit=${limit}`, 10 * 60_000);
+  return (Array.isArray(rows) ? rows : [])
+    .filter((r) => typeof r.symbol === "string")
+    .map((r) => ({
+      symbol: String(r.symbol),
+      publishedDate: String(r.publishedDate ?? ""),
+      title: String(r.newsTitle ?? ""),
+      publisher: String(r.newsPublisher ?? ""),
+      url: String(r.newsURL ?? ""),
+      gradingCompany: String(r.gradingCompany ?? ""),
+      action: String(r.action ?? ""),
+      newGrade: String(r.newGrade ?? ""),
+      previousGrade: String(r.previousGrade ?? ""),
+    }));
+};
+
+/** NYSE full-closure dates (YYYY-MM-DD). Cached for a day. */
+export const fetchFmpNyseHolidays = async (): Promise<string[]> => {
+  const rows = await cachedFeed<Array<Record<string, unknown>>>("nyse-holidays", "/holidays-by-exchange?exchange=NYSE", 24 * 60 * 60_000);
+  return (Array.isArray(rows) ? rows : []).filter((r) => r.isClosed !== false && typeof r.date === "string").map((r) => String(r.date).slice(0, 10));
+};
