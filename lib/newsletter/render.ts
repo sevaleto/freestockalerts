@@ -31,7 +31,7 @@ export interface RenderInput {
 
 const INTRO: Record<IssueKind, (dateKey: DateKey) => string> = {
   morning: (d) => `Good morning. Here is what to watch before the bell on ${longDate(d)}.`,
-  closing: (d) => `The closing bell has rung on ${longDate(d)}. Here is what happened, and why.`,
+  closing: (d) => `The closing bell has rung on ${longDate(d)}. Here are the five stories that mattered, and why.`,
 };
 
 export const FOOTER_DISCLAIMER =
