@@ -246,9 +246,18 @@ async function buildSlot(job: SlotJob): Promise<SlotResult> {
       costUsd: 0,
     });
 
+  // Two slots built in separate invocations can pick the same company; the later one re-picks.
+  const clash = await otherSlotHasTicker(deps, dateKey, slot, pick.ticker);
+  let written: Awaited<ReturnType<typeof writeArticle>>;
+  let usage: ModelUsage = EMPTY_USAGE;
+  if (clash && job.repick) {
+    job.log(`slot ${slot}: ${pick.ticker} is already slot ${clash}'s story today; picking another topic`);
+    const next = await job.repick(pick, `already covered by issue ${clash} today`).catch(() => undefined);
+    if (next) pick = next;
+  }
   await markPending(pick);
-  let written = await writeArticle(pick, dateKey, job.writer);
-  let usage = written.usage;
+  written = await writeArticle(pick, dateKey, job.writer);
+  usage = addUsage(usage, written.usage);
   if (written.status === "stale" && job.repick) {
     job.log(`slot ${slot}: ${pick.ticker} is old news (${written.reason}); picking another topic`);
     try {
@@ -319,6 +328,13 @@ async function buildSlot(job: SlotJob): Promise<SlotResult> {
     reviewReason: reviewReason ?? undefined,
     body: deps.dry ? body : undefined,
   };
+}
+
+/** The slot number of another issue today that already carries this ticker, else null. */
+async function otherSlotHasTicker(deps: BuildDeps, dateKey: DateKey, slot: Slot, ticker: string): Promise<number | null> {
+  if (deps.dry) return null;
+  const row = await deps.db.newsletterIssue.findFirst({ where: { issueDate: dateKey, slot: { not: slot }, ticker, status: { in: ["pending", "drafted", "needs_review"] } }, select: { slot: true } });
+  return row?.slot ?? null;
 }
 
 type IssuePatch = Omit<Prisma.NewsletterIssueUncheckedCreateInput, "issueDate" | "slot" | "status" | "id"> & { status: IssueStatus };

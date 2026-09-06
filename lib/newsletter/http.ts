@@ -57,6 +57,9 @@ export function selfTarget(): { origin: string; headers: Record<string, string> 
   return { origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000", headers: {} };
 }
 
+/** Gap between fanned-out slot invocations (the crons are a minute apart). */
+export const SLOT_STAGGER_MS = 30_000;
+
 /**
  * Start one build invocation per slot over HTTP (each gets its own function
  * and budget) and wait for them. Used by the admin route from inside after().
@@ -67,7 +70,9 @@ export async function triggerSlotBuilds(opts: { dateKey?: string; slots: readonl
   if (process.env.CRON_SECRET) headers.Authorization = `Bearer ${process.env.CRON_SECRET}`;
   const last = opts.slots[opts.slots.length - 1];
   return Promise.all(
-    opts.slots.map(async (slot) => {
+    opts.slots.map(async (slot, i) => {
+      // Stagger so the second slot sees the first slot's pending row when it picks its topic.
+      if (i > 0) await new Promise((r) => setTimeout(r, i * SLOT_STAGGER_MS));
       const u = new URL(`${target.origin}/api/newsletter/build/${slot}`);
       if (opts.dateKey) u.searchParams.set("date", opts.dateKey);
       if (opts.force) u.searchParams.set("force", "1");
