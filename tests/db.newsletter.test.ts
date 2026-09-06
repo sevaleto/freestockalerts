@@ -24,7 +24,8 @@ const paragraph = (ticker: string, i: number) =>
   `${ticker} was the name every desk was talking about on Monday morning, and Reuters led its coverage with the numbers behind the move number ${i + 1}. ` +
   `CNBC followed with a look at what management said on the call, quoting two analysts who had been skeptical going in. ` +
   `Both outlets flagged the same open question for the next quarter, which is where the story for ${ticker} goes from here.`;
-const raw = (ticker: string, extra = "") => `HEADLINE: ${ticker} did a thing${extra}
+const raw = (ticker: string, extra = "") => `EVENT_DATE: ${DATE}
+HEADLINE: ${ticker} did a thing${extra}
 SUBTITLE: A deck.
 SUBJECT: ${ticker} did a thing
 PREVIEW: Preview text.
@@ -34,7 +35,7 @@ BODY:
 ${Array.from({ length: 7 }, (_, i) => paragraph(ticker, i)).join("\n\n")}`;
 
 /** Slot 1 → NVDA, slot 2 → LULU, whichever slots are requested. */
-const fakePicker = { async pick(input: { slots: number[] }) { const t: Record<number, string> = { 1: "NVDA", 2: "LULU" }; return { picks: input.slots.map((slot) => ({ slot, ticker: t[slot], companyName: t[slot], eventSummary: `${t[slot]} event on ${DATE}`, eventSlug: "event", whyNow: "", seedUrls: [] })), usage: { inputTokens: 1000, outputTokens: 100, webSearches: 0 }, raw: "" }; } };
+const fakePicker = { async pick(input: { slots: number[] }) { const t: Record<number, string> = { 1: "NVDA", 2: "LULU" }; return { picks: input.slots.map((slot) => ({ slot, ticker: t[slot], companyName: t[slot], eventSummary: `${t[slot]} event on ${DATE}`, eventSlug: "event", eventDate: DATE, whyNow: "", seedUrls: [] })), usage: { inputTokens: 1000, outputTokens: 100, webSearches: 0 }, raw: "" }; } };
 const goodWriter = { async write(pick: { ticker: string }) { return { raw: raw(pick.ticker), usage: { inputTokens: 5000, outputTokens: 800, webSearches: 3 }, stopReason: "end_turn" }; } };
 
 const AD = `<table style="border:1px solid #E5E0D5; background-color:#FAF8F3;"><tr><td><a href="https://sponsor.example.com/x">Sponsor</a></td></tr></table>`;

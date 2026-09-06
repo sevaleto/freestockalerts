@@ -35,9 +35,14 @@ export const NEWSLETTER = {
   /** Headlines older than this are not candidates. Monday looks back over the weekend. */
   newsLookbackHours: 30,
   mondayNewsLookbackHours: 72,
-  /** How many FMP headlines to pull and how many tickers to show the picker. */
+  /** How many FMP headlines to pull (pages of 250) and how many tickers to show the picker. */
   newsFetchLimit: 250,
+  newsFetchPages: 2,
   candidateLimit: 14,
+  /** The event itself must have happened within this many days of the issue date (one more on Mondays). */
+  maxEventAgeDays: 2,
+  /** Cited coverage older than this, judged from dates in the source URLs, means the story is stale. */
+  maxSourceAgeDays: 4,
 
   timezone: "America/Los_Angeles",
   slots: [1, 2] as const,

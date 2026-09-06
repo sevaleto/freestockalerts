@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { adPlaceholderText, blocksToHtml, buildBlocks, buildCreatePostBody, FOOTER_DISCLAIMER, type RenderInput } from "../lib/newsletter/render";
 
 const article = {
+  eventDate: "2026-09-08",
   headline: "Nvidia Clears the Bar Again",
   subtitle: "Another record quarter.",
   subjectLine: "Nvidia beat again",

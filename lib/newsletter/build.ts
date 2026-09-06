@@ -73,6 +73,12 @@ export interface BuildOptions {
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 
+/** Several pages of the market feed; one page covers only half a day of headlines. */
+async function fetchNewsPages(): Promise<FmpMarketNewsItem[]> {
+  const pages = await Promise.all(Array.from({ length: NEWSLETTER.newsFetchPages }, (_, i) => fetchFmpLatestStockNews(NEWSLETTER.newsFetchLimit, i).catch(() => [] as FmpMarketNewsItem[])));
+  return pages.flat();
+}
+
 /** A pending row younger than this belongs to a run that is still going (Vercel functions stop at 300s). */
 export const IN_PROGRESS_MS = 6 * 60_000;
 
@@ -129,7 +135,7 @@ export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Pro
   let picks: TopicPick[] = [];
   let pickerUsage: ModelUsage = EMPTY_USAGE;
   try {
-    const rows = await (deps.news ?? (() => fetchFmpLatestStockNews(NEWSLETTER.newsFetchLimit)))();
+    const rows = await (deps.news ?? fetchNewsPages)();
     const exclusions = await loadExclusions(deps.db, dateKey, slots.map((slot) => ({ issueDate: dateKey, slot })));
     const lookbackHours = dateKeyWeekday(dateKey) === 1 ? NEWSLETTER.mondayNewsLookbackHours : NEWSLETTER.newsLookbackHours;
     const candidates = groupCandidates(rows, { now, lookbackHours, exclude: new Set(exclusions.recentTickers), limit: NEWSLETTER.candidateLimit });
