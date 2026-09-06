@@ -1,9 +1,38 @@
 /** The run report email (Resend), so a failed or flagged morning is visible without opening Beehiiv. */
+import type { PrismaClient } from "@prisma/client";
 import { Resend } from "resend";
 import { NewsletterRunEmail } from "@/lib/email/newsletterRunEmail";
-import type { BuildResult } from "./build";
-import { reportRecipients } from "./config";
-import { toMMDDYYYY } from "./dates";
+import type { BuildResult, SlotResult } from "./build";
+import { reportRecipients, type Slot } from "./config";
+import { shiftDateKey, toMMDDYYYY, type DateKey } from "./dates";
+import { IN_PROGRESS_MS } from "./build";
+
+/** The day's issues as one result, from the rows, so a per-slot run can report on both slots. */
+export async function dayResult(db: PrismaClient, dateKey: DateKey, extra: { warnings?: string[]; ms?: number; now?: Date } = {}): Promise<BuildResult> {
+  const now = extra.now ?? new Date();
+  const rows = await db.newsletterIssue.findMany({ where: { issueDate: dateKey }, orderBy: { slot: "asc" } });
+  const slots: SlotResult[] = rows.map((r) => ({
+    slot: r.slot as Slot,
+    status: r.status === "pending" && now.getTime() - r.updatedAt.getTime() > IN_PROGRESS_MS ? "failed" : (r.status as SlotResult["status"]),
+    ticker: r.ticker ?? undefined,
+    companyName: r.companyName ?? undefined,
+    headline: r.headline ?? undefined,
+    subjectLine: r.subjectLine ?? undefined,
+    beehiivPostId: r.beehiivPostId ?? undefined,
+    beehiivPostUrl: r.beehiivPostUrl ?? undefined,
+    adsFound: r.adsFound,
+    tsiPostTitle: r.tsiPostTitle ?? undefined,
+    tsiAdvertisers: r.tsiAdvertisers ?? undefined,
+    reviewReason: r.reviewReason ?? undefined,
+    error: r.error ?? (r.status === "pending" && now.getTime() - r.updatedAt.getTime() > IN_PROGRESS_MS ? "The build stopped before this issue finished (function time limit). Use Rebuild." : undefined),
+    costUsd: r.costUsd,
+  }));
+  return { dateKey, tsiDateKey: shiftDateKey(dateKey, -1), paused: false, slots, warnings: extra.warnings ?? [], totalCostUsd: Math.round(slots.reduce((n, s) => n + s.costUsd, 0) * 1e6) / 1e6, ms: extra.ms ?? 0 };
+}
+
+export async function sendDayReport(db: PrismaClient, dateKey: DateKey, extra: { warnings?: string[]; ms?: number } = {}) {
+  return sendRunReport(await dayResult(db, dateKey, extra));
+}
 
 export function reportSubject(result: BuildResult): string {
   if (result.paused) return `FSA drafts ${toMMDDYYYY(result.dateKey)}: builds are paused`;

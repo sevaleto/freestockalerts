@@ -1,19 +1,17 @@
 import { NextResponse, after } from "next/server";
-import { prisma } from "@/lib/prisma/client";
 import { getAdminUser } from "@/lib/auth/admin";
-import { buildDailyIssues } from "@/lib/newsletter/build";
 import { newsletterConfigured, NEWSLETTER, type Slot } from "@/lib/newsletter/config";
 import { isDateKey } from "@/lib/newsletter/dates";
-import { sendRunReport } from "@/lib/newsletter/report";
+import { triggerSlotBuilds } from "@/lib/newsletter/http";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
  * POST { date?, slot?, force? } — build (or rebuild) issue drafts from the admin page.
- * The build runs after the response (Cloudflare cuts browser requests at 100s and a
- * build takes a few minutes); rows update as each slot finishes and the run report
- * is emailed like the cron's. Returns 202 with what was queued.
+ * Answers 202 at once (Cloudflare cuts browser requests at 100s), then starts one
+ * build invocation per slot so each has its own function budget. Rows update as
+ * slots finish; the last slot emails the day's report.
  */
 export async function POST(request: Request) {
   if (!(await getAdminUser())) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -25,12 +23,8 @@ export async function POST(request: Request) {
   if (slot !== undefined && !NEWSLETTER.slots.includes(slot)) return NextResponse.json({ error: "slot must be 1 or 2" }, { status: 400 });
   const force = body.force === true;
   after(async () => {
-    try {
-      const result = await buildDailyIssues({ dateKey: date, slots: slot ? [slot] : undefined, force }, { db: prisma, log: (m) => console.log(`[newsletter:admin] ${m}`) });
-      if (result.slots.some((s) => !s.skipped)) await sendRunReport(result);
-    } catch (err) {
-      console.error("[newsletter:admin] build failed:", err);
-    }
+    const outcomes = await triggerSlotBuilds({ dateKey: date, slots: slot ? [slot] : NEWSLETTER.slots, force });
+    console.log(`[newsletter:admin] slot builds: ${outcomes.map((o) => `${o.slot}=${o.status ?? o.error}`).join(", ")}`);
   });
   return NextResponse.json({ ok: true, queued: true, date: date ?? null, slots: slot ? [slot] : [...NEWSLETTER.slots], force }, { status: 202 });
 }
