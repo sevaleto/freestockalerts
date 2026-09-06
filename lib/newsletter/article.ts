@@ -248,7 +248,7 @@ export function validateIssue(kind: IssueKind, a: Article, issueDate: DateKey): 
     if (words > NEWSLETTER.closing.maxWords) return { ok: false, reason: `body is ${words} words, over ${NEWSLETTER.closing.maxWords}` };
     const long = a.paragraphs.find((p) => sentenceCount(p) > NEWSLETTER.closing.maxSentencesPerParagraph + 1);
     if (long) return { ok: false, reason: `a paragraph has more than ${NEWSLETTER.closing.maxSentencesPerParagraph} sentences: "${long.slice(0, 60)}..."` };
-    if (!/S&P|Nasdaq|Dow/i.test(body)) return { ok: false, reason: "the recap never names the S&P 500, Nasdaq or Dow" };
+    if (!/S&P|Nasdaq|\bDow\b/.test(body)) return { ok: false, reason: "the recap never names the S&P 500, Nasdaq or Dow" };
   }
   const common = validateCommon(a, body);
   return common ? { ok: false, reason: common } : { ok: true };
