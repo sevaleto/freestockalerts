@@ -1,7 +1,7 @@
 /** Topic candidates, pick checks, writer output parsing and the compliance validator. Pure. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkPicks, extractJson, groupCandidates, PickSchema, renderPickerPrompt, type PickInput, type TopicPick } from "../lib/newsletter/topics";
+import { checkPicks, extractJson, groupCandidates, normalizeSlots, PickSchema, renderPickerPrompt, type PickInput, type TopicPick } from "../lib/newsletter/topics";
 import { parseWriterOutput, renderWriterPrompt, sentenceCount, validateArticle, type Article } from "../lib/newsletter/article";
 import { dateKeyWeekday, isDateKey, pacificDateKey, shiftDateKey, toMMDDYYYY, yesterdayPacific } from "../lib/newsletter/dates";
 import { NEWSLETTER } from "../lib/newsletter/config";
@@ -75,6 +75,14 @@ test("checkPicks enforces slots, distinct tickers, candidate membership, cooldow
   assert.match((checkPicks([pick(1, "NVDA"), pick(2, "TSLA")], { ...input, candidates: [...input.candidates, { ticker: "TSLA", publishers: 1, headlines: [] }] }) as { reason: string }).reason, /cooldown/);
   assert.match((checkPicks([pick(1, "NVDA"), pick(3, "LULU")], input) as { reason: string }).reason, /not requested/);
   assert.match((checkPicks([pick(1, "NVDA"), pick(2, "LULU", { eventSlug: "Bad Slug" })], input) as { reason: string }).reason, /kebab-case/);
+});
+
+test("normalizeSlots renumbers a lone pick to the requested slot but leaves correct or ambiguous answers alone", () => {
+  assert.deepEqual(normalizeSlots([pick(1, "LULU")], [2]).map((p) => p.slot), [2], "rebuilding slot 2 only: the model said slot 1");
+  assert.deepEqual(normalizeSlots([pick(1, "NVDA"), pick(2, "LULU")], [1, 2]).map((p) => p.slot), [1, 2]);
+  assert.deepEqual(normalizeSlots([pick(1, "NVDA"), pick(1, "LULU")], [1, 2]).map((p) => [p.slot, p.ticker]), [[1, "NVDA"], [2, "LULU"]], "duplicate numbers get assigned in order");
+  assert.deepEqual(normalizeSlots([pick(1, "NVDA")], [1, 2]).map((p) => p.slot), [1], "a missing pick is left for checkPicks to reject");
+  assert.match(renderPickerPrompt({ ...input, slots: [2] }), /one pick, "slot": 2/);
 });
 
 test("extractJson tolerates fences and prose; PickSchema fills defaults", () => {
