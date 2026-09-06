@@ -10,7 +10,7 @@ import { beehiivEditUrl, createPost, type CreatePostBody } from "@/lib/beehiiv/c
 import { publicationByKey } from "@/lib/beehiiv/config";
 import { getSetting } from "@/lib/settings";
 import { claudeIssueWriter, numberedItems, writeIssue, type IssueWriter } from "./article";
-import { KIND_LABEL, KIND_WINDOW_ET, NEWSLETTER, NEWSLETTER_PAUSED_KEY, SLOT_KIND, type IssueKind, type Slot } from "./config";
+import { KIND_LABEL, KIND_WINDOW_ET, NEWSLETTER, NEWSLETTER_PAUSED_KEY, NYSE_HOLIDAYS_STATIC, SLOT_KIND, type IssueKind, type Slot } from "./config";
 import { dateKeyWeekday, easternMinutes, longDate, pacificDateKey, shiftDateKey, type DateKey } from "./dates";
 import { gatherFacts, renderFacts, type FactsDeps, type IssueFacts } from "./facts";
 import { buildCreatePostBody, type RenderMode } from "./render";
@@ -114,10 +114,11 @@ export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Pro
   }
 
   // Market calendar: weekends and NYSE holidays produce nothing unless forced.
-  let holidays = new Set<string>();
+  // The static list is the backstop; FMP's feed only lists holidays already past.
+  const holidays = new Set<string>(NYSE_HOLIDAYS_STATIC);
   if (!opts.force) {
     try {
-      holidays = new Set(await (deps.holidays ?? fetchFmpNyseHolidays)());
+      for (const d of await (deps.holidays ?? fetchFmpNyseHolidays)()) holidays.add(d);
     } catch (err) {
       warnings.push(`Could not load the NYSE holiday calendar: ${err instanceof Error ? err.message : String(err)}`);
     }
