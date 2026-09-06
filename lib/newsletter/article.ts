@@ -45,7 +45,10 @@ export const WRITER_SYSTEM_PROMPT = `You write the one article in a daily email 
 
 Research: use web_search to read the actual coverage of the event from at least two reputable outlets (Reuters, Bloomberg, CNBC, The Wall Street Journal, Barron's, MarketWatch, the Financial Times, AP, the company's own release). Name the outlets in the text ("Reuters reported…", "according to CNBC…"). Every number, quote and date must come from something you read; if outlets disagree, say so. Do not invent details.
 
-Dates: the issue date is given below. Say when the event happened with a real day or date ("on Thursday, September 4"), never "today", "overnight" or "this morning" unless the coverage you read is dated within the last day. Report the event's date in the EVENT_DATE line. Cite coverage published within the last few days. If the freshest coverage you can find is older than that, the story is stale: still fill in the format, but make the EVENT_DATE the real date so the editor can catch it.
+Dates: the issue date and the oldest acceptable event date are given below. Say when the event happened with a real day or date ("on Thursday, September 4"), never "today", "overnight" or "this morning" unless the coverage you read is dated within the last day. Report the event's date in the EVENT_DATE line and cite coverage published within the last few days.
+
+Stale check, do this first: if your research shows the event actually happened before the oldest acceptable date (today's headlines are rehashing older news), do NOT write the article. Reply with a single line instead:
+STALE: <YYYY-MM-DD the event really happened> | <one sentence on what the coverage is>
 
 Length and shape: ${NEWSLETTER.targetWords} words in the body. Paragraphs of one to three sentences, never longer. Plain English, specific, written to one reader. A punchy headline under ${NEWSLETTER.maxHeadlineChars} characters, no clickbait, no ALL CAPS, no emoji, no exclamation marks. Open with what happened; close with what the outlets say comes next (a date, an event) without predicting the outcome.
 
@@ -63,9 +66,12 @@ SOURCE: <Outlet name> | <URL>
 BODY:
 <paragraphs separated by one blank line>`;
 
+export const oldestAcceptableEvent = (dateKey: DateKey): DateKey => shiftDateKey(dateKey, -(NEWSLETTER.maxEventAgeDays + (dateKeyWeekday(dateKey) === 1 ? 1 : 0)));
+
 export function renderWriterPrompt(pick: TopicPick, dateKey: DateKey, retryReason?: string): { system: string; user: string } {
   const lines: string[] = [];
-  lines.push(`Issue date: ${dateKey}.`);
+  lines.push(`Issue date: ${dateKey}. Oldest acceptable event date: ${oldestAcceptableEvent(dateKey)}.`);
+  if (pick.eventDate) lines.push(`The editor believes the event happened on ${pick.eventDate}; verify that against the coverage.`);
   lines.push(`Company: ${pick.companyName} (${pick.ticker}).`);
   lines.push(`Event to cover: ${pick.eventSummary}`);
   if (pick.whyNow) lines.push(`Why it matters today: ${pick.whyNow}`);
@@ -97,6 +103,19 @@ function parseSource(value: string): ArticleSource | null {
     .replace(/\s+/g, " ")
     .trim();
   return { outlet: outlet || new URL(url).hostname.replace(/^www\./, ""), url };
+}
+
+export interface StaleSignal {
+  eventDate: string | null;
+  note: string;
+}
+
+/** The writer's "this is old news" reply, when that is what came back. */
+export function parseStale(raw: string): StaleSignal | null {
+  const m = /^\s*[*#_>-]*\s*STALE\s*[*_]*\s*:\s*[*_]*\s*(.*)$/im.exec(raw);
+  if (!m) return null;
+  const date = /\d{4}-\d{2}-\d{2}/.exec(m[1])?.[0] ?? null;
+  return { eventDate: date, note: m[1].replace(date ?? "", "").replace(/^[\s|*_]+/, "").replace(/[\s*_]+$/, "").trim().slice(0, 300) };
 }
 
 /** Delimited text → Article. Tolerates markdown around the labels. */
@@ -279,7 +298,8 @@ export const claudeArticleWriter: ArticleWriter = {
 
 export interface WrittenArticle {
   article: Article | null;
-  status: "ok" | "needs_review" | "failed";
+  /** `stale`: the writer found the event is older than allowed; the caller should pick another topic. */
+  status: "ok" | "needs_review" | "failed" | "stale";
   reason: string | null;
   usage: ModelUsage;
   attempts: number;
@@ -306,6 +326,12 @@ export async function writeArticle(pick: TopicPick, dateKey: DateKey, writer: Ar
       continue;
     }
     usage = addUsage(usage, out.usage);
+    const stale = parseStale(out.raw);
+    if (stale) {
+      const why = `the event happened on ${stale.eventDate ?? "an earlier date"}: ${stale.note || "old news"}`;
+      console.warn(`[newsletter] ${pick.ticker}: writer reports stale story (${why})`);
+      return { article: null, status: "stale", reason: why, usage, attempts };
+    }
     const parsed = parseWriterOutput(out.raw);
     if (!parsed.ok) {
       reason = parsed.reason;
@@ -314,6 +340,8 @@ export async function writeArticle(pick: TopicPick, dateKey: DateKey, writer: Ar
     last = parsed.article;
     const check = validateArticle(parsed.article, pick, dateKey);
     if (check.ok) return { article: parsed.article, status: "ok", reason: null, usage, attempts };
+    // The validator's own staleness verdict is the same signal: do not retry, re-pick.
+    if (stalenessReason(parsed.article, dateKey)) return { article: null, status: "stale", reason: check.reason, usage, attempts };
     reason = check.reason;
     console.warn(`[newsletter] ${pick.ticker} attempt ${attempt + 1} rejected: ${reason}`);
   }

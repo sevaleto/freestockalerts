@@ -4,7 +4,7 @@
  * and record everything in NewsletterIssue. A slot's failure never blocks the
  * other, and every path leaves the row in a final state.
  */
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { fetchFmpLatestStockNews, type FmpMarketNewsItem } from "@/lib/api/fmp";
 import { beehiivEditUrl, createPost, type CreatePostBody } from "@/lib/beehiiv/client";
 import { publicationByKey } from "@/lib/beehiiv/config";
@@ -13,7 +13,7 @@ import { claudeArticleWriter, writeArticle, type ArticleWriter } from "./article
 import { NEWSLETTER, NEWSLETTER_PAUSED_KEY, type Slot } from "./config";
 import { dateKeyWeekday, pacificDateKey, shiftDateKey, type DateKey } from "./dates";
 import { buildCreatePostBody, type RenderMode } from "./render";
-import { claudeTopicPicker, dropNonStocks, groupCandidates, loadExclusions, pickTopics, type TopicPick, type TopicPicker } from "./topics";
+import { claudeTopicPicker, dropNonStocks, groupCandidates, loadExclusions, pickTopics, type Candidate, type Exclusions, type TopicPick, type TopicPicker } from "./topics";
 import type { FmpProfileLite } from "@/lib/api/fmp";
 import { advertiserLabel, fetchTsiAdsFor, type TsiAdsResult } from "./tsiAds";
 import { addUsage, costUsd, EMPTY_USAGE, type ModelUsage } from "./usage";
@@ -137,14 +137,16 @@ export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Pro
   const writer = deps.writer ?? claudeArticleWriter;
   let picks: TopicPick[] = [];
   let pickerUsage: ModelUsage = EMPTY_USAGE;
+  let candidates: Candidate[] = [];
+  let exclusions: Exclusions = { recentTickers: [], recentEvents: [] };
   try {
     const rows = await (deps.news ?? fetchNewsPages)();
-    const exclusions = await loadExclusions(deps.db, dateKey, slots.map((slot) => ({ issueDate: dateKey, slot })));
+    exclusions = await loadExclusions(deps.db, dateKey, slots.map((slot) => ({ issueDate: dateKey, slot })));
     const lookbackHours = dateKeyWeekday(dateKey) === 1 ? NEWSLETTER.mondayNewsLookbackHours : NEWSLETTER.newsLookbackHours;
     // Ask for a few extra so the ETF filter still leaves a full list.
     const grouped = groupCandidates(rows, { now, lookbackHours, exclude: new Set(exclusions.recentTickers), limit: NEWSLETTER.candidateLimit + 6 });
     const { kept, dropped } = await dropNonStocks(grouped, deps.profile);
-    const candidates = kept.slice(0, NEWSLETTER.candidateLimit);
+    candidates = kept.slice(0, NEWSLETTER.candidateLimit);
     log(`${rows.length} headlines → ${grouped.length} candidate tickers, ${candidates.length} after dropping ${dropped.length} non-stocks${dropped.length ? ` (${dropped.join(", ")})` : ""} (${exclusions.recentTickers.length} on cooldown, ${exclusions.recentEvents.length} past events)`);
     const picked = await pickTopics({ candidates, exclusions, dateKey, slots }, picker);
     picks = picked.picks;
@@ -165,7 +167,17 @@ export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Pro
     slots.map((slot) => {
       const pick = picks.find((p) => p.slot === slot);
       if (!pick) return Promise.reject(new Error(`the picker returned nothing for slot ${slot}`));
-      return buildSlot({ slot, pick, dateKey, tsiDateKey, tsi, writer, deps, force: !!opts.force, pickerCostUsd: pickerCostPerSlot, log });
+      // When the writer finds the story is old, pick again once with that ticker and the other slots' tickers excluded.
+      const repick = async (stale: TopicPick, reason: string) => {
+        const taken = new Set([...exclusions.recentTickers, stale.ticker, ...picks.filter((p) => p.slot !== slot).map((p) => p.ticker)]);
+        const remaining = candidates.filter((c) => !taken.has(c.ticker));
+        const again = await pickTopics(
+          { candidates: remaining, exclusions: { recentTickers: [...taken], recentEvents: [...exclusions.recentEvents, { dateKey, ticker: stale.ticker, summary: `${stale.eventSummary} (rejected: ${reason})` }] }, dateKey, slots: [slot] },
+          picker
+        );
+        return again.picks[0];
+      };
+      return buildSlot({ slot, pick, dateKey, tsiDateKey, tsi, writer, deps, force: !!opts.force, pickerCostUsd: pickerCostPerSlot, log, repick });
     })
   );
   for (let i = 0; i < slots.length; i++) {
@@ -192,41 +204,71 @@ interface SlotJob {
   force: boolean;
   pickerCostUsd: number;
   log: (m: string) => void;
+  /** Choose another topic for this slot after a stale one; undefined disables re-picking. */
+  repick?: (stale: TopicPick, reason: string) => Promise<TopicPick | undefined>;
 }
 
 async function buildSlot(job: SlotJob): Promise<SlotResult> {
-  const { slot, pick, dateKey, deps } = job;
+  const { slot, dateKey, deps } = job;
+  let pick = job.pick;
   const source = job.tsi.bySlot.get(slot);
   const ads = source?.ads ?? [];
   const tsiFields = source ? { tsiPostId: source.post.id, tsiPostTitle: source.post.title, tsiAdvertisers: advertiserLabel(source.title) } : {};
-  const eventKey = `${pick.ticker}:${dateKey}:${pick.eventSlug}`;
 
   // Dry runs leave the issue log alone: a "drafted" row with no Beehiiv id would make the morning cron skip the slot.
   const record = deps.dry ? async () => {} : (patch: IssuePatch) => upsertIssue(deps.db, dateKey, slot, patch);
 
-  await record({
-    status: "pending",
-    ticker: pick.ticker,
-    companyName: pick.companyName,
-    eventKey,
-    eventSummary: pick.eventSummary,
-    adsFound: ads.length,
-    adsHtml: ads.map((a) => a.html),
-    ...tsiFields,
-    forced: job.force,
-    error: null,
-    beehiivPostId: null,
-    beehiivPostUrl: null,
-    model: NEWSLETTER.model,
-  });
+  const markPending = (p: TopicPick) =>
+    record({
+      status: "pending",
+      ticker: p.ticker,
+      companyName: p.companyName,
+      eventKey: `${p.ticker}:${dateKey}:${p.eventSlug}`,
+      eventSummary: p.eventSummary,
+      adsFound: ads.length,
+      adsHtml: ads.map((a) => a.html),
+      ...tsiFields,
+      forced: job.force,
+      // A rebuilt row starts clean; the previous article's fields must not linger.
+      headline: null,
+      subjectLine: null,
+      previewText: null,
+      sources: Prisma.JsonNull,
+      articleText: null,
+      reviewReason: null,
+      error: null,
+      beehiivPostId: null,
+      beehiivPostUrl: null,
+      model: NEWSLETTER.model,
+      inputTokens: 0,
+      outputTokens: 0,
+      webSearches: 0,
+      costUsd: 0,
+    });
 
-  const written = await writeArticle(pick, dateKey, job.writer);
-  const cost = round6(costUsd(written.usage) + job.pickerCostUsd);
-  const usageFields = { inputTokens: written.usage.inputTokens, outputTokens: written.usage.outputTokens, webSearches: written.usage.webSearches, costUsd: cost };
+  await markPending(pick);
+  let written = await writeArticle(pick, dateKey, job.writer);
+  let usage = written.usage;
+  if (written.status === "stale" && job.repick) {
+    job.log(`slot ${slot}: ${pick.ticker} is old news (${written.reason}); picking another topic`);
+    try {
+      const next = await job.repick(pick, written.reason ?? "stale");
+      if (next) {
+        pick = next;
+        await markPending(pick);
+        written = await writeArticle(pick, dateKey, job.writer);
+        usage = addUsage(usage, written.usage);
+      }
+    } catch (err) {
+      written = { ...written, status: "failed", reason: `${written.reason}; re-pick failed: ${err instanceof Error ? err.message : String(err)}` };
+    }
+  }
+  const cost = round6(costUsd(usage) + job.pickerCostUsd);
+  const usageFields = { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, webSearches: usage.webSearches, costUsd: cost };
   const base: SlotResult = { slot, status: "failed", ticker: pick.ticker, companyName: pick.companyName, adsFound: ads.length, costUsd: cost, ...("tsiPostTitle" in tsiFields ? { tsiPostTitle: tsiFields.tsiPostTitle, tsiAdvertisers: tsiFields.tsiAdvertisers } : {}) };
 
   if (!written.article) {
-    const error = `Article failed after ${written.attempts} attempt(s): ${written.reason ?? "unknown"}`;
+    const error = written.status === "stale" ? `Only old news for ${pick.ticker}: ${written.reason ?? "stale"}` : `Article failed after ${written.attempts} attempt(s): ${written.reason ?? "unknown"}`;
     await record({ status: "failed", error: error.slice(0, 1000), ...usageFields });
     job.log(`slot ${slot}: ${error}`);
     return { ...base, status: "failed", error };
