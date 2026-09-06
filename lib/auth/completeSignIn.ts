@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { upsertUserForAuth, type SignupSource } from "@/lib/auth/users";
 import type { Attribution } from "@/lib/tracking/attribution";
@@ -24,6 +25,11 @@ interface CompleteSignInInput {
  *      has opted out of marketing (explicit choice, GPC, or opt-in region
  *      without consent; see lib/cookies/serverConsent.ts)
  * Returns the CAPI event id so the browser pixel can dedupe against it.
+ *
+ * The CAPI sends run inside Next's after(): the redirect goes out first, and
+ * the function stays alive until Meta answers. A bare fire-and-forget promise
+ * gets frozen with the instance the moment the response is returned, and the
+ * socket to graph.facebook.com dies (ETIMEDOUT / TLS reset in the logs).
  */
 export async function completeSignIn({ user, request, origin, abVariant, sourceOverride, attribution }: CompleteSignInInput) {
   const provider = user.app_metadata?.provider;
@@ -72,24 +78,27 @@ export async function completeSignIn({ user, request, origin, abVariant, sourceO
   // Google signups never fired a browser Lead (the click only sends a custom
   // InitiateSignup). Fire the real Lead here, server-side, with the verified
   // email, only when this is a brand-new account.
-  if (provider === "google" && createdNow) {
-    sendCAPIEvent({
-      eventName: "Lead",
-      eventId: generateEventId(),
+  const sendLead = provider === "google" && createdNow;
+
+  // Deferred until after the redirect is sent; never blocks the user on Meta.
+  after(async () => {
+    if (sendLead) {
+      await sendCAPIEvent({
+        eventName: "Lead",
+        eventId: generateEventId(),
+        eventSourceUrl: `${origin}/api/auth/callback`,
+        userData,
+        customData: { content_name: leadContentName(source), method: "google" },
+      }).catch((err) => console.error("[CAPI] Lead (google) error:", err));
+    }
+    await sendCAPIEvent({
+      eventName: "CompleteRegistration",
+      eventId,
       eventSourceUrl: `${origin}/api/auth/callback`,
       userData,
-      customData: { content_name: leadContentName(source), method: "google" },
-    }).catch((err) => console.error("[CAPI] Lead (google) error:", err));
-  }
-
-  // Fire async — never block the redirect on Meta
-  sendCAPIEvent({
-    eventName: "CompleteRegistration",
-    eventId,
-    eventSourceUrl: `${origin}/api/auth/callback`,
-    userData,
-    customData: { content_name: "dashboard", method: provider ?? "email" },
-  }).catch((err) => console.error("[CAPI] CompleteRegistration error:", err));
+      customData: { content_name: "dashboard", method: provider ?? "email" },
+    }).catch((err) => console.error("[CAPI] CompleteRegistration error:", err));
+  });
 
   return eventId;
 }
