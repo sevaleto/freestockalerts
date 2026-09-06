@@ -7,12 +7,12 @@ import { groupedBySection, STRATEGIES } from "@/lib/templates/catalog";
 import { SECTION_ICONS } from "@/lib/templates/icons";
 
 export const metadata: Metadata = {
-  title: "Alert Strategy Templates",
+  title: "Alert Strategies",
   description:
     "Ten ready-made alert strategies for idea discovery, entry timing and market monitoring. Each one states its universe, qualification rules, trigger and refresh date. Free to activate.",
   alternates: { canonical: "/templates" },
   openGraph: {
-    title: "Alert Strategy Templates | FreeStockAlerts.AI",
+    title: "Alert Strategies | FreeStockAlerts.AI",
     description:
       "Ten ready-made alert strategies: screened breakout lists, pullback and reclaim alerts, dividend buy zones, sector leadership and market stress. Free to activate.",
     url: "/templates",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Alert Strategy Templates | FreeStockAlerts.AI",
+    title: "Alert Strategies | FreeStockAlerts.AI",
     description: "Ten ready-made alert strategies with stated rules, triggers and refresh dates. Free to activate.",
     images: ["/og-image.png"],
   },
@@ -43,10 +43,10 @@ export default function TemplatesPage() {
 
       <main className="mx-auto w-full max-w-6xl px-5 pb-20 sm:px-6">
         <div className="max-w-3xl space-y-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Strategy templates</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Alert strategies</p>
           <h1 className="font-serif text-4xl text-lp-navy md:text-5xl">{total} alert strategies, each one a defined setup.</h1>
           <p className="text-base leading-relaxed text-lp-navy/75 md:text-lg">
-            Every template states what it watches, how a company qualifies, the one trigger that sends the email, and when the list was last refreshed. Preview a strategy, then activate every alert in it with one click.
+            Every strategy states what it watches, how a company qualifies, the one trigger that sends the email, and when the list was last refreshed. Preview a strategy, then activate every alert in it with one click.
           </p>
           <p className="text-sm text-lp-muted">Educational information only. Strategies surface research candidates; nothing here is a recommendation to buy or sell.</p>
         </div>

@@ -63,7 +63,7 @@ export default async function TemplateDetailPage(props: TemplateDetailPageProps)
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
               <Link href="/templates" className="hover:text-lp-navy">
-                Templates
+                Strategies
               </Link>
             </li>
             <li aria-hidden>/</li>

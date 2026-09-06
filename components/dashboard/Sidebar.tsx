@@ -20,7 +20,7 @@ import { createBrowserClient } from "@supabase/ssr";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/alerts", label: "My Alerts", icon: Bell },
-  { href: "/dashboard/templates", label: "Templates", icon: Grid2X2 },
+  { href: "/dashboard/templates", label: "Strategies", icon: Grid2X2 },
   { href: "/dashboard/history", label: "Alert History", icon: History },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];

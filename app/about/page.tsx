@@ -23,7 +23,7 @@ export default function AboutPage() {
             <h2 className="text-lg font-semibold text-text-primary">Our promise</h2>
             <p className="mt-2 text-sm text-text-secondary">
               No bait-and-switch pricing. No credit cards. No surprise upsells. You keep full access
-              to every alert type, every template, and every AI summary.
+              to every alert type, every strategy, and every AI summary.
             </p>
           </div>
           <div className="rounded-[20px] border border-border bg-surface p-6">

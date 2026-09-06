@@ -81,7 +81,7 @@ export function Hero() {
           <div className="hidden items-center gap-7 text-sm font-medium text-text-secondary md:flex">
             <a href="#how" className="hover:text-text-primary">How it works</a>
             <a href="#features" className="hover:text-text-primary">Features</a>
-            <a href="#templates" className="hover:text-text-primary">Templates</a>
+            <a href="#templates" className="hover:text-text-primary">Strategies</a>
           </div>
           <Link
             href="/login"
@@ -111,7 +111,7 @@ export function Hero() {
                       <span>
                         <span className="font-semibold">Activating:</span> {pending.name}. Where should I send it?
                       </span>
-                      <button type="button" onClick={() => setPending(null)} className="text-lp-muted hover:text-lp-navy" aria-label="Clear selected template">
+                      <button type="button" onClick={() => setPending(null)} className="text-lp-muted hover:text-lp-navy" aria-label="Clear selected strategy">
                         <X className="h-4 w-4" />
                       </button>
                     </div>
