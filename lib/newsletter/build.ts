@@ -9,9 +9,9 @@ import { fetchFmpNyseHolidays } from "@/lib/api/fmp";
 import { beehiivEditUrl, createPost, type CreatePostBody } from "@/lib/beehiiv/client";
 import { publicationByKey } from "@/lib/beehiiv/config";
 import { getSetting } from "@/lib/settings";
-import { claudeIssueWriter, writeIssue, type IssueWriter } from "./article";
+import { claudeIssueWriter, numberedItems, writeIssue, type IssueWriter } from "./article";
 import { KIND_LABEL, KIND_WINDOW_ET, NEWSLETTER, NEWSLETTER_PAUSED_KEY, SLOT_KIND, type IssueKind, type Slot } from "./config";
-import { dateKeyWeekday, easternMinutes, pacificDateKey, shiftDateKey, type DateKey } from "./dates";
+import { dateKeyWeekday, easternMinutes, longDate, pacificDateKey, shiftDateKey, type DateKey } from "./dates";
 import { gatherFacts, renderFacts, type FactsDeps, type IssueFacts } from "./facts";
 import { buildCreatePostBody, type RenderMode } from "./render";
 import { advertiserLabel, fetchTsiAdsFor, type TsiAdsResult } from "./tsiAds";
@@ -237,6 +237,11 @@ async function buildSlot(job: SlotJob): Promise<SlotResult> {
   }
 
   const reviewReason = written.status === "needs_review" ? written.reason : null;
+  // The brief's headline is fixed, like the CNBC list it is modeled on: "Top 9 things to watch Monday, September 8".
+  if (kind === "morning") {
+    const items = numberedItems(written.article.paragraphs);
+    if (items.ok) written.article.headline = `Top ${items.items.length} things to watch ${longDate(dateKey)}`;
+  }
   const body = buildCreatePostBody({
     dateKey,
     slot,

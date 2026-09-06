@@ -12,7 +12,7 @@ before(() => {
   if (enabled) process.env.DATABASE_URL = url;
 });
 
-// 2099-01-06 is a Wednesday far in the future, so real rows never collide.
+// 2099-01-06 is a Tuesday far in the future, so real rows never collide.
 const DATE = "2099-01-06";
 const MORNING = new Date("2099-01-06T12:30:00Z"); // 7:30 AM EST
 const EVENING = new Date("2099-01-06T21:35:00Z"); // 4:35 PM EST
@@ -82,7 +82,7 @@ test("the morning cron builds only the brief, the evening cron only the recap; r
     assert.match(am.slots[1].note ?? "", /Closing recap builds from 16:05 ET/);
     assert.equal(bh.calls.length, 1);
     const created = bh.calls[0].body as { title: string; status: string; content_tags: string[]; blocks: { type: string; html?: string; formattedText?: { text: string; styling?: string[] }[] }[] };
-    assert.equal(created.title, "Nine things to watch before the bell");
+    assert.equal(created.title, "Top 9 things to watch Tuesday, January 6", "the brief's headline is fixed");
     assert.equal(created.status, "draft");
     assert.deepEqual(created.content_tags, ["morning-brief"]);
     assert.equal(created.blocks.filter((b) => b.type === "html" && b.html === AD).length, 2, "both Smart Investor ads copied");
@@ -164,7 +164,7 @@ test("a failing writer leaves the other issue alone; twice-invalid text becomes 
     assert.equal(r2.slots[0].status, "needs_review");
     assert.match(r2.slots[0].reviewReason ?? "", /banned phrase "secret"/);
     assert.ok(r2.slots[0].beehiivPostId);
-    assert.equal((bh.calls[0].body as { title: string }).title, "[REVIEW] Nine things to watch before the bell with a secret");
+    assert.equal((bh.calls[0].body as { title: string }).title, "[REVIEW] Top 9 things to watch Tuesday, January 6");
   } finally {
     await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
     await prisma.$disconnect();
