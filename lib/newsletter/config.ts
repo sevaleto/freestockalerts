@@ -26,7 +26,7 @@ export const NEWSLETTER = {
   /** Adaptive thinking counts against max_tokens, so this leaves room to think. */
   writerMaxTokens: 16000,
   /** Server-side web searches the writer may run per issue. */
-  webSearchMaxUses: 8,
+  webSearchMaxUses: 6,
   /** How many times a `pause_turn` is resumed before giving up. */
   pauseTurnResumes: 3,
 

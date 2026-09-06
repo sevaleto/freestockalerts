@@ -75,8 +75,8 @@ export interface BuildOptions {
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 
-/** A pending row younger than this belongs to a run that is still going (Vercel functions stop at 300s). */
-export const IN_PROGRESS_MS = 6 * 60_000;
+/** A pending row younger than this belongs to a run that is still going (the function limit is 800s with Fluid compute). */
+export const IN_PROGRESS_MS = 14 * 60_000;
 
 /** Why the slot's kind cannot be built right now, or null when it can. */
 export function windowReason(kind: IssueKind, now: Date, holidays: Set<string>, dateKey: DateKey): string | null {
