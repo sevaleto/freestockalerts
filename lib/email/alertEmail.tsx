@@ -23,6 +23,8 @@ interface AlertEmailProps {
   contextLines?: string[];
   /** The AI-written context, one entry per paragraph. Falls back to aiSummary when absent. */
   contextParagraphs?: string[];
+  /** Sponsored snippet from lib/ads (already-rendered, email-safe HTML); omitted when no ad is active. */
+  adHtml?: string | null;
 }
 
 export function AlertEmail({
@@ -36,6 +38,7 @@ export function AlertEmail({
   appUrl,
   contextLines = [],
   contextParagraphs,
+  adHtml,
 }: AlertEmailProps) {
   const paragraphs = contextParagraphs && contextParagraphs.length ? contextParagraphs : aiSummary.split(/\n\s*\n/).filter(Boolean);
   return (
@@ -104,6 +107,7 @@ export function AlertEmail({
               View Alert Details →
             </Link>
           </Section>
+          {adHtml ? <div style={{ marginTop: "28px" }} dangerouslySetInnerHTML={{ __html: adHtml }} /> : null}
           <Hr style={{ marginTop: "24px", borderColor: "#E2E8F0" }} />
           <Text style={{ fontSize: "12px", color: "#64748B" }}>
             You&apos;re receiving this because you set an alert for {ticker} on

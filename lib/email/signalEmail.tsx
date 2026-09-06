@@ -14,12 +14,14 @@ interface SignalEmailProps {
   appUrl: string;
   /** AI-written context, one entry per paragraph; omitted when not generated. */
   contextParagraphs?: string[];
+  /** Sponsored snippet from lib/ads (already-rendered, email-safe HTML); omitted when no ad is active. */
+  adHtml?: string | null;
 }
 
 const navy = "#0F172A";
 
 /** Email for an event-strategy signal (insider purchase, analyst cluster). Same look as the alert email. */
-export function SignalEmail({ strategyName, strategySlug, symbol, subject, explanation, rows, score, maxScore, sourceLine, appUrl, contextParagraphs = [] }: SignalEmailProps) {
+export function SignalEmail({ strategyName, strategySlug, symbol, subject, explanation, rows, score, maxScore, sourceLine, appUrl, contextParagraphs = [], adHtml }: SignalEmailProps) {
   return (
     <Html>
       <Head />
@@ -77,6 +79,7 @@ export function SignalEmail({ strategyName, strategySlug, symbol, subject, expla
 
           <Text style={{ fontSize: "12px", color: "#64748B", marginTop: "16px" }}>Source: {sourceLine}</Text>
 
+          {adHtml ? <div style={{ marginTop: "28px" }} dangerouslySetInnerHTML={{ __html: adHtml }} /> : null}
           <Hr style={{ marginTop: "24px", borderColor: "#E2E8F0" }} />
           <Text style={{ fontSize: "12px", color: "#64748B" }}>
             You&apos;re receiving this because you activated {strategyName} on FreeStockAlerts.AI. Turn it off any time from{" "}

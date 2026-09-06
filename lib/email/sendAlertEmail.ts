@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { AlertEmail } from "@/lib/email/alertEmail";
+import { serveEmailAd } from "@/lib/ads/serve";
 
 interface SendAlertEmailInput {
   to: string;
@@ -14,6 +15,8 @@ interface SendAlertEmailInput {
   contextLines?: string[];
   /** AI-written context, one entry per paragraph. */
   contextParagraphs?: string[];
+  /** Recipient's user id; identifies them on ad clicks. */
+  userId?: string | null;
 }
 
 export async function sendAlertEmail(input: SendAlertEmailInput) {
@@ -24,13 +27,19 @@ export async function sendAlertEmail(input: SendAlertEmailInput) {
       ? "FreeStockAlerts <alerts@freestockalerts.ai>"
       : "FreeStockAlerts <onboarding@resend.dev>");
 
+  // One impression per email sent; null when no ad is active, and never throws.
+  const ad = await serveEmailAd({ userId: input.userId });
+
+  const { userId: _userId, ...emailProps } = input;
+  void _userId;
   return resend.emails.send({
     from,
     to: input.to,
     subject: `🔔 ${input.ticker} Alert: ${input.alertType}`,
     react: AlertEmail({
-      ...input,
+      ...emailProps,
       appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+      adHtml: ad?.html ?? null,
     }),
   });
 }
