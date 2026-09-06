@@ -16,10 +16,10 @@ export function TemplatePreview() {
       <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Strategy templates</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lp-teal">Alert strategies</p>
             <h2 className="font-serif text-3xl text-lp-navy md:text-4xl">Pick a strategy. Activate a full watchlist.</h2>
             <p className="text-base leading-relaxed text-lp-navy/75">
-              Each template is a defined setup: a screened list, one specific trigger, and a stated refresh date. Activate every alert in it with one click. {remaining} more strategies wait on your dashboard.
+              Each strategy is a defined setup: a screened list, one specific trigger, and a stated refresh date. Activate every alert in it with one click. {remaining} more strategies wait on your dashboard.
             </p>
           </div>
           <Link href="/templates" className="inline-flex items-center gap-2 text-sm font-semibold text-lp-teal hover:text-lp-teal-dark">

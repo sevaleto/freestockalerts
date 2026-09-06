@@ -10,7 +10,7 @@ import { trackSubscribe } from "@/lib/tracking/events";
 interface ActivateButtonProps {
   slug: string;
   templateName: string;
-  /** Button text when signed in; defaults to "Activate this template". */
+  /** Button text when signed in; defaults to "Activate this strategy". */
   label?: string;
   /** Disable activation (e.g. the strategy has no constituents right now). */
   disabled?: boolean;
@@ -48,7 +48,7 @@ export function ActivateButton({ slug, templateName, label, disabled = false }: 
         return;
       }
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || "Failed to activate template");
+      if (!res.ok) throw new Error(body.error || "Failed to activate strategy");
 
       trackSubscribe(templateName, body.data?.alertCount ?? 0);
       setActivated(true);
@@ -72,8 +72,8 @@ export function ActivateButton({ slug, templateName, label, disabled = false }: 
   const text = loading
     ? "Activating…"
     : signedIn
-      ? `${label ?? "Activate this template"} →`
-      : `${label ?? "Activate this template"} (sign in first) →`;
+      ? `${label ?? "Activate this strategy"} →`
+      : `${label ?? "Activate this strategy"} (sign in first) →`;
 
   return (
     <div className="space-y-2">

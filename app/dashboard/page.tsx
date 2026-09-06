@@ -82,7 +82,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard/alerts/new">Create New Alert</Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/dashboard/templates">Browse Templates</Link>
+            <Link href="/dashboard/templates">Browse Strategies</Link>
           </Button>
         </div>
       </div>

@@ -21,7 +21,7 @@ const BENEFITS = [
   },
   {
     icon: LayoutGrid,
-    title: "Every strategy template, one click",
+    title: "Every strategy, one click",
     body: "Twelve ready-made alert strategies: screened breakout lists, insider-purchase and analyst-upgrade signals, pullback-and-reclaim alerts, dividend buy zones, sector leadership and market stress. Turn any of them on from your dashboard.",
   },
   {
@@ -42,7 +42,7 @@ const BENEFITS = [
   {
     icon: BadgeDollarSign,
     title: "Free. No asterisk.",
-    body: "No credit card, no trial, no paid tier. Every feature and every template is free, and you can unsubscribe in one click.",
+    body: "No credit card, no trial, no paid tier. Every feature and every strategy is free, and you can unsubscribe in one click.",
   },
 ];
 

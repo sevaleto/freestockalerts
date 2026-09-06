@@ -40,7 +40,7 @@ export default async function AlertsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-text-primary">My Alerts</h1>
           <p className="text-sm text-text-secondary">
-            Manage your custom alerts and template-based subscriptions.
+            Manage your custom alerts and strategy subscriptions.
           </p>
         </div>
         <Button asChild>

@@ -22,7 +22,7 @@ const features = [
   {
     title: "Free. No asterisk.",
     description:
-      "Not a trial. Not \"freemium.\" Not three alerts then pay. Every feature, every alert type, every template, $0 forever.",
+      "Not a trial. Not \"freemium.\" Not three alerts then pay. Every feature, every alert type, every strategy, $0 forever.",
     icon: DollarSign,
   },
 ];

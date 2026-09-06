@@ -13,7 +13,7 @@ const steps = [
     step: "02",
     title: "Or activate a ready-made strategy.",
     description:
-      "Don't know where to start? Twelve strategy templates give you a full set of pre-built alerts in one click: post-earnings strength, quality breakouts, confirmed insider purchases, analyst upgrade clusters, 200-day comebacks, sector leadership, and more.",
+      "Don't know where to start? Twelve ready-made strategies give you a full set of pre-built alerts in one click: post-earnings strength, quality breakouts, confirmed insider purchases, analyst upgrade clusters, 200-day comebacks, sector leadership, and more.",
     icon: Sparkles,
     example: "\"Activate Under-the-Radar Breakouts: 10 screened mid-caps, ready to go\"",
   },

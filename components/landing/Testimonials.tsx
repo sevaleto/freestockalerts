@@ -3,12 +3,12 @@ export function Testimonials() {
     { feature: "Price alerts", us: "Up to 50, free", them: "Limited on free plans" },
     { feature: "RSI, SMA, volume alerts", us: "Free", them: "Usually paid tiers" },
     { feature: "Plain-English context with each alert", us: "Every alert", them: "Rare" },
-    { feature: "One-click strategy templates", us: "9", them: "Rare" },
+    { feature: "One-click strategies", us: "12", them: "Rare" },
     { feature: "Price", us: "$0, forever", them: "$10–$30 / mo" },
   ];
   const stats = [
     { stat: "12", label: "Alert types", sub: "Price, %, RSI, SMA, volume, and more" },
-    { stat: "9", label: "Ready-made templates", sub: "Full watchlists, one click" },
+    { stat: "12", label: "Ready-made strategies", sub: "Full watchlists, one click" },
     { stat: "5 min", label: "Check interval", sub: "During market hours" },
     { stat: "50", label: "Alerts per account", sub: "Not three, then a paywall" },
     { stat: "$0", label: "Forever", sub: "Not a trial. Not freemium." },

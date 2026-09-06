@@ -148,7 +148,7 @@ export default function DashboardTemplatesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-text-primary">Strategy templates</h1>
+        <h1 className="text-2xl font-semibold text-text-primary">Strategies</h1>
         <p className="text-sm text-text-secondary">
           Activate a ready-made alert strategy with one click. Preview any strategy to see its rules, trigger and current list.
         </p>
@@ -156,7 +156,7 @@ export default function DashboardTemplatesPage() {
 
       {templates.length === 0 ? (
         <div className="rounded-[20px] border border-border bg-white p-6 text-sm text-text-secondary">
-          No templates available yet.
+          No strategies available yet.
         </div>
       ) : (
         groups.map(({ section, templates: list }) => (

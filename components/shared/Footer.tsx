@@ -13,7 +13,7 @@ export function Footer() {
         <Logo />
         <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-text-secondary" aria-label="Footer">
           <Link href="/about" className="hover:text-text-primary">About</Link>
-          <Link href="/templates" className="hover:text-text-primary">Templates</Link>
+          <Link href="/templates" className="hover:text-text-primary">Strategies</Link>
           <Link href="/advertise" className="hover:text-text-primary">Advertise</Link>
           <Link href="/privacy" className="hover:text-text-primary">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-text-primary">Terms of Use</Link>
