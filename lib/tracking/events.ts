@@ -33,6 +33,42 @@ function fbWithId(event: string, eventId: string, params?: Record<string, any>) 
   }
 }
 
+/**
+ * Whether the Meta pixel bootstrap has run. The inline snippet defines a
+ * queueing `fbq` stub synchronously, so once this is true events are safe to
+ * send even if fbevents.js itself is still downloading.
+ */
+export function metaPixelReady(): boolean {
+  return typeof window !== "undefined" && typeof window.fbq === "function";
+}
+
+/**
+ * Run `cb` once the Meta pixel stub exists, polling every 100ms up to
+ * `timeoutMs`. The pixel only mounts after the consent provider's first
+ * effect and Next's afterInteractive injection, so an event fired on a fixed
+ * timer right after a redirect can land before `fbq` is defined and be
+ * dropped by the guards above. Calls `cb(false)` on timeout (pixel blocked,
+ * no marketing consent) so callers can decide what to do.
+ * Returns a cancel function.
+ */
+export function onMetaPixelReady(cb: (ready: boolean) => void, timeoutMs: number = 8000): () => void {
+  if (metaPixelReady()) {
+    cb(true);
+    return () => {};
+  }
+  const started = Date.now();
+  const timer = setInterval(() => {
+    if (metaPixelReady()) {
+      clearInterval(timer);
+      cb(true);
+    } else if (Date.now() - started >= timeoutMs) {
+      clearInterval(timer);
+      cb(false);
+    }
+  }, 100);
+  return () => clearInterval(timer);
+}
+
 function tt(event: string, params?: Record<string, any>) {
   if (typeof window !== "undefined" && window.ttq && typeof window.ttq.track === "function") {
     window.ttq.track(event, params);
@@ -79,13 +115,16 @@ export function trackLead(
 /**
  * User successfully authenticated and lands on dashboard.
  * Accepts optional event_id from CAPI (passed via URL param capi_eid).
+ * Returns true when the Meta pixel was present and the event was queued.
  */
-export function trackCompleteRegistration(capiEventId?: string) {
+export function trackCompleteRegistration(capiEventId?: string): boolean {
   const eventId = capiEventId || generateEventId();
 
   // Browser pixel — uses same event_id as CAPI for dedup
+  const sent = metaPixelReady();
   fbWithId("CompleteRegistration", eventId, { content_name: "dashboard" });
   tt("CompleteRegistration", { content_name: "dashboard" });
+  return sent;
 }
 
 /** User views a template detail page */
