@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 import { useCookieConsent } from "@/lib/cookies/CookieConsentContext";
 
 /**
@@ -21,28 +22,33 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "";
 
 export function TrackingScripts() {
   const { hasConsent } = useCookieConsent();
+  const pathname = usePathname();
+  const lastTrackedPath = useRef<string | null>(null);
 
   const marketingConsent = hasConsent("marketing");
   const analyticsConsent = hasConsent("analytics");
 
-  // Meta Pixel — init on consent
+  // PageView on client-side route changes only. The inline snippets below
+  // already send PageView when they first run, and because React runs the
+  // <Script> child's effect before this one, firing here on the same commit
+  // produced a second PageView on every full load. The root layout persists
+  // across App Router navigations, so those got no PageView at all; this
+  // effect covers them.
   useEffect(() => {
-    if (marketingConsent && META_PIXEL_ID && typeof window !== "undefined") {
-      // If fbq already loaded (e.g., navigated back), just track PageView
-      if (typeof (window as any).fbq === "function") {
-        (window as any).fbq("track", "PageView");
-      }
+    if (!marketingConsent) return;
+    if (lastTrackedPath.current === null || lastTrackedPath.current === pathname) {
+      lastTrackedPath.current = pathname;
+      return;
     }
-  }, [marketingConsent]);
-
-  // TikTok Pixel — init on consent
-  useEffect(() => {
-    if (marketingConsent && TIKTOK_PIXEL_ID && typeof window !== "undefined") {
-      if (typeof (window as any).ttq === "object") {
-        (window as any).ttq.page();
-      }
+    lastTrackedPath.current = pathname;
+    const w = window as any;
+    if (META_PIXEL_ID && typeof w.fbq === "function") {
+      w.fbq("track", "PageView");
     }
-  }, [marketingConsent]);
+    if (TIKTOK_PIXEL_ID && typeof w.ttq === "object" && typeof w.ttq.page === "function") {
+      w.ttq.page();
+    }
+  }, [marketingConsent, pathname]);
 
   return (
     <>
