@@ -13,7 +13,11 @@ export default function ContactPage() {
       <main className="mx-auto w-full max-w-4xl px-6 pb-20">
         <h1 className="font-serif text-4xl text-lp-navy md:text-5xl">Contact</h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Questions or feedback? Email us at hello@freestockalerts.ai
+          Questions or feedback? Email us at{" "}
+          <a href="mailto:support@freestockalerts.ai" className="text-primary underline">
+            support@freestockalerts.ai
+          </a>
+          .
         </p>
       </main>
     </div>

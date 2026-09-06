@@ -17,9 +17,7 @@ export function LpFooter() {
           <button type="button" onClick={openBanner} className="hover:text-text-primary">
             Cookie Settings
           </button>
-          <button type="button" onClick={openBanner} className="hover:text-text-primary">
-            Do Not Sell or Share My Personal Information
-          </button>
+          <Link href="/do-not-sell" className="hover:text-text-primary">Do Not Sell or Share My Personal Information</Link>
         </div>
       </div>
     </footer>

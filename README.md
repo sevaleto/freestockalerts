@@ -140,6 +140,25 @@ Subscribing (`/welcome/<slug>`, the Activate button, or the dashboard toggle) cr
 `TemplateSubscription`; activation creates no per-user alerts for these two templates.
 Users with `emailAlerts` off, or an `INVALID`/`SUPPRESSED` address, are skipped.
 
+## Public forms: /advertise and /do-not-sell
+
+Both pages mirror research.tradingtips.com. `/advertise` is the advertiser pitch (no audience
+figures, no rates, no named staff in the prose) ending in an inquiry form; `/do-not-sell` is the
+CCPA/CPRA opt-out page with the request form and a link that opens the site's privacy-choices
+panel for the cookie half. The forms post JSON to `/api/advertiser-inquiry` and
+`/api/privacy-request`: per-IP rate limit, honeypot, Turnstile (when configured), then the row is
+written (`AdvertiserInquiry`, `PrivacyRequest`) before staff are emailed in `after()`. The email
+outcome is written back to the row (`emailStatus` / `notifyStatus`), so an undelivered request is
+visible. There is no admin page; the tables are the record:
+
+```sql
+SELECT ts, name, company, email, "emailStatus", "handledAt" FROM "AdvertiserInquiry" ORDER BY ts DESC;
+SELECT ts, "firstName", "lastName", email, "notifyStatus", "handledAt" FROM "PrivacyRequest" ORDER BY ts DESC;
+```
+
+Recipients are env-overridable (`ADVERTISER_INQUIRY_TO`, `ADVERTISER_INQUIRY_BCC`,
+`PRIVACY_ALERT_EMAILS`); see `.env.example`. A privacy request has a 45-day statutory clock.
+
 ## How the alert loop works
 
 1. `vercel.json` schedules `GET /api/alerts/check` every 5 minutes, 13:00–21:59 UTC, Mon–Fri.
@@ -195,8 +214,10 @@ npm run smoke              # every template page, redirects, auth gates, against
 For `test:db`: `createdb freestockalerts_test`, then
 `DATABASE_URL=postgresql://$USER@localhost:5432/freestockalerts_test DIRECT_URL=$DATABASE_URL npx prisma db push`
 (set `TEST_DATABASE_URL` if your local Postgres needs different credentials).
-The `next-dev-testdb` entry in `.claude/launch.json` runs the dev server against that database so
-nothing local touches production data.
+The `next-dev-testdb` entry in `.claude/launch.json` runs the dev server against that database, with
+the Turnstile keys blanked and the form-notification recipients pointed at Resend's test sink
+(`delivered@resend.dev`), so submissions are stored and the email path runs without a bot check and
+without reaching a staff inbox; nothing local touches production data.
 
 > The Vercel development environment uses the **production** database. Local dev
 > reads and writes live user data.

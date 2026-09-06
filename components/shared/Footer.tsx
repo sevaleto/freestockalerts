@@ -14,25 +14,18 @@ export function Footer() {
         <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-text-secondary" aria-label="Footer">
           <Link href="/about" className="hover:text-text-primary">About</Link>
           <Link href="/templates" className="hover:text-text-primary">Templates</Link>
-          <Link href="/blog" className="hover:text-text-primary">Blog</Link>
-          <Link href="/contact" className="hover:text-text-primary">Contact</Link>
+          <Link href="/advertise" className="hover:text-text-primary">Advertise</Link>
           <Link href="/privacy" className="hover:text-text-primary">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-text-primary">Terms of Use</Link>
           <Link href="/disclaimer" className="hover:text-text-primary">Disclaimer</Link>
           <button type="button" onClick={openBanner} className="text-text-secondary transition-colors hover:text-text-primary">
             Cookie Settings
           </button>
-          <button type="button" onClick={openBanner} className="text-text-secondary transition-colors hover:text-text-primary">
-            Do Not Sell or Share My Personal Information
-          </button>
+          <Link href="/do-not-sell" className="hover:text-text-primary">Do Not Sell or Share My Personal Information</Link>
         </nav>
       </div>
       <div className="mx-auto mt-6 w-full max-w-[1440px] space-y-1 px-5 text-xs text-text-muted sm:px-8 lg:px-12">
         <p>© 2026 FreeStockAlerts.AI, a Wealthpire, Inc. property. Educational information only. Not investment advice.</p>
-        <p>
-          Wealthpire, Inc. · 400 Continental Blvd, 6th Floor, El Segundo, CA 90245 ·{" "}
-          <Link href="/contact" className="underline underline-offset-2 hover:text-text-primary">Contact us</Link>
-        </p>
       </div>
     </footer>
   );

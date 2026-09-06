@@ -311,3 +311,62 @@ model StrategyScanRun {
 
   @@index([strategySlug, startedAt])
 }
+
+// ---------------------------------------------------------------------------
+// Public forms: advertiser inquiries (/advertise) and privacy opt-out requests
+// (/do-not-sell). The row is written before any email goes out, so a mail
+// outage costs a notification, never the record. Both mirror the tables on
+// research.tradingtips.com.
+// ---------------------------------------------------------------------------
+
+model AdvertiserInquiry {
+  id          String    @id @default(cuid())
+  ts          DateTime  @default(now())
+  name        String
+  email       String
+  company     String
+  website     String?
+  phone       String?
+  message     String?
+  /// Set when sales has actioned the inquiry. Null = still in the queue.
+  handledAt   DateTime?
+  handledNote String?
+  /// Delivery to the sales inbox: pending | sent | failed | skipped (no email provider configured).
+  emailStatus String    @default("pending")
+  emailError  String?
+  emailSentAt DateTime?
+  /// sha256(salt + ip); stores no raw IP.
+  ipHash      String?
+  userAgent   String?
+
+  @@index([ts])
+}
+
+/// A "Do Not Sell or Share My Personal Information" request. Carries a statutory deadline, so it is a durable, auditable record.
+model PrivacyRequest {
+  id            String    @id @default(cuid())
+  ts            DateTime  @default(now())
+  /// consumer | agent (an authorized agent filing on someone's behalf)
+  requesterType String    @default("consumer")
+  firstName     String
+  lastName      String
+  email         String
+  phone         String    @default("")
+  street        String?
+  city          String?
+  state         String?
+  zip           String?
+  country       String?
+  details       String?
+  handledAt     DateTime?
+  handledNote   String?
+  /// Staff notification: pending | sent | failed | skipped.
+  notifyStatus  String    @default("pending")
+  notifyError   String?
+  notifiedAt    DateTime?
+  ipHash        String?
+  userAgent     String?
+
+  @@index([ts])
+  @@index([email])
+}
