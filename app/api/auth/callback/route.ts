@@ -6,6 +6,7 @@ import { completeSignIn, safeNext } from "@/lib/auth/completeSignIn";
 import { toSignupSource } from "@/lib/auth/users";
 import { parseAttribution } from "@/lib/tracking/attribution";
 import { marketingAllowed } from "@/lib/cookies/serverConsent";
+import { VARIANT_COOKIE } from "@/lib/cookies/bucket";
 
 const HANDOFF_COOKIES = ["fsa_next", "fsa_src", "fsa_attr"] as const;
 
@@ -105,7 +106,7 @@ export async function GET(request: Request) {
     user: result.data.user,
     request,
     origin,
-    abVariant: jar.get("ab_hero_headline")?.value ?? null,
+    abVariant: jar.get(VARIANT_COOKIE)?.value ?? null,
     sourceOverride,
     attribution,
   });

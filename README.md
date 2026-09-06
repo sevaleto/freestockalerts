@@ -44,14 +44,30 @@ Site URL `https://www.freestockalerts.ai`; Redirect URLs include
 Resend webhook (`/api/webhooks/resend`) must be subscribed to `email.bounced` and
 `email.complained` so bad addresses are suppressed from broadcasts.
 
-## Facebook ad landing pages (`/go/<slug>`)
+## Facebook ad landing pages (`/go/<slug>`) and headline split tests
 
-One page per ad angle, each backed by an alert template. Defined in `lib/lp/pages.ts`;
-adding a page is one config entry (copy + template slug). Pages have no site navigation,
+One page per ad angle, each backed by an alert template. Pages are rows in the
+`LandingPage` table, managed at `/admin/pages` (admins only): pick a slug and a strategy,
+write one or more headline + subheadline variants, publish. Pages have no site navigation,
 show the template's alerts as proof, and send signups to `/welcome/<template-slug>`,
 which activates the template on arrival so the visitor lands with the alerts live.
+The homepage hero is the row with slug `home`; only its variants are used.
 
-Live pages: `/go/breakouts`, `/go/radar`, `/go/turnarounds`, `/go/oversold`, `/go/sectors`.
+`lib/lp/pages.ts` holds the original seven pages as seed data (`npm run prisma:seed`
+creates missing rows and never overwrites admin edits) and as the fallback if the
+database read fails. Copy fields left blank in the admin fall back to the strategy's
+own landing copy and sample alert.
+
+Split tests: the middleware stamps a random `fsa_bucket` cookie once per browser;
+`lib/ab/pick.ts` maps it onto the page's active variants by weight, so assignment is
+sticky per visitor and page and the first render already shows the right headline.
+The page writes `fsa_var=<slug>:<key>`, which the auth routes store on
+`User.signupVariant` at signup (first write wins). Views come from a browser beacon
+(`POST /api/ab/view`, bots ignored). The admin shows views, leads, confirmed signups,
+lead rate and a two-proportion z-test against variant A. `?v=B` forces a variant
+(not counted); `?preview=1` lets admins view draft pages. Page copy and the watchlist
+quotes are cached for an hour (`unstable_cache`, tags `lp:<slug>`); admin saves
+invalidate the page tag immediately.
 
 Attribution: `User.signupSource` is `lp:<slug>` for email signups and (via the `fsa_src`
 cookie) Google signups from a page. Meta pixel `ViewContent` and `Lead` carry

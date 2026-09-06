@@ -8,10 +8,10 @@ import { CheckInboxCard } from "@/components/auth/CheckInboxCard";
 import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
 import { useTurnstile } from "@/components/auth/useTurnstile";
-import type { LandingPage } from "@/lib/lp/pages";
+import type { LandingPageView } from "@/lib/lp/view";
 
 type Props = {
-  lp: Pick<LandingPage, "slug" | "templateSlug" | "source" | "metaContentName" | "ctaLabel" | "googleLabel">;
+  lp: Pick<LandingPageView, "slug" | "templateSlug" | "source" | "metaContentName" | "ctaLabel" | "googleLabel">;
 };
 
 const REASSURANCE = ["Free forever", "Up to 50 alerts", "No credit card"];

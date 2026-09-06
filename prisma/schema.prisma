@@ -9,23 +9,23 @@ datasource db {
 }
 
 model User {
-  id                     String    @id @default(cuid())
-  email                  String    @unique
+  id                     String                 @id @default(cuid())
+  email                  String                 @unique
   firstName              String?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-  emailVerified          Boolean   @default(false)
-  alertsCount            Int       @default(0)
-  maxAlerts              Int       @default(50)
-  unsubscribedFromBlasts Boolean   @default(false)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  emailVerified          Boolean                @default(false)
+  alertsCount            Int                    @default(0)
+  maxAlerts              Int                    @default(50)
+  unsubscribedFromBlasts Boolean                @default(false)
   resendContactId        String?
-  signupVariant          String?   // A/B test variant at signup (e.g. "hero_headline:A")
-  signupSource           String?   // which form captured the lead: hero | final-cta | template-preview | login | google
+  signupVariant          String? // headline variant seen at signup: "<page slug>:<key>", e.g. "home:B" or "radar:A"
+  signupSource           String? // which form captured the lead: hero | final-cta | template-preview | login | google
   lastLinkSentAt         DateTime? // last magic-link email; rate-limits resends to one per 60s
-  emailStatus            EmailStatus @default(PENDING) // deliverability verdict; gates the Resend audience and lead exports
-  emailVerdict           String?   // raw verdict: Email Oversight Result name, or magic-link | google | bounce | complaint | precheck:<reason>
+  emailStatus            EmailStatus            @default(PENDING) // deliverability verdict; gates the Resend audience and lead exports
+  emailVerdict           String? // raw verdict: Email Oversight Result name, or magic-link | google | bounce | complaint | precheck:<reason>
   emailCheckedAt         DateTime? // when emailStatus was last written
-  emailCheckAttempts     Int       @default(0) // Email Oversight calls made (Retry/Unknown are retried up to 3 times)
+  emailCheckAttempts     Int                    @default(0) // Email Oversight calls made (Retry/Unknown are retried up to 3 times)
   // First-touch acquisition data captured at signup (URL params on the page the lead converted on).
   utmSource              String?
   utmMedium              String?
@@ -45,47 +45,47 @@ model User {
 
 /// Deliverability verdict for a lead's address. Only VALID and ACCEPT_ALL are mailable.
 enum EmailStatus {
-  PENDING    // not checked yet, or Email Oversight said Retry/Unknown (retried by cron)
-  VALID      // Email Oversight "Verified", or the user confirmed via magic link / Google
+  PENDING // not checked yet, or Email Oversight said Retry/Unknown (retried by cron)
+  VALID // Email Oversight "Verified", or the user confirmed via magic link / Google
   ACCEPT_ALL // catch-all domain: probably fine for the newsletter, not good enough to share
-  RISKY      // role account, or still unknown after all retries
-  INVALID    // undeliverable, malformed, disposable, bot, or hard-bounced
+  RISKY // role account, or still unknown after all retries
+  INVALID // undeliverable, malformed, disposable, bot, or hard-bounced
   SUPPRESSED // spam trap, complainer, seed, suppression list, or a Resend complaint
 }
 
 model UserPreferences {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  emailAlerts         Boolean  @default(true)
-  dailyDigest         Boolean  @default(false)
-  digestTime          String   @default("08:00")
-  timezone            String   @default("America/New_York")
-  marketOpenReminder  Boolean  @default(false)
-  marketCloseReminder Boolean  @default(false)
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailAlerts         Boolean @default(true)
+  dailyDigest         Boolean @default(false)
+  digestTime          String  @default("08:00")
+  timezone            String  @default("America/New_York")
+  marketOpenReminder  Boolean @default(false)
+  marketCloseReminder Boolean @default(false)
 }
 
 model Alert {
-  id               String             @id @default(cuid())
+  id               String           @id @default(cuid())
   userId           String
-  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   ticker           String
   companyName      String?
   alertType        AlertType
   triggerValue     Float
   triggerDirection TriggerDirection
   currentPrice     Float?
-  isActive         Boolean            @default(true)
-  isTriggered      Boolean            @default(false)
+  isActive         Boolean          @default(true)
+  isTriggered      Boolean          @default(false)
   triggeredAt      DateTime?
   lastCheckedAt    DateTime?
-  cooldownMinutes  Int                @default(20)
+  cooldownMinutes  Int              @default(20)
   note             String?
   templateId       String?
-  template         AlertTemplate?     @relation(fields: [templateId], references: [id])
+  template         AlertTemplate?   @relation(fields: [templateId], references: [id])
   history          AlertHistory[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([userId, isActive])
   @@index([ticker, isActive])
@@ -103,29 +103,29 @@ model SignupRateLimit {
 }
 
 model AlertHistory {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   alertId        String
-  alert          Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  triggeredAt    DateTime @default(now())
+  alert          Alert     @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  triggeredAt    DateTime  @default(now())
   priceAtTrigger Float
   aiSummary      String?
-  emailSent      Boolean  @default(false)
+  emailSent      Boolean   @default(false)
   emailSentAt    DateTime?
 }
 
 model AlertTemplate {
-  id              String                  @id @default(cuid())
+  id              String                 @id @default(cuid())
   name            String
-  slug            String                  @unique
+  slug            String                 @unique
   description     String
   longDescription String?
   category        TemplateCategory
-  iconEmoji       String                  @default("📊")
-  isActive        Boolean                 @default(true)
-  isFeatured      Boolean                 @default(false)
-  sortOrder       Int                     @default(0)
+  iconEmoji       String                 @default("📊")
+  isActive        Boolean                @default(true)
+  isFeatured      Boolean                @default(false)
+  sortOrder       Int                    @default(0)
   /// Catalog section shown on the index and on every strategy page.
-  section         StrategySection         @default(IDEA_DISCOVERY)
+  section         StrategySection        @default(IDEA_DISCOVERY)
   /// One line describing the final alert trigger, e.g. "Fresh 52-week high".
   triggerSummary  String?
   /// Human cadence, e.g. "Monthly", "Weekly", "Weekly in earnings season, biweekly otherwise".
@@ -133,7 +133,7 @@ model AlertTemplate {
   /// When the constituent list was last rebuilt or reviewed.
   lastRefreshedAt DateTime?
   /// Bumped when the strategy's rules change.
-  version         Int                     @default(1)
+  version         Int                    @default(1)
   /// Retired templates stay in the table so existing user alerts keep their reference.
   retiredAt       DateTime?
   /// Slug of the strategy that replaced a retired template.
@@ -141,21 +141,21 @@ model AlertTemplate {
   alerts          Alert[]
   items           TemplateItem[]
   subscriptions   TemplateSubscription[]
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 }
 
 model TemplateItem {
-  id               String        @id @default(cuid())
+  id               String           @id @default(cuid())
   templateId       String
-  template         AlertTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template         AlertTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
   ticker           String
   companyName      String?
   alertType        AlertType
   triggerValue     Float
   triggerDirection TriggerDirection
   rationale        String?
-  sortOrder        Int           @default(0)
+  sortOrder        Int              @default(0)
 }
 
 model TemplateSubscription {
@@ -217,18 +217,18 @@ enum TemplateCategory {
 
 /// One line of a Form 4 (or similar) as normalized from the provider.
 model InsiderTransaction {
-  id                       String   @id @default(cuid())
+  id                       String    @id @default(cuid())
   symbol                   String
   /// accession + transaction details; stable across re-fetches
-  dedupKey                 String   @unique
+  dedupKey                 String    @unique
   accession                String?
   insiderName              String
   insiderTitle             String?
   /// raw "typeOfOwner" string, e.g. "director, officer: CEO"
   ownerType                String?
-  isDirector               Boolean  @default(false)
-  isOfficer                Boolean  @default(false)
-  isSenior                 Boolean  @default(false)
+  isDirector               Boolean   @default(false)
+  isOfficer                Boolean   @default(false)
+  isSenior                 Boolean   @default(false)
   transactionCode          String
   acquisitionOrDisposition String?
   securityName             String?
@@ -240,7 +240,7 @@ model InsiderTransaction {
   sharesOwnedAfter         Float?
   filingUrl                String?
   raw                      Json
-  fetchedAt                DateTime @default(now())
+  fetchedAt                DateTime  @default(now())
 
   @@index([symbol, transactionDate])
   @@index([transactionDate])
@@ -421,23 +421,23 @@ model EmailAd {
 }
 
 model EmailAdClick {
-  id        String   @id @default(cuid())
-  adId      String
-  ad        EmailAd  @relation(fields: [adId], references: [id], onDelete: Cascade)
-  ts        DateTime @default(now())
+  id           String      @id @default(cuid())
+  adId         String
+  ad           EmailAd     @relation(fields: [adId], references: [id], onDelete: Cascade)
+  ts           DateTime    @default(now())
   /// sha256(salt + ip); no raw IP stored.
-  ipHash    String?
-  userAgent String?
+  ipHash       String?
+  userAgent    String?
   /// Counted toward `EmailAd.clicks`; false for bot user agents and repeat clicks within a day.
-  counted   Boolean  @default(true)
+  counted      Boolean     @default(true)
   /// alert | beehiiv_fsa | beehiiv_si | unknown
-  channel   String   @default("unknown")
+  channel      String      @default("unknown")
   /// Raw subscriber token from the link (u_<userId> or Beehiiv sub_…); kept so a click can be attached later.
-  token     String?
+  token        String?
   subscriberId String?
   subscriber   Subscriber? @relation(fields: [subscriberId], references: [id], onDelete: SetNull)
   /// Value credited to this click (0 when not counted).
-  valueCents Int     @default(0)
+  valueCents   Int         @default(0)
 
   @@index([adId, ts])
   @@index([subscriberId, ts])
@@ -450,51 +450,51 @@ model EmailAdClick {
 // ---------------------------------------------------------------------------
 
 model Subscriber {
-  id                  String    @id @default(cuid())
-  email               String    @unique
-  firstName           String?
-  userId              String?   @unique
-  user                User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  appCreatedAt        DateTime?
-  beehiivFsaId        String?   @unique
-  beehiivFsaStatus    String?
-  beehiivFsaCreatedAt DateTime?
-  beehiivSiId         String?   @unique
-  beehiivSiStatus     String?
-  beehiivSiCreatedAt  DateTime?
+  id                             String         @id @default(cuid())
+  email                          String         @unique
+  firstName                      String?
+  userId                         String?        @unique
+  user                           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appCreatedAt                   DateTime?
+  beehiivFsaId                   String?        @unique
+  beehiivFsaStatus               String?
+  beehiivFsaCreatedAt            DateTime?
+  beehiivSiId                    String?        @unique
+  beehiivSiStatus                String?
+  beehiivSiCreatedAt             DateTime?
   /// Lifetime click counts Beehiiv reports per subscription (every link in every issue). Refreshed each sync.
-  beehiivFsaClicks       Int       @default(0)
-  beehiivFsaUniqueClicks Int       @default(0)
-  beehiivSiClicks        Int       @default(0)
-  beehiivSiUniqueClicks  Int       @default(0)
+  beehiivFsaClicks               Int            @default(0)
+  beehiivFsaUniqueClicks         Int            @default(0)
+  beehiivSiClicks                Int            @default(0)
+  beehiivSiUniqueClicks          Int            @default(0)
   /// Counts at the moment tracking started for this subscriber; clicks before that are not credited.
-  beehiivFsaClicksBaseline       Int @default(0)
-  beehiivFsaUniqueClicksBaseline Int @default(0)
-  beehiivSiClicksBaseline        Int @default(0)
-  beehiivSiUniqueClicksBaseline  Int @default(0)
-  beehiivStatsAt         DateTime?
+  beehiivFsaClicksBaseline       Int            @default(0)
+  beehiivFsaUniqueClicksBaseline Int            @default(0)
+  beehiivSiClicksBaseline        Int            @default(0)
+  beehiivSiUniqueClicksBaseline  Int            @default(0)
+  beehiivStatsAt                 DateTime?
   /// First time this subscriber's Beehiiv stats were read (the baseline moment).
-  trackingStartedAt      DateTime?
+  trackingStartedAt              DateTime?
   /// Earliest signup across sources; cohort month comes from this.
-  firstSeenAt         DateTime
+  firstSeenAt                    DateTime
   /// Which source the attribution below came from: app | beehiiv_fsa | beehiiv_si
-  attributionSource   String?
-  utmSource           String?
-  utmMedium           String?
-  utmCampaign         String?
-  utmTerm             String?
-  utmContent          String?
-  referringSite       String?
-  landingPath         String?
+  attributionSource              String?
+  utmSource                      String?
+  utmMedium                      String?
+  utmCampaign                    String?
+  utmTerm                        String?
+  utmContent                     String?
+  referringSite                  String?
+  landingPath                    String?
   /// "<source>|<medium>|<campaign>" (lowercased); joins CohortCost.
-  cohortKey           String
+  cohortKey                      String
   /// Alert-email ad clicks through our redirect (per-ad value stamped at click time).
-  countedClicks       Int       @default(0)
-  clickValueCents     Int       @default(0)
-  lastClickAt         DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  clicks              EmailAdClick[]
+  countedClicks                  Int            @default(0)
+  clickValueCents                Int            @default(0)
+  lastClickAt                    DateTime?
+  createdAt                      DateTime       @default(now())
+  updatedAt                      DateTime       @updatedAt
+  clicks                         EmailAdClick[]
 
   @@index([cohortKey])
   @@index([firstSeenAt])
@@ -510,38 +510,38 @@ model AppSetting {
 
 /// A sent Beehiiv issue with its email stats, so the admin can see which links earned the clicks.
 model NewsletterPost {
-  id          String           @id
+  id                   String           @id
   /// fsa | si
-  publication String
-  title       String
-  subtitle    String?
-  webUrl      String?
-  publishDate DateTime?
-  recipients  Int              @default(0)
-  delivered   Int              @default(0)
-  uniqueOpens Int              @default(0)
-  clicks      Int              @default(0)
-  uniqueClicks Int             @default(0)
+  publication          String
+  title                String
+  subtitle             String?
+  webUrl               String?
+  publishDate          DateTime?
+  recipients           Int              @default(0)
+  delivered            Int              @default(0)
+  uniqueOpens          Int              @default(0)
+  clicks               Int              @default(0)
+  uniqueClicks         Int              @default(0)
   /// Beehiiv's human-verified subset (excludes link scanners).
-  verifiedClicks       Int     @default(0)
-  uniqueVerifiedClicks Int     @default(0)
-  syncedAt    DateTime         @default(now())
-  links       NewsletterLink[]
+  verifiedClicks       Int              @default(0)
+  uniqueVerifiedClicks Int              @default(0)
+  syncedAt             DateTime         @default(now())
+  links                NewsletterLink[]
 
   @@index([publication, publishDate])
 }
 
 model NewsletterLink {
-  id                String         @id @default(cuid())
-  postId            String
-  post              NewsletterPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  url               String
-  baseUrl           String
-  emailClicks       Int            @default(0)
-  emailUniqueClicks Int            @default(0)
-  verifiedClicks       Int         @default(0)
-  uniqueVerifiedClicks Int         @default(0)
-  webClicks         Int            @default(0)
+  id                   String         @id @default(cuid())
+  postId               String
+  post                 NewsletterPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url                  String
+  baseUrl              String
+  emailClicks          Int            @default(0)
+  emailUniqueClicks    Int            @default(0)
+  verifiedClicks       Int            @default(0)
+  uniqueVerifiedClicks Int            @default(0)
+  webClicks            Int            @default(0)
 
   @@unique([postId, url])
 }
@@ -574,4 +574,63 @@ model SubscriberSyncRun {
   error        String?
 
   @@index([source, startedAt])
+}
+
+/// Where a LandingPage renders: the homepage hero (one row, slug "home") or an ad page at /go/<slug>.
+enum LandingPageKind {
+  HOME
+  GO
+}
+
+enum LandingPageStatus {
+  DRAFT // admins only, via /go/<slug>?preview=1
+  LIVE
+  ARCHIVED // 404 publicly; kept so lead rows keep their context
+}
+
+/// Admin-managed landing page. The copy fields are nullable overrides of the
+/// code defaults in lib/lp/view.ts; headline and subheadline live on the
+/// variants so they can be split-tested. Attribution is derived from the slug
+/// (User.signupSource = "lp:<slug>", User.signupVariant = "<slug>:<key>").
+model LandingPage {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  kind            LandingPageKind   @default(GO)
+  status          LandingPageStatus @default(DRAFT)
+  templateSlug    String // AlertTemplate.slug shown as proof and auto-activated; ignored for HOME
+  eyebrow         String?
+  logicLine       String?
+  bullets         String[]          @default([])
+  ctaLabel        String?
+  googleLabel     String?
+  proofTitle      String?
+  disclosure      String?
+  afterSignupNote String?
+  sampleAlert     Json? // SampleAlert shape (lib/lp/pages.ts); null = the strategy's own sample
+  ogTitle         String?
+  ogDescription   String?
+  createdBy       String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  variants        HeadlineVariant[]
+
+  @@index([status])
+}
+
+/// One headline + subheadline candidate on a LandingPage. Visitors are bucketed
+/// deterministically (lib/ab/pick.ts); weight 0 or isActive=false removes it from rotation.
+model HeadlineVariant {
+  id          String      @id @default(cuid())
+  pageId      String
+  page        LandingPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  key         String // "A".."Z"
+  headline    String // "\n" marks a line break; the homepage renders the second line teal
+  subheadline String
+  weight      Int         @default(1)
+  isActive    Boolean     @default(true)
+  views       Int         @default(0) // counted by the browser beacon (POST /api/ab/view), bots filtered
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([pageId, key])
 }

@@ -1,9 +1,14 @@
 /**
- * Facebook-ad landing pages. One entry per ad angle; each maps to an
- * AlertTemplate whose alerts are shown as proof and auto-activated after
- * signup. Adding a page = adding an entry here (no other code).
+ * The original Facebook-ad landing pages. Each maps to an AlertTemplate whose
+ * alerts are shown as proof and auto-activated after signup.
  *
- * Pure data — imported by server pages and by the auth source whitelist.
+ * Since Sept 2026 landing pages live in the LandingPage table and are managed
+ * in /admin/pages (headline split tests included). This file is the seed
+ * source for those rows (lib/lp/seed.ts, create-if-missing) and the static
+ * fallback when a row is missing or the database read fails (lib/lp/store.ts).
+ * New pages are created in the admin, not here.
+ *
+ * Pure data — safe to import from tests and scripts.
  */
 
 export type LpSlug = "breakouts" | "radar" | "turnarounds" | "oversold" | "sectors" | "insiders" | "upgrades";

@@ -61,11 +61,6 @@ export function trackLead(
 ) {
   const eventId = generateEventId();
 
-  // Capture A/B variant for attribution
-  const abVariant = typeof document !== "undefined"
-    ? document.cookie.split("; ").find((c) => c.startsWith("ab_hero_headline="))?.split("=")[1] ?? null
-    : null;
-
   // Browser pixel (with event_id for dedup)
   fbWithId("Lead", eventId, { content_name: contentName, method });
   tt("SubmitForm", { content_name: contentName, method });
@@ -75,7 +70,7 @@ export function trackLead(
     fetch("/api/tracking/lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event_id: eventId, email, method, ab_variant: abVariant, content_name: contentName }),
+      body: JSON.stringify({ event_id: eventId, email, method, content_name: contentName }),
       keepalive: true, // survives page navigation (OAuth redirect)
     }).catch(() => {}); // silent fail
   }

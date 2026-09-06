@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { completeSignIn } from "@/lib/auth/completeSignIn";
+import { VARIANT_COOKIE } from "@/lib/cookies/bucket";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     user,
     request,
     origin,
-    abVariant: (await cookies()).get("ab_hero_headline")?.value ?? null,
+    abVariant: (await cookies()).get(VARIANT_COOKIE)?.value ?? null,
   });
   return NextResponse.json({ ok: true, capiEventId });
 }
