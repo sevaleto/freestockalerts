@@ -1,7 +1,7 @@
 /** Topic candidates, pick checks, writer output parsing and the compliance validator. Pure. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkPicks, extractJson, groupCandidates, normalizeSlots, oldestEventDate, PickSchema, publisherKind, renderPickerPrompt, type PickInput, type TopicPick } from "../lib/newsletter/topics";
+import { checkPicks, dropNonStocks, extractJson, groupCandidates, normalizeSlots, oldestEventDate, PickSchema, publisherKind, renderPickerPrompt, type Candidate, type PickInput, type TopicPick } from "../lib/newsletter/topics";
 import { parseWriterOutput, renderWriterPrompt, sentenceCount, stalenessReason, urlDate, validateArticle, type Article } from "../lib/newsletter/article";
 import { dateKeyWeekday, isDateKey, pacificDateKey, shiftDateKey, toMMDDYYYY, yesterdayPacific } from "../lib/newsletter/dates";
 import { NEWSLETTER } from "../lib/newsletter/config";
@@ -82,6 +82,19 @@ const input: PickInput = {
   ],
 };
 const pick = (slot: number, ticker: string, over: Partial<TopicPick> = {}): TopicPick => ({ slot, ticker, companyName: ticker, eventSummary: `${ticker} did a thing on 2026-09-08`, eventSlug: "did-a-thing", eventDate: "2026-09-08", whyNow: "", seedUrls: [], ...over });
+
+test("dropNonStocks removes ETFs, funds and unknown symbols; a lookup error keeps the candidate", async () => {
+  const cand = (ticker: string): Candidate => ({ ticker, headlines: [], publishers: 1, newsCount: 1 });
+  const profiles: Record<string, { isEtf: boolean; isFund: boolean; isActivelyTrading: boolean } | null> = { BNO: { isEtf: true, isFund: false, isActivelyTrading: true }, ROIV: { isEtf: false, isFund: false, isActivelyTrading: true }, NBA: null, DEAD: { isEtf: false, isFund: false, isActivelyTrading: false } };
+  const lookup = async (t: string) => {
+    if (t === "ERR") throw new Error("boom");
+    const p = profiles[t];
+    return p ? { symbol: t, companyName: t, marketCap: 1, ...p } : null;
+  };
+  const r = await dropNonStocks(["BNO", "ROIV", "NBA", "DEAD", "ERR"].map(cand), lookup);
+  assert.deepEqual(r.kept.map((c) => c.ticker), ["ROIV", "ERR"]);
+  assert.deepEqual(r.dropped, ["BNO (ETF or fund)", "NBA (unknown symbol)", "DEAD (not trading)"]);
+});
 
 test("checkPicks enforces slots, distinct tickers, candidate membership, cooldown and slug shape", () => {
   assert.deepEqual(checkPicks([pick(1, "NVDA"), pick(2, "LULU")], input), { ok: true });

@@ -13,7 +13,8 @@ import { claudeArticleWriter, writeArticle, type ArticleWriter } from "./article
 import { NEWSLETTER, NEWSLETTER_PAUSED_KEY, type Slot } from "./config";
 import { dateKeyWeekday, pacificDateKey, shiftDateKey, type DateKey } from "./dates";
 import { buildCreatePostBody, type RenderMode } from "./render";
-import { claudeTopicPicker, groupCandidates, loadExclusions, pickTopics, type TopicPick, type TopicPicker } from "./topics";
+import { claudeTopicPicker, dropNonStocks, groupCandidates, loadExclusions, pickTopics, type TopicPick, type TopicPicker } from "./topics";
+import type { FmpProfileLite } from "@/lib/api/fmp";
 import { advertiserLabel, fetchTsiAdsFor, type TsiAdsResult } from "./tsiAds";
 import { addUsage, costUsd, EMPTY_USAGE, type ModelUsage } from "./usage";
 
@@ -27,6 +28,8 @@ export interface BuildDeps {
   writer?: ArticleWriter;
   news?: () => Promise<FmpMarketNewsItem[]>;
   tsiAds?: (dateKey: DateKey) => Promise<TsiAdsResult>;
+  /** Injected in tests; defaults to the FMP profile lookup. */
+  profile?: (ticker: string) => Promise<FmpProfileLite | null>;
   now?: Date;
   log?: (m: string) => void;
   /** Run everything except the Beehiiv write and the NewsletterIssue rows. */
@@ -138,8 +141,11 @@ export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Pro
     const rows = await (deps.news ?? fetchNewsPages)();
     const exclusions = await loadExclusions(deps.db, dateKey, slots.map((slot) => ({ issueDate: dateKey, slot })));
     const lookbackHours = dateKeyWeekday(dateKey) === 1 ? NEWSLETTER.mondayNewsLookbackHours : NEWSLETTER.newsLookbackHours;
-    const candidates = groupCandidates(rows, { now, lookbackHours, exclude: new Set(exclusions.recentTickers), limit: NEWSLETTER.candidateLimit });
-    log(`${rows.length} headlines → ${candidates.length} candidate tickers (${exclusions.recentTickers.length} on cooldown, ${exclusions.recentEvents.length} past events)`);
+    // Ask for a few extra so the ETF filter still leaves a full list.
+    const grouped = groupCandidates(rows, { now, lookbackHours, exclude: new Set(exclusions.recentTickers), limit: NEWSLETTER.candidateLimit + 6 });
+    const { kept, dropped } = await dropNonStocks(grouped, deps.profile);
+    const candidates = kept.slice(0, NEWSLETTER.candidateLimit);
+    log(`${rows.length} headlines → ${grouped.length} candidate tickers, ${candidates.length} after dropping ${dropped.length} non-stocks${dropped.length ? ` (${dropped.join(", ")})` : ""} (${exclusions.recentTickers.length} on cooldown, ${exclusions.recentEvents.length} past events)`);
     const picked = await pickTopics({ candidates, exclusions, dateKey, slots }, picker);
     picks = picked.picks;
     pickerUsage = picked.usage;

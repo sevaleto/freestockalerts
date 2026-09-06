@@ -39,6 +39,7 @@ const fakePicker = { async pick(input: { slots: number[] }) { const t: Record<nu
 const goodWriter = { async write(pick: { ticker: string }) { return { raw: raw(pick.ticker), usage: { inputTokens: 5000, outputTokens: 800, webSearches: 3 }, stopReason: "end_turn" }; } };
 
 const AD = `<table style="border:1px solid #E5E0D5; background-color:#FAF8F3;"><tr><td><a href="https://sponsor.example.com/x">Sponsor</a></td></tr></table>`;
+const profile = async (t: string) => ({ symbol: t, companyName: t, isEtf: false, isFund: false, isActivelyTrading: true, marketCap: 1e9 });
 const tsiAds = async () => ({
   bySlot: new Map([[1 as const, { post: { id: "post_si1", title: "01/04/2099 - #1 - Wyatt (Gold / V3)", status: "confirmed", publish_date: 1 }, title: { dateKey: "2099-01-04", kind: "newsletter" as const, number: 1, advertisers: [{ name: "Wyatt", creative: "Gold / V3" }] }, ads: [{ index: 1, html: AD, linkCount: 1, isHouseAd: false, empty: false }, { index: 2, html: AD, linkCount: 1, isHouseAd: false, empty: false }], contentSource: "email" as const }]]),
   warnings: ["No Smart Investor newsletter #2 found for 2099-01-04"],
@@ -62,7 +63,7 @@ test("buildDailyIssues drafts both slots, records rows, skips on rerun, and rebu
   await prisma.appSetting.deleteMany({ where: { key: "newsletterBuildPaused" } });
   try {
     const bh = beehiiv();
-    const r = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
+    const r = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
     assert.deepEqual(r.slots.map((s) => [s.slot, s.status, s.ticker, s.adsFound]), [[1, "drafted", "NVDA", 2], [2, "drafted", "LULU", 0]]);
     assert.equal(bh.calls.length, 2, "one create per slot");
     assert.match(bh.calls[0].url, /\/publications\/pub_[^/]+\/posts$/);
@@ -83,18 +84,18 @@ test("buildDailyIssues drafts both slots, records rows, skips on rerun, and rebu
 
     // A slot another run is writing right now (fresh pending row) is left alone without force.
     await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { status: "pending", beehiivPostId: null, updatedAt: new Date(NOW.getTime() - 2 * 60_000) } });
-    const overlapping = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
+    const overlapping = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
     assert.equal(overlapping.slots.find((s) => s.slot === 2)?.status, "pending");
     assert.equal(overlapping.slots.find((s) => s.slot === 2)?.skipped, true);
     assert.equal(bh.calls.length, 2, "no new draft while the other run is mid-build");
     // A stale pending row (the run died) is rebuilt.
     await prisma.newsletterIssue.update({ where: { issueDate_slot: { issueDate: DATE, slot: 2 } }, data: { updatedAt: new Date(NOW.getTime() - 30 * 60_000) } });
-    const stale = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
+    const stale = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
     assert.equal(stale.slots.find((s) => s.slot === 2)?.status, "drafted");
     assert.equal(bh.calls.length, 3);
 
     // Second run: nothing to do.
-    const again = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
+    const again = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
     assert.ok(again.slots.every((s) => s.skipped));
     assert.equal(bh.calls.length, 3);
 
@@ -106,7 +107,7 @@ test("buildDailyIssues drafts both slots, records rows, skips on rerun, and rebu
     assert.deepEqual((await loadExclusions(prisma, DATE, [{ issueDate: DATE, slot: 1 }])).recentTickers, ["LULU"]);
 
     // Force rebuild of slot 2 only: a new draft, row overwritten and marked forced, slot 1 untouched.
-    const forced = await buildDailyIssues({ dateKey: DATE, slots: [2], force: true }, { db: prisma, fetchImpl: bh.fetchImpl, picker: { async pick(i) { const p = await fakePicker.pick(i); return { ...p, picks: p.picks.map((x) => ({ ...x, ticker: "AMD", companyName: "AMD" })) }; } }, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
+    const forced = await buildDailyIssues({ dateKey: DATE, slots: [2], force: true }, { db: prisma, fetchImpl: bh.fetchImpl, picker: { async pick(i) { const p = await fakePicker.pick(i); return { ...p, picks: p.picks.map((x) => ({ ...x, ticker: "AMD", companyName: "AMD" })) }; } }, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
     assert.equal(forced.slots[0].status, "drafted");
     assert.equal(forced.slots[0].ticker, "AMD");
     assert.equal(bh.calls.length, 4);
@@ -128,7 +129,7 @@ test("a failing writer on one slot leaves the other drafted; twice-invalid text 
   try {
     const bh = beehiiv();
     const writer = { async write(pick: { ticker: string }) { if (pick.ticker === "LULU") throw new Error("model exploded"); return goodWriter.write(pick); } };
-    const r = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer, news: async () => news, tsiAds, now: NOW });
+    const r = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer, news: async () => news, tsiAds, profile, now: NOW });
     assert.equal(r.slots[0].status, "drafted");
     assert.equal(r.slots[1].status, "failed");
     assert.match(r.slots[1].error ?? "", /model exploded/);
@@ -139,7 +140,7 @@ test("a failing writer on one slot leaves the other drafted; twice-invalid text 
 
     // A failed slot is rebuilt on the next plain run (no force needed), this time with text that never passes validation.
     const banned = { async write(pick: { ticker: string }) { return { raw: raw(pick.ticker, " with a secret"), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, stopReason: "end_turn" }; } };
-    const r2 = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: banned, news: async () => news, tsiAds, now: NOW });
+    const r2 = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: banned, news: async () => news, tsiAds, profile, now: NOW });
     const s2 = r2.slots.find((s) => s.slot === 2)!;
     assert.equal(s2.status, "needs_review");
     assert.match(s2.reviewReason ?? "", /banned phrase "secret"/);
@@ -159,10 +160,10 @@ test("the pause setting stops a plain run but not a forced one; dry runs write n
   await prisma.appSetting.upsert({ where: { key: "newsletterBuildPaused" }, create: { key: "newsletterBuildPaused", value: "1" }, update: { value: "1" } });
   try {
     const bh = beehiiv();
-    const paused = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW });
+    const paused = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW });
     assert.equal(paused.paused, true);
     assert.equal(paused.slots.length, 0);
-    const dry = await buildDailyIssues({ dateKey: DATE, force: true }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, now: NOW, dry: true });
+    const dry = await buildDailyIssues({ dateKey: DATE, force: true }, { db: prisma, fetchImpl: bh.fetchImpl, picker: fakePicker, writer: goodWriter, news: async () => news, tsiAds, profile, now: NOW, dry: true });
     assert.equal(dry.paused, false);
     assert.equal(bh.calls.length, 0);
     assert.ok(dry.slots.every((s) => s.status === "drafted" && s.body && !s.beehiivPostId));

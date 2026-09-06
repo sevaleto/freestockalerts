@@ -6,7 +6,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import type { FmpMarketNewsItem } from "@/lib/api/fmp";
+import { fetchFmpProfileLite, type FmpMarketNewsItem, type FmpProfileLite } from "@/lib/api/fmp";
 import { NEWSLETTER, type Slot } from "./config";
 import { dateKeyWeekday, isDateKey, shiftDateKey, type DateKey } from "./dates";
 import { EMPTY_USAGE, type ModelUsage } from "./usage";
@@ -108,6 +108,28 @@ export function groupCandidates(rows: FmpMarketNewsItem[], opts: { now: Date; lo
  * rows being rebuilt right now (today's slot), so a forced rebuild may pick
  * the same story again.
  */
+/**
+ * Drop ETFs, funds and symbols FMP does not know (the feed files OPEC stories
+ * under oil ETFs and sports stories under whatever matches). One cached
+ * profile call per candidate; a lookup failure keeps the candidate.
+ */
+export async function dropNonStocks(candidates: Candidate[], lookup: (t: string) => Promise<FmpProfileLite | null> = fetchFmpProfileLite): Promise<{ kept: Candidate[]; dropped: string[] }> {
+  const results = await Promise.all(
+    candidates.map(async (c) => {
+      try {
+        const p = await lookup(c.ticker);
+        if (!p) return { c, drop: "unknown symbol" };
+        if (p.isEtf || p.isFund) return { c, drop: "ETF or fund" };
+        if (!p.isActivelyTrading) return { c, drop: "not trading" };
+        return { c, drop: null };
+      } catch {
+        return { c, drop: null };
+      }
+    })
+  );
+  return { kept: results.filter((r) => !r.drop).map((r) => r.c), dropped: results.filter((r) => r.drop).map((r) => `${r.c.ticker} (${r.drop})`) };
+}
+
 export async function loadExclusions(db: PrismaClient, dateKey: DateKey, ignore: { issueDate: DateKey; slot: number }[] = []): Promise<Exclusions> {
   const rows = await db.newsletterIssue.findMany({
     where: { issueDate: { gte: shiftDateKey(dateKey, -NEWSLETTER.eventLookbackDays), lte: dateKey }, status: { in: ["pending", "drafted", "needs_review"] } },
