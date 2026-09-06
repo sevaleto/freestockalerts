@@ -13,7 +13,7 @@ Google), create alerts on any ticker, and get an email when the alert fires.
 - Prisma on Supabase Postgres (pooled via pgbouncer)
 - Supabase Auth (magic link + Google OAuth)
 - Financial Modeling Prep (quotes, search, RSI/SMA indicators, earnings calendar), Alpha Vantage as quote fallback
-- OpenAI `gpt-4o-mini` for the one-paragraph alert summary
+- Anthropic Claude (`claude-haiku-4-5`) for the two-paragraph context in alert and signal emails
 - Resend for alert emails, Supabase auth emails, and the broadcast audience
 - Meta Pixel + Conversions API, TikTok pixel, cookie consent
 
@@ -168,8 +168,31 @@ Recipients are env-overridable (`ADVERTISER_INQUIRY_TO`, `ADVERTISER_INQUIRY_BCC
    (`lib/alerts/evaluator.ts`).
 4. Triggered alerts get descriptive context (`lib/alerts/context.ts`: position vs the 50- and
    200-day averages, volume vs the 30-session average, and for the sector ETFs the 21-session
-   return vs SPY), a two-sentence AI summary built on that context, an email (if the user's
+   return vs SPY), a two-paragraph AI context (see below), an email (if the user's
    `emailAlerts` preference is on), an `AlertHistory` row with `emailSent`/`emailSentAt`, and a cooldown.
+
+### AI context paragraphs
+
+`lib/ai/alertContext.ts` gathers facts in code (the quote, the context lines, the strategy that
+created the alert, and four cached FMP calls: recent headlines, analyst consensus, price-target
+consensus, next and last earnings), renders them into a prompt, and asks Claude for exactly two
+paragraphs of 120 to 180 words. The model is told to use only the facts given; output without a
+paragraph break, under 60 words, or containing a banned phrase is replaced by a deterministic
+fallback built from the same facts. No email is ever blocked on the model. Model, length targets
+and prices live in `lib/ai/config.ts`. Signals from the daily scan get the same paragraphs, stored
+in `StrategySignal.payload.aiContext`.
+
+Cost at Haiku 4.5 list prices is about $0.003 per alert (about 1,300 input and 350 output
+tokens); each call logs `[ai-context] TICKER model in= out= cost=`. To tune the prompt against
+real output:
+
+```bash
+set -a; source .env.local; set +a
+npm run preview:context -- NVDA "hits a new 52-week high" quality-breakout-radar
+```
+
+`ANTHROPIC_API_KEY` is required in Vercel for the model path; `OPENAI_API_KEY` is no longer read
+and can be removed.
 5. **One-shot types** (price above/below, 52-week high/low, RSI, SMA cross, earnings
    reminder) deactivate after firing. Editing the trigger re-arms them.
    **Recurring types** (daily % change, volume spike) stay active but notify at most
