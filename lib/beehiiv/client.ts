@@ -292,5 +292,5 @@ export async function createPost(publicationId: string, body: CreatePostBody, op
   return { id, previewUrl: payload.data?.preview_url ?? null };
 }
 
-/** Where a draft is edited in the Beehiiv app. */
-export const beehiivEditUrl = (postId: string) => `https://app.beehiiv.com/posts/${postId}/edit`;
+/** The post's page in the Beehiiv app (overview with an Edit button). The app drops the `post_` prefix. */
+export const beehiivEditUrl = (postId: string) => `https://app.beehiiv.com/posts/${postId.replace(/^post_/, "")}`;

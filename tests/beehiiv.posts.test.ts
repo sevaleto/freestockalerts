@@ -1,7 +1,7 @@
 /** Beehiiv posts client against an injected fetch: query shape, 202/404 handling, retry rules. Pure. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createPost, getPost, listPosts, listSubscriptions } from "../lib/beehiiv/client";
+import { beehiivEditUrl, createPost, getPost, listPosts, listSubscriptions } from "../lib/beehiiv/client";
 
 type Call = { url: string; init?: RequestInit };
 const fake = (responses: Array<{ status: number; body?: unknown }>) => {
@@ -71,4 +71,8 @@ test("idempotent GETs retry 5xx and give up after four attempts", async () => {
   const dead = fake([{ status: 502 }]);
   await assert.rejects(listSubscriptions("pub_x", { fetchImpl: dead.fetchImpl, backoffMs: 0 }), /Beehiiv 502/);
   assert.equal(dead.calls.length, 4);
+});
+
+test("beehiivEditUrl points at the app's post page without the post_ prefix", () => {
+  assert.equal(beehiivEditUrl("post_30ed9ba9-6b1d-47c5-a2d8-6cd6d2da1f61"), "https://app.beehiiv.com/posts/30ed9ba9-6b1d-47c5-a2d8-6cd6d2da1f61");
 });
