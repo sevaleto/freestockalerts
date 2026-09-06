@@ -116,6 +116,24 @@ async function main() {
   const scan = await get("/api/strategies/scan?dryRun=1", { headers: { authorization: "Bearer definitely-wrong" } });
   ok(scan.status === 401 || scan.status === 200, `/api/strategies/scan responds (${scan.status}; 401 when CRON_SECRET is set)`);
 
+  console.log("\npublic forms");
+  for (const p of ["/advertise", "/do-not-sell"]) {
+    const res = await get(p);
+    const html = unescape(await res.text());
+    ok(res.status === 200, `GET ${p} → 200`);
+    ok(new RegExp(`<link rel="canonical" href="[^"]*${p}"`).test(html), `${p}: canonical`);
+  }
+  ok(unescape(await (await get("/advertise")).text()).includes("Request rates & media kit"), "/advertise has the inquiry form");
+  ok(unescape(await (await get("/do-not-sell")).text()).includes("Opt-Out Request Form"), "/do-not-sell has the request form");
+  const badInquiry = await get("/api/advertiser-inquiry", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "", email: "x", company: "" }) });
+  ok(badInquiry.status === 400, "POST /api/advertiser-inquiry rejects an empty inquiry (400)");
+  const botInquiry = await get("/api/advertiser-inquiry", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ fax: "1", name: "Bot", email: "bot@example.com", company: "Bots" }) });
+  ok(botInquiry.status === 200, "POST /api/advertiser-inquiry honeypot is a silent accept (200)");
+  const badPrivacy = await get("/api/privacy-request", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ firstName: "", lastName: "", email: "" }) });
+  ok(badPrivacy.status === 400, "POST /api/privacy-request rejects an empty request (400)");
+  const footer = unescape(await (await get("/templates")).text());
+  ok(footer.includes('href="/advertise"') && footer.includes('href="/do-not-sell"'), "footer links to /advertise and /do-not-sell");
+
   console.log(`\n${failures === 0 ? "all checks passed" : `${failures} check(s) failed`}`);
   process.exit(failures === 0 ? 0 : 1);
 }

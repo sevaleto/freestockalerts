@@ -1,13 +1,26 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "next-dev", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3000 },
+    {
+      "name": "next-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
     {
       "name": "next-dev-testdb",
       "runtimeExecutable": "env",
       "runtimeArgs": [
         "DATABASE_URL=postgresql://manueljesus@localhost:5432/freestockalerts_test",
         "DIRECT_URL=postgresql://manueljesus@localhost:5432/freestockalerts_test",
+        "PRIVACY_ALERT_EMAILS=delivered@resend.dev",
+        "ADVERTISER_INQUIRY_BCC=delivered@resend.dev",
+        "ADVERTISER_INQUIRY_TO=delivered@resend.dev",
+        "NEXT_PUBLIC_TURNSTILE_SITE_KEY=",
+        "TURNSTILE_SECRET_KEY=",
         "npm",
         "run",
         "dev"
