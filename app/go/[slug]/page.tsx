@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma/client";
 import { getStrategy } from "@/lib/templates/catalog";
 import { getBatchQuotes } from "@/lib/api/quotes";
 import { fetchFmpAvgVolume, fetchFmpRsi } from "@/lib/api/fmp";
 import { watchlistMetric, type WatchlistQuote } from "@/lib/lp/watchlistMetric";
-import { getLandingPage, LP_SLUGS } from "@/lib/lp/pages";
+import { getLandingPageView } from "@/lib/lp/store";
+import { BUCKET_COOKIE, bucketFromCookie, isPageSlug } from "@/lib/cookies/bucket";
+import { getAdminUser } from "@/lib/auth/admin";
 import { Logo } from "@/components/shared/Logo";
 import { TrackViewContent } from "@/components/shared/TrackViewContent";
+import { HeadlineExposure } from "@/components/ab/HeadlineExposure";
 import { AlertProofList } from "@/components/lp/AlertProofList";
 import type { DescribableItem } from "@/lib/alerts/describe";
 import { PhoneEmailPreview } from "@/components/lp/PhoneEmailPreview";
@@ -20,60 +25,85 @@ import { SignalList } from "@/components/templates/SignalList";
 import { loadRecentSignals } from "@/lib/strategies/signals";
 import { CheckCircle2 } from "lucide-react";
 
-// Ad pages: static, refreshed hourly, unknown slugs 404.
-export const revalidate = 3600;
-export const dynamicParams = false;
+/**
+ * Ad landing pages, managed in /admin/pages. Rendered per request (the
+ * headline variant depends on the visitor's bucket cookie); page copy and the
+ * watchlist proof data come from the data cache, so the database and the
+ * market-data provider are hit at most once an hour per page.
+ *
+ *   /go/<slug>             live pages only, unknown or unpublished → 404
+ *   /go/<slug>?v=B         force a variant (previews; views are not counted)
+ *   /go/<slug>?preview=1   admins can view DRAFT / ARCHIVED pages
+ */
 
 const WATCHLIST_ROWS = 5;
+const PROOF_REVALIDATE_SEC = 3600;
 
+type Param = string | string[] | undefined;
 interface LpPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ v?: Param; preview?: Param }>;
 }
 
-export function generateStaticParams() {
-  return LP_SLUGS.map((slug) => ({ slug }));
+const single = (v: Param) => (typeof v === "string" ? v : null);
+
+async function resolvePage(props: LpPageProps) {
+  const [{ slug }, sp, jar] = await Promise.all([props.params, props.searchParams, cookies()]);
+  if (!isPageSlug(slug)) return null;
+  const forceKey = single(sp.v)?.toUpperCase() ?? null;
+  const allowDraft = single(sp.preview) === "1" ? !!(await getAdminUser()) : false;
+  const bucket = bucketFromCookie(jar.get(BUCKET_COOKIE)?.value);
+  return getLandingPageView(slug, bucket, { forceKey, allowDraft });
 }
 
 export async function generateMetadata(props: LpPageProps): Promise<Metadata> {
-  const { slug } = await props.params;
-  const lp = getLandingPage(slug);
-  if (!lp) return {};
-  const title = lp.ogTitle ?? lp.headline.replace(/\n/g, " ");
-  const description = lp.ogDescription ?? lp.subheadline;
+  const resolved = await resolvePage(props);
+  if (!resolved) return {};
+  const { view } = resolved;
   return {
-    title,
-    description,
+    title: view.ogTitle,
+    description: view.ogDescription,
     robots: { index: false, follow: false },
-    openGraph: { title, description, url: `/go/${lp.slug}`, images: ["/og-image.png"] },
-    twitter: { card: "summary_large_image", title, description, images: ["/og-image.png"] },
+    openGraph: { title: view.ogTitle, description: view.ogDescription, url: `/go/${view.slug}`, images: ["/og-image.png"] },
+    twitter: { card: "summary_large_image", title: view.ogTitle, description: view.ogDescription, images: ["/og-image.png"] },
   };
 }
 
+interface ProofItem extends DescribableItem {
+  sortOrder: number;
+}
+interface Proof {
+  name: string;
+  slug: string;
+  items: ProofItem[];
+  /** Live price + distance to trigger for the first few items (one more than shown, so the sample ticker can be skipped). */
+  rows: WatchlistRow[];
+}
+
 /** Prisma first (matches what activation creates); catalog fallback so an ad page never 404s. */
-async function loadTemplate(templateSlug: string) {
+async function loadTemplate(templateSlug: string): Promise<{ name: string; slug: string; items: ProofItem[] } | null> {
   try {
     const t = await prisma.alertTemplate.findUnique({
       where: { slug: templateSlug },
       include: { items: { orderBy: { sortOrder: "asc" } } },
     });
-    if (t) return t;
+    if (t) return { name: t.name, slug: t.slug, items: t.items.map(toProofItem) };
   } catch (err) {
     console.error(`[lp] template load failed for ${templateSlug}:`, err);
   }
   const strategy = getStrategy(templateSlug);
-  return strategy ? { name: strategy.name, slug: strategy.slug, items: strategy.items } : null;
+  return strategy ? { name: strategy.name, slug: strategy.slug, items: strategy.items.map(toProofItem) } : null;
 }
 
-/**
- * Live price + "distance to trigger" for each watchlist row. Refreshed with
- * the page (hourly). Rows degrade to ticker + rationale if data is missing.
- */
-async function loadWatchlistRows(items: DescribableItem[]): Promise<WatchlistRow[]> {
+function toProofItem(i: { ticker: string; companyName?: string | null; alertType: string; triggerValue: number; triggerDirection: string; rationale?: string | null; sortOrder: number }): ProofItem {
+  return { ticker: i.ticker, companyName: i.companyName ?? null, alertType: i.alertType, triggerValue: i.triggerValue, triggerDirection: i.triggerDirection, rationale: i.rationale ?? null, sortOrder: i.sortOrder };
+}
+
+/** Live price + "distance to trigger" for each watchlist row. Rows degrade to ticker + rationale if data is missing. */
+async function loadWatchlistRows(items: ProofItem[]): Promise<WatchlistRow[]> {
   let quotes: Record<string, WatchlistQuote> = {};
   try {
-    const raw = (await getBatchQuotes(items.map((i) => i.ticker), { skipMock: true })) as Array<
-      WatchlistQuote & { ticker: string }
-    >;
+    const raw = (await getBatchQuotes(items.map((i) => i.ticker), { skipMock: true })) as Array<WatchlistQuote & { ticker: string }>;
     quotes = Object.fromEntries(raw.filter((q) => q.price > 0).map((q) => [q.ticker.toUpperCase(), q]));
   } catch (err) {
     console.error("[lp] quotes failed:", err);
@@ -103,19 +133,34 @@ async function loadWatchlistRows(items: DescribableItem[]): Promise<WatchlistRow
   });
 }
 
+/**
+ * Template + watchlist quotes, cached per strategy for an hour. This is what
+ * keeps per-visitor rendering from turning every ad click into FMP calls.
+ */
+const loadProofCached = (templateSlug: string): Promise<Proof | null> =>
+  unstable_cache(
+    async () => {
+      const template = await loadTemplate(templateSlug);
+      if (!template) return null;
+      const isSignal = getStrategy(templateSlug)?.kind === "signal";
+      const rows = isSignal ? [] : await loadWatchlistRows(template.items.slice(0, WATCHLIST_ROWS + 1));
+      return { ...template, rows };
+    },
+    ["lp-proof", templateSlug],
+    { revalidate: PROOF_REVALIDATE_SEC, tags: ["lp:proof"] }
+  )();
+
 export default async function LandingPage(props: LpPageProps) {
-  const { slug } = await props.params;
-  const lp = getLandingPage(slug);
-  if (!lp) notFound();
-  const template = await loadTemplate(lp.templateSlug);
-  if (!template) notFound();
+  const resolved = await resolvePage(props);
+  if (!resolved) notFound();
+  const { view: lp, forced } = resolved;
+  const proof = await loadProofCached(lp.templateSlug);
+  if (!proof) notFound();
   const strategy = getStrategy(lp.templateSlug);
   const isSignal = strategy?.kind === "signal";
 
-  const watchlist = isSignal
-    ? []
-    : template.items.filter((i) => i.ticker.toUpperCase() !== lp.sampleAlert.ticker.toUpperCase()).slice(0, WATCHLIST_ROWS);
-  const rows = isSignal ? [] : await loadWatchlistRows(watchlist);
+  const sampleTicker = lp.sampleAlert.ticker.toUpperCase();
+  const rows = isSignal ? [] : proof.rows.filter((r) => r.item.ticker.toUpperCase() !== sampleTicker).slice(0, WATCHLIST_ROWS);
   const recent = isSignal ? await loadRecentSignals(lp.templateSlug, 3) : null;
 
   const disclosure = <p className="text-sm text-lp-muted">{lp.disclosure}</p>;
@@ -123,6 +168,12 @@ export default async function LandingPage(props: LpPageProps) {
   return (
     <div className="flex min-h-screen flex-col bg-lp-bg text-lp-navy">
       <TrackViewContent name={lp.metaContentName} slug={lp.slug} contentType="landing_page" />
+      <HeadlineExposure tag={lp.variantTag} count={!forced && lp.status === "LIVE"} />
+      {lp.status !== "LIVE" ? (
+        <p className="bg-amber-100 px-4 py-2 text-center text-sm font-semibold text-amber-900">
+          Admin preview: this page is {lp.status.toLowerCase()} and not visible to the public. Variant {lp.variantKey}.
+        </p>
+      ) : null}
 
       <section className="mx-auto w-full max-w-[1440px] px-5 pb-16 pt-7 sm:px-8 md:pt-12 lg:px-12 lg:pb-24 xl:pt-14">
         <header className="mb-10 md:mb-14 xl:mb-16">
@@ -206,13 +257,13 @@ export default async function LandingPage(props: LpPageProps) {
               </div>
             </div>
           ) : (
-            <AlertProofList items={template.items} title={`All ${template.items.length} alerts`} columns={2} className="mt-8" />
+            <AlertProofList items={proof.items} title={`All ${proof.items.length} alerts`} columns={2} className="mt-8" />
           )}
           <p className="mt-6 text-center text-sm text-lp-muted">{lp.afterSignupNote}</p>
         </div>
       </section>
 
-      <MemberBenefits templateName={template.name} ctaLabel={lp.ctaLabel} />
+      <MemberBenefits templateName={proof.name} ctaLabel={lp.ctaLabel} />
       <HonestAnswer ctaLabel={lp.ctaLabel} />
       <LpFooter />
     </div>

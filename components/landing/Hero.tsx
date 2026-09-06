@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useId } from "react";
+import { useState, useId } from "react";
 import Link from "next/link";
 import { CheckCircle2, Mail } from "lucide-react";
 import { Logo } from "@/components/shared/Logo";
@@ -11,11 +11,10 @@ import { PhoneEmailPreview } from "@/components/lp/PhoneEmailPreview";
 import { sendMagicLink } from "@/lib/auth/magicLink";
 import { trackLead } from "@/lib/tracking/events";
 import { useTurnstile } from "@/components/auth/useTurnstile";
-import { ACTIVE_TESTS, HERO_HEADLINES } from "@/lib/ab/variants";
 import { usePendingTemplate } from "@/lib/landing/pendingTemplate";
 import { X } from "lucide-react";
-import { assignVariant } from "@/lib/ab/assign";
 import type { SampleAlert } from "@/lib/lp/pages";
+import type { HeroHeadline } from "@/lib/lp/view";
 
 const HOME_SAMPLE: SampleAlert = {
   ticker: "AAPL",
@@ -38,21 +37,21 @@ const HOME_SAMPLE: SampleAlert = {
 
 const REASSURANCE = ["Free forever", "Up to 50 alerts", "No credit card"];
 
-export function Hero() {
+interface HeroProps {
+  /** Resolved server-side from the visitor's bucket (see app/page.tsx), so there is no headline swap after hydration. */
+  headline: Pick<HeroHeadline, "line1" | "line2" | "sub">;
+}
+
+export function Hero({ headline }: HeroProps) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [variant, setVariant] = useState<string>("A");
   const inputId = useId();
   const errorId = useId();
   const [pending, setPending] = usePendingTemplate();
   const next = pending ? `/welcome/${pending.slug}` : undefined;
   const turnstile = useTurnstile("light");
-
-  useEffect(() => {
-    setVariant(assignVariant(ACTIVE_TESTS.hero_headline));
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +68,6 @@ export function Hero() {
     }
     setLoading(false);
   };
-
-  const headline = HERO_HEADLINES[variant];
 
   return (
     <section className="relative overflow-hidden bg-lp-bg">
@@ -98,8 +95,12 @@ export function Hero() {
             </p>
             <h1 className="mt-4 font-serif text-[clamp(2.625rem,10vw,3.25rem)] leading-[1.02] tracking-[-0.01em] text-lp-navy md:text-[clamp(3.25rem,4.45vw,4.5rem)] lg:-mr-10 xl:-mr-16">
               {headline.line1}
-              <br />
-              <span className="text-lp-teal">{headline.line2}</span>
+              {headline.line2 ? (
+                <>
+                  <br />
+                  <span className="text-lp-teal">{headline.line2}</span>
+                </>
+              ) : null}
             </h1>
             <p className="mt-5 max-w-[34rem] text-xl leading-relaxed text-lp-navy/80 md:text-[1.3rem]">{headline.sub}</p>
 

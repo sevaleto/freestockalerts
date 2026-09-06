@@ -1,6 +1,6 @@
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma/client";
-import { isLpSlug, type LpSlug } from "@/lib/lp/pages";
+import { isPageSlug, isVariantTag } from "@/lib/cookies/bucket";
 import type { Attribution } from "@/lib/tracking/attribution";
 
 export type SignupSource =
@@ -11,7 +11,7 @@ export type SignupSource =
   | "login"
   | "google"
   | "unknown"
-  | `lp:${LpSlug}`;
+  | `lp:${string}`;
 
 export const SIGNUP_SOURCES: readonly SignupSource[] = [
   "hero",
@@ -26,13 +26,14 @@ export const SIGNUP_SOURCES: readonly SignupSource[] = [
 export const toSignupSource = (value: unknown): SignupSource => {
   if (typeof value !== "string") return "unknown";
   if ((SIGNUP_SOURCES as readonly string[]).includes(value)) return value as SignupSource;
-  // Ad landing pages: "lp:<slug>" for a slug defined in lib/lp/pages.ts
-  if (value.startsWith("lp:") && isLpSlug(value.slice(3))) return value as SignupSource;
+  // Ad landing pages: "lp:<slug>" (admin-created in /admin/pages or defined in lib/lp/pages.ts)
+  if (value.startsWith("lp:") && isPageSlug(value.slice(3))) return value as SignupSource;
   return "unknown";
 };
 
 interface UpsertInput {
   authUser: Pick<AuthUser, "id" | "email" | "email_confirmed_at" | "app_metadata">;
+  /** Headline variant seen at signup, "<page slug>:<key>" (from the fsa_var cookie). */
   abVariant?: string | null;
   source?: SignupSource;
   emailVerified?: boolean;
@@ -67,7 +68,7 @@ export async function upsertUserForAuth(input: UpsertInput) {
   const email = (input.authUser.email ?? "").trim().toLowerCase();
   if (!email) throw new Error("Auth user has no email");
 
-  const variantTag = input.abVariant ? `hero_headline:${input.abVariant}` : null;
+  const variantTag = isVariantTag(input.abVariant) ? input.abVariant : null;
   const existing = await prisma.user.findFirst({
     where: { OR: [{ id: input.authUser.id }, { email }] },
   });

@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { seedTemplates } from "../lib/templates/seed";
 import { STRATEGIES } from "../lib/templates/catalog";
+import { seedLandingPages } from "../lib/lp/seed";
 
 const prisma = new PrismaClient();
 
@@ -11,6 +12,10 @@ async function main() {
   }
   const summary = await seedTemplates(prisma);
   console.log(`upserted ${summary.upserted.length}, retired ${summary.retired.join(", ") || "none"}` + (summary.absent.length ? ` (not present: ${summary.absent.join(", ")})` : ""));
+
+  // Landing pages + headline variants: created only when missing, so admin edits survive.
+  const pages = await seedLandingPages(prisma);
+  console.log(`landing pages: created ${pages.created.join(", ") || "none"}; kept ${pages.existing.length} existing; rewrote ${pages.rewrittenUsers} legacy signupVariant values`);
 }
 
 main()

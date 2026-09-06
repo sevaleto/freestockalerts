@@ -111,8 +111,20 @@ async function main() {
     const res = await get(`/go/${slug}`);
     const html = await res.text();
     ok(res.status === 200 && html.includes("Illustrative example"), `GET /go/${slug} → 200 with labeled example`);
+    ok((res.headers.get("set-cookie") ?? "").includes("fsa_bucket="), `/go/${slug} stamps the split-test bucket cookie`);
     if (slug === "insiders" || slug === "upgrades") ok(html.includes("Latest confirmed signals"), `/go/${slug} shows live signal block`);
   }
+  const forced = await get("/go/radar?v=A");
+  ok(forced.status === 200, "GET /go/radar?v=A (forced variant) → 200");
+  const draftPreview = await get("/go/radar?preview=1");
+  ok(draftPreview.status === 200, "GET /go/radar?preview=1 unauthenticated still serves the live page (200)");
+  ok((await get("/go/does-not-exist")).status === 404, "GET /go/does-not-exist → 404");
+  ok((await get("/go/Bad_Slug")).status === 404, "GET /go/Bad_Slug → 404");
+  const beacon = await get("/api/ab/view", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tag: "nope" }) });
+  ok(beacon.status === 204, "POST /api/ab/view with a bogus tag → 204");
+  const homeRes = await get("/");
+  ok(homeRes.status === 200 && (homeRes.headers.get("set-cookie") ?? "").includes("fsa_bucket="), "GET / → 200 and stamps the bucket cookie");
+  ok((await get("/api/admin/pages")).status === 403, "GET /api/admin/pages unauthenticated → 403");
   const scan = await get("/api/strategies/scan?dryRun=1", { headers: { authorization: "Bearer definitely-wrong" } });
   ok(scan.status === 401 || scan.status === 200, `/api/strategies/scan responds (${scan.status}; 401 when CRON_SECRET is set)`);
 

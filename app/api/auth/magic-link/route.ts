@@ -11,6 +11,7 @@ import { precheckEmail } from "@/lib/email/precheck";
 import { verifyUserEmail } from "@/lib/email/verification";
 import { parseAttribution } from "@/lib/tracking/attribution";
 import { marketingAllowed } from "@/lib/cookies/serverConsent";
+import { VARIANT_COOKIE } from "@/lib/cookies/bucket";
 
 export const dynamic = "force-dynamic";
 
@@ -114,8 +115,8 @@ export async function POST(request: Request) {
     const { hashed_token, email_otp, verification_type } = data.properties;
     const isNewUser = !data.user.last_sign_in_at;
 
-    // Capture the lead NOW.
-    const abVariant = (await cookies()).get("ab_hero_headline")?.value ?? null;
+    // Capture the lead NOW. The headline variant they saw travels in the fsa_var cookie ("<page>:<key>").
+    const abVariant = (await cookies()).get(VARIANT_COOKIE)?.value ?? null;
     const { user } = await upsertUserForAuth({
       authUser: data.user,
       abVariant,

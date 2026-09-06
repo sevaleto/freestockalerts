@@ -1,6 +1,7 @@
 import { updateSession } from "@/lib/supabase/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { REGION_COOKIE, REGION_COOKIE_MAX_AGE, regionFromHeaders } from "@/lib/cookies/region";
+import { BUCKET_COOKIE, BUCKET_COOKIE_MAX_AGE, randomBucket } from "@/lib/cookies/bucket";
 import { LEGACY_TEMPLATE_SLUGS } from "@/lib/templates/redirects";
 
 /** /templates/<old-slug> and /welcome/<old-slug> → the strategy that replaced it (real 308, before auth). */
@@ -20,7 +21,7 @@ export async function middleware(request: NextRequest) {
   const legacy = legacyTemplateRedirect(request);
   if (legacy) return legacy;
 
-  // Ad landing pages are ISR and never need a session; skip the Supabase round trip.
+  // Ad landing pages never need a session; skip the Supabase round trip.
   const response = pathname.startsWith("/go/")
     ? NextResponse.next({ request: { headers: request.headers } })
     : await updateSession(request);
@@ -38,12 +39,26 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  // Split-test bucket: one random number per browser. Pages turn it into a
+  // headline variant (lib/ab/pick.ts); the cookie is readable via cookies()
+  // in the same request, so the first page view already renders its variant.
+  if (!pathname.startsWith("/api/") && !request.cookies.get(BUCKET_COOKIE)) {
+    response.cookies.set({
+      name: BUCKET_COOKIE,
+      value: String(randomBucket()),
+      path: "/",
+      maxAge: BUCKET_COOKIE_MAX_AGE,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+
   return response;
 }
 
 export const config = {
   matcher: [
     // All paths except static files and the API routes that never need a session refresh.
-    "/((?!_next/static|_next/image|favicon.ico|api/auth/callback|api/auth/magic-link|api/webhooks|api/email|api/alerts/check|api/ads/click|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/auth/callback|api/auth/magic-link|api/webhooks|api/email|api/alerts/check|api/ads/click|api/ab|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
   ],
 };
