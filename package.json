@@ -20,7 +20,8 @@
     "leads:export": "tsx scripts/export-leads.ts",
     "emails:verify": "tsx scripts/verify-emails.ts",
     "update:disposable": "tsx scripts/update-disposable-domains.ts",
-    "sync:subscribers": "tsx scripts/sync-subscribers.ts"
+    "sync:subscribers": "tsx scripts/sync-subscribers.ts",
+    "newsletter:build": "tsx scripts/build-newsletter.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

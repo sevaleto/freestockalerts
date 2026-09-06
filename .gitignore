@@ -50,3 +50,6 @@ ad-production/vo/
 # keep the template even though .env* is ignored
 !.env.example
 .gstack/
+
+# newsletter dry-run previews
+.newsletter-out/

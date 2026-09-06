@@ -586,3 +586,28 @@ export const fetchFmpEarningsSnapshot = async (ticker: string, today = new Date(
       : null,
   };
 };
+
+// ---------------------------------------------------------------------------
+// Market-wide news feed (newest first), for picking the day's newsletter topics.
+// ---------------------------------------------------------------------------
+
+export interface FmpMarketNewsItem extends FmpNewsItem {
+  /** Ticker the story is filed under; null on general-market items. */
+  symbol: string | null;
+}
+
+/** One page of the latest stock-tagged headlines across the market. */
+export const fetchFmpLatestStockNews = async (limit = 250, page = 0): Promise<FmpMarketNewsItem[]> => {
+  const rows = await cachedFeed<Array<Record<string, unknown>>>(`news:latest:${page}:${limit}`, `/news/stock-latest?page=${page}&limit=${limit}`, 5 * 60_000);
+  return (Array.isArray(rows) ? rows : [])
+    .map((r) => ({
+      symbol: typeof r.symbol === "string" && r.symbol.trim() ? r.symbol.trim().toUpperCase() : null,
+      title: stripHtml(String(r.title ?? "")).slice(0, 200),
+      publisher: String(r.publisher ?? r.site ?? "").slice(0, 80),
+      site: String(r.site ?? "").slice(0, 80),
+      publishedDate: String(r.publishedDate ?? "").slice(0, 19),
+      snippet: stripHtml(String(r.text ?? "")).slice(0, 300),
+      url: typeof r.url === "string" ? r.url : "",
+    }))
+    .filter((n) => n.title);
+};

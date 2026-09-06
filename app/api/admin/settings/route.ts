@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/auth/admin";
 import { NEWSLETTER_CLICK_VALUE_KEY, setSetting } from "@/lib/settings";
+import { NEWSLETTER_PAUSED_KEY } from "@/lib/newsletter/config";
 
 export const dynamic = "force-dynamic";
 
 const EDITABLE: Record<string, (v: unknown) => string | null> = {
   [NEWSLETTER_CLICK_VALUE_KEY]: (v) => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 100_000 ? String(v) : null),
+  /** "1" pauses the morning newsletter build; anything else resumes it. */
+  [NEWSLETTER_PAUSED_KEY]: (v) => (v === "1" || v === true ? "1" : v === "0" || v === false ? "0" : null),
 };
 
 /** POST { key, value } — write one admin setting. Only whitelisted keys, each with its own validation. */
