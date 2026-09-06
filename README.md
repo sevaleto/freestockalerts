@@ -276,6 +276,57 @@ that brought them with the click revenue credited to each cohort. Code lives in
   landingPath, referrer), `EmailAd.valueCents`, and `EmailAdClick` identity columns. All
   additive: `prisma db push` before deploy.
 
+## Daily newsletter drafts (Beehiiv)
+
+Every day at 11:00 UTC (4 AM PDT / 3 AM PST) `/api/newsletter/build` creates **two drafts** in
+the FreeStockAlerts.AI Beehiiv publication so the morning job is opening Beehiiv and clicking Send.
+Code lives in `lib/newsletter/`; the log is the `NewsletterIssue` table, shown at `/admin/issues`.
+
+Each draft is one article plus copied ads:
+
+- **Topic.** `topics.ts` pulls the latest stock-tagged headlines from FMP (`/news/stock-latest`),
+  groups them by ticker inside a 30-hour window (72 on Mondays), drops press-release wires and
+  law-firm solicitations, removes tickers covered in the last 14 days, and asks Claude
+  (`claude-sonnet-5`) to pick one event per slot. The answer is re-checked in code (`checkPicks`)
+  and the model gets one retry. Events from the last 60 days are shown to it as "already covered".
+- **Article.** `article.ts` has Claude write a 350–500 word recap of what major outlets reported,
+  with the `web_search` server tool so it reads the coverage, in a delimited text format
+  (`HEADLINE:`, `SUBJECT:`, `SOURCE:` lines, `BODY:`). `validateArticle` enforces length,
+  paragraphs of at most three sentences, two named sources, no markdown, and the compliance list
+  (no "guaranteed", "risk-free", "secret", buy/sell advice, price predictions). One retry with the
+  reason; a second failure still creates the draft, titled `[REVIEW] …` with an editor note on
+  top, and the row is `needs_review`. Only a hard model failure leaves a slot `failed`.
+- **Ads.** `tsiAds.ts` reads yesterday's two Smart Investor issues from the Beehiiv API
+  (`expand[]=free_email_content`), matched by the date in their titles
+  (`09/05/2026 - #1 - Advertiser (Creative)`; dedicated sends are ignored), and extracts the two
+  sponsor tables (`border:1px solid #E5E0D5; background-color:#FAF8F3`) as-is, minus `<style>`
+  tags and classes. Draft 1 gets issue #1's ads, draft 2 gets issue #2's. A missing issue or ad
+  becomes a red placeholder line in the draft and a warning in the report; ads are never borrowed
+  from the other slot. Our own `/admin/ads` snippets are skipped.
+- **Draft.** `render.ts` builds native Beehiiv blocks (editable in the editor) for the article and
+  `html` blocks for the ads: intro → ad 1 → headline → paragraphs → sources → ad 2 → disclaimer.
+  `status: "draft"`, subject line and preview text set, tags `[TICKER, daily-brief]`.
+  `renderMode: "html"` (`--html` in the script) sends one `body_content` document instead.
+- **Report.** `report.ts` emails the run summary (drafts, Beehiiv links, ads found, review reasons,
+  cost) to `NEWSLETTER_REPORT_TO`. Subject starts with `ACTION NEEDED` when a slot is flagged.
+
+Operations:
+
+```bash
+set -a; source .env.local; set +a
+npm run newsletter:build -- --spike          # inspect yesterday's Smart Investor HTML + create one throwaway draft
+npm run newsletter:build -- --dry            # full pipeline, no Beehiiv write and no NewsletterIssue rows; previews in .newsletter-out/<date>/
+npm run newsletter:build -- --live --force   # create today's drafts from a laptop
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build?dry=1"
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build?force=1&slot=2"
+```
+
+A slot that already has a draft is skipped unless `force=1` (the old draft stays in Beehiiv; the
+report lists the new id). `/admin/issues` has Rebuild per row, Build today, and a pause toggle
+(`AppSetting.newsletterBuildPaused`). Needs `BEEHIIV_API_KEY` with posts read + write (Create Post
+is a Max/Enterprise feature), `ANTHROPIC_API_KEY` and `FMP_API_KEY`; the route returns 503
+otherwise. Typical cost is a few cents per draft (`costUsd` on each row).
+
 ## How the alert loop works
 
 1. `vercel.json` schedules `GET /api/alerts/check` every 5 minutes, 13:00–21:59 UTC, Mon–Fri.

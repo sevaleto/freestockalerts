@@ -634,3 +634,51 @@ model HeadlineVariant {
 
   @@unique([pageId, key])
 }
+
+/// One AI-drafted FreeStockAlerts issue slot per day: the exclusion list for
+/// topic picking and the idempotency key for the cron (lib/newsletter/build.ts).
+model NewsletterIssue {
+  id             String   @id @default(cuid())
+  /// YYYY-MM-DD in America/Los_Angeles
+  issueDate      String
+  /// 1 | 2
+  slot           Int
+  /// pending | drafted | needs_review | failed | skipped
+  status         String
+  ticker         String?
+  companyName    String?
+  headline       String?
+  subjectLine    String?
+  previewText    String?
+  /// "<TICKER>:<YYYY-MM-DD>:<slug>"
+  eventKey       String?
+  /// One sentence; fed back to the topic picker as an exclusion.
+  eventSummary   String?
+  /// [{ outlet, url }]
+  sources        Json?
+  /// Final paragraphs, "\n\n"-separated.
+  articleText    String?
+  reviewReason   String?
+  /// The Smart Investor post the ads were copied from.
+  tsiPostId      String?
+  tsiPostTitle   String?
+  tsiAdvertisers String?
+  adsFound       Int      @default(0)
+  /// The extracted ad HTML, for rebuilds and debugging.
+  adsHtml        Json?
+  beehiivPostId  String?
+  beehiivPostUrl String?
+  error          String?
+  model          String?
+  inputTokens    Int      @default(0)
+  outputTokens   Int      @default(0)
+  webSearches    Int      @default(0)
+  costUsd        Float    @default(0)
+  forced         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([issueDate, slot])
+  @@index([ticker, issueDate])
+  @@index([createdAt])
+}

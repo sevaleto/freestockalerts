@@ -15,6 +15,10 @@
     {
       "path": "/api/subscribers/sync",
       "schedule": "23 * * * *"
+    },
+    {
+      "path": "/api/newsletter/build",
+      "schedule": "0 11 * * *"
     }
   ]
 }
