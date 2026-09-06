@@ -16,7 +16,8 @@ export function pacificDateKey(d: Date): DateKey {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-export const isDateKey = (s: unknown): s is DateKey => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
+/** Shape and calendar validity ("2026-02-30" is rejected, not rolled into March). */
+export const isDateKey = (s: unknown): s is DateKey => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`)) && shiftDateKey(s, 0) === s;
 
 /** Add days to a date key; pure calendar arithmetic, no timezone involved. */
 export function shiftDateKey(key: DateKey, days: number): DateKey {

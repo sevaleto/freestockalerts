@@ -29,7 +29,7 @@ export interface BuildDeps {
   tsiAds?: (dateKey: DateKey) => Promise<TsiAdsResult>;
   now?: Date;
   log?: (m: string) => void;
-  /** Run everything except the Beehiiv write. */
+  /** Run everything except the Beehiiv write and the NewsletterIssue rows. */
   dry?: boolean;
   renderMode?: RenderMode;
 }
@@ -137,7 +137,7 @@ export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Pro
     const error = `Topic selection failed: ${err instanceof Error ? err.message : String(err)}`;
     log(error);
     for (const slot of slots) {
-      await upsertIssue(deps.db, dateKey, slot, { status: "failed", error: error.slice(0, 1000), forced: !!opts.force });
+      if (!deps.dry) await upsertIssue(deps.db, dateKey, slot, { status: "failed", error: error.slice(0, 1000), forced: !!opts.force });
       result.slots.push({ slot, status: "failed", error, adsFound: 0, costUsd: 0 });
     }
     return finish();
@@ -156,7 +156,7 @@ export async function buildDailyIssues(opts: BuildOptions, deps: BuildDeps): Pro
     if (o.status === "fulfilled") result.slots.push(o.value);
     else {
       const error = o.reason instanceof Error ? o.reason.message : String(o.reason);
-      await upsertIssue(deps.db, dateKey, slots[i], { status: "failed", error: error.slice(0, 1000), forced: !!opts.force }).catch(() => {});
+      if (!deps.dry) await upsertIssue(deps.db, dateKey, slots[i], { status: "failed", error: error.slice(0, 1000), forced: !!opts.force }).catch(() => {});
       result.slots.push({ slot: slots[i], status: "failed", error, adsFound: 0, costUsd: pickerCostPerSlot });
     }
   }
@@ -184,7 +184,10 @@ async function buildSlot(job: SlotJob): Promise<SlotResult> {
   const tsiFields = source ? { tsiPostId: source.post.id, tsiPostTitle: source.post.title, tsiAdvertisers: advertiserLabel(source.title) } : {};
   const eventKey = `${pick.ticker}:${dateKey}:${pick.eventSlug}`;
 
-  await upsertIssue(deps.db, dateKey, slot, {
+  // Dry runs leave the issue log alone: a "drafted" row with no Beehiiv id would make the morning cron skip the slot.
+  const record = deps.dry ? async () => {} : (patch: IssuePatch) => upsertIssue(deps.db, dateKey, slot, patch);
+
+  await record({
     status: "pending",
     ticker: pick.ticker,
     companyName: pick.companyName,
@@ -207,7 +210,7 @@ async function buildSlot(job: SlotJob): Promise<SlotResult> {
 
   if (!written.article) {
     const error = `Article failed after ${written.attempts} attempt(s): ${written.reason ?? "unknown"}`;
-    await upsertIssue(deps.db, dateKey, slot, { status: "failed", error: error.slice(0, 1000), ...usageFields });
+    await record({ status: "failed", error: error.slice(0, 1000), ...usageFields });
     job.log(`slot ${slot}: ${error}`);
     return { ...base, status: "failed", error };
   }
@@ -234,7 +237,7 @@ async function buildSlot(job: SlotJob): Promise<SlotResult> {
   }
 
   const status: IssueStatus = reviewReason ? "needs_review" : "drafted";
-  await upsertIssue(deps.db, dateKey, slot, {
+  await record({
     status,
     headline: written.article.headline,
     subjectLine: body.email_settings?.email_subject_line ?? written.article.headline,

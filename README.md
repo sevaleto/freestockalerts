@@ -315,7 +315,7 @@ Operations:
 ```bash
 set -a; source .env.local; set +a
 npm run newsletter:build -- --spike          # inspect yesterday's Smart Investor HTML + create one throwaway draft
-npm run newsletter:build -- --dry            # full pipeline, no Beehiiv write; previews in .newsletter-out/<date>/
+npm run newsletter:build -- --dry            # full pipeline, no Beehiiv write and no NewsletterIssue rows; previews in .newsletter-out/<date>/
 npm run newsletter:build -- --live --force   # create today's drafts from a laptop
 curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build?dry=1"
 curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build?force=1&slot=2"

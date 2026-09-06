@@ -153,7 +153,7 @@ test("the pause setting stops a plain run but not a forced one; dry runs write n
     assert.equal(dry.paused, false);
     assert.equal(bh.calls.length, 0);
     assert.ok(dry.slots.every((s) => s.status === "drafted" && s.body && !s.beehiivPostId));
-    assert.equal((await prisma.newsletterIssue.findMany({ where: { issueDate: DATE } })).every((r) => r.beehiivPostId === null), true);
+    assert.equal(await prisma.newsletterIssue.count({ where: { issueDate: DATE } }), 0, "a dry run leaves no rows, so the real run is not skipped");
   } finally {
     await prisma.appSetting.deleteMany({ where: { key: "newsletterBuildPaused" } });
     await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });

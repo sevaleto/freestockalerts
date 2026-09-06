@@ -235,6 +235,7 @@ export const claudeTopicPicker: TopicPicker = {
       messages: [{ role: "user", content: renderPickerPrompt(input, opts.retryReason) }],
     });
     if (res.stop_reason === "refusal") throw new Error(`picker refused: ${res.stop_details?.explanation ?? "no explanation"}`);
+    if (res.stop_reason === "max_tokens") throw new Error(`picker hit max_tokens (${NEWSLETTER.pickerMaxTokens}); reply truncated`);
     const raw = res.content
       .filter((b): b is Extract<typeof b, { type: "text" }> => b.type === "text")
       .map((b) => b.text)

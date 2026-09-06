@@ -24,6 +24,7 @@ test("Pacific date keys: 11:00 UTC is the same calendar day in summer and winter
   assert.equal(toMMDDYYYY("2026-09-05"), "09/05/2026");
   assert.equal(isDateKey("2026-09-05"), true);
   assert.equal(isDateKey("2026-13-05"), false);
+  assert.equal(isDateKey("2026-02-30"), false);
   assert.equal(isDateKey("nope"), false);
 });
 
@@ -159,11 +160,14 @@ test("validateArticle accepts the good article and rejects each rule", () => {
   assert.match(reason({ ...good, sources: good.sources.slice(0, 1) }), /only 1 source/);
   assert.match(reason({ ...good, sources: [{ outlet: "Reuters", url: "https://r" }, { outlet: "Bloomberg", url: "https://b" }] }), /only 1 of the sources are named/);
   assert.match(reason(good, pick(1, "MSFT", { companyName: "Microsoft" })), /never names Microsoft or MSFT/);
+  assert.deepEqual(validateArticle({ ...good, headline: "Coca-Cola® Clears the Bar" }, nvda), { ok: true }, "® is not an emoji");
+  assert.deepEqual(validateArticle({ ...good, paragraphs: good.paragraphs.map((p) => p.replace(/CNBC/g, "the Journal")), sources: [good.sources[0], { outlet: "The Wall Street Journal", url: "https://www.wsj.com/x" }] }, nvda), { ok: true }, "outlet shorthand counts");
   assert.match(reason({ ...good, paragraphs: [`Hello {{first_name}}. ${good.paragraphs[0]}`, ...good.paragraphs.slice(1)] }), /merge tag/);
 });
 
-test("sentenceCount tolerates decimals and closing quotes", () => {
+test("sentenceCount tolerates decimals, closing quotes and abbreviations", () => {
   assert.equal(sentenceCount("Revenue was $46.7 billion. That beat estimates."), 2);
+  assert.equal(sentenceCount("The U.S. Securities and Exchange Commission and Apple Inc. Chief Tim Cook met Mr. Smith. Shares rose."), 2);
   assert.equal(sentenceCount('He called demand "extraordinary." Shares fell 3% after hours.'), 2);
   assert.equal(sentenceCount("One sentence only, with 2.5 in it."), 1);
 });

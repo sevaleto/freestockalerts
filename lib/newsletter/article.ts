@@ -141,11 +141,35 @@ export function parseWriterOutput(raw: string): { ok: true; article: Article } |
 export const BANNED_PHRASES =
   /\b(guaranteed?|risk[- ]?free|secret|insider (?:tip|info|information|secret)s?|can'?t lose|sure thing|no[- ]brainer|you should (?:buy|sell|hold)|(?:buy|sell) (?:it|this stock|shares|now) now|we recommend (?:buying|selling)|must[- ](?:buy|own|sell)|will (?:soar|skyrocket|double|triple|crash|plunge|rally|surge|tank))\b/i;
 
-const EMOJI_RE = /\p{Extended_Pictographic}/u;
+/** Pictographs, but not ©, ® or ™, which show up in company names. */
+const EMOJI_RE = /(?![\u00A9\u00AE\u2122])\p{Extended_Pictographic}/u;
 const MARKDOWN_LINE_RE = /^\s*(?:[#*•]|- |\d+\.\s)/m;
 
-/** Roughly count sentences; abbreviations inflate it, so the cap below is one above the target. */
-export const sentenceCount = (p: string) => p.split(/(?<=[.!?]["”')]?)\s+(?=[A-Z"“$(])/).filter((s) => s.trim()).length;
+const ABBREVIATIONS = /\b(?:U\.S|U\.K|U\.N|E\.U|Inc|Corp|Co|Ltd|Mr|Ms|Mrs|Dr|Sen|Rep|Gov|Jr|Sr|St|vs|No|Jan|Feb|Aug|Sept|Oct|Nov|Dec|a\.m|p\.m)\./gi;
+
+/** Roughly count sentences; common abbreviations are masked first, and the cap below is one above the target. */
+export const sentenceCount = (p: string) =>
+  p
+    .replace(ABBREVIATIONS, (m) => m.replace(/\./g, "\u0000"))
+    .split(/(?<=[.!?]["”')]?)\s+(?=[A-Z"“$(])/)
+    .filter((s) => s.trim()).length;
+
+/** "The Wall Street Journal" may appear as "the Journal" or "WSJ"; "Bloomberg News" as "Bloomberg". */
+export function outletNamed(lowerBody: string, s: ArticleSource): boolean {
+  const outlet = s.outlet.toLowerCase().replace(/^the /, "").trim();
+  if (!outlet) return false;
+  if (lowerBody.includes(outlet)) return true;
+  const words = outlet.split(/\s+/).filter((w) => w.length > 2 && !/^(news|the|and|of)$/.test(w));
+  if (words.length && lowerBody.includes(words[words.length - 1])) return true;
+  if (words.length > 1 && lowerBody.includes(words[0])) return true;
+  try {
+    const stem = new URL(s.url).hostname.replace(/^www\./, "").split(".")[0];
+    if (stem.length >= 2 && new RegExp(`\\b${stem}\\b`, "i").test(lowerBody)) return true;
+  } catch {
+    /* no URL */
+  }
+  return false;
+}
 
 export function validateArticle(a: Article, pick: TopicPick): { ok: true } | { ok: false; reason: string } {
   const body = a.paragraphs.join("\n\n");
@@ -170,7 +194,7 @@ export function validateArticle(a: Article, pick: TopicPick): { ok: true } | { o
   const validSources = a.sources.filter((s) => /^https?:\/\//i.test(s.url) && s.outlet.length > 1);
   if (validSources.length < NEWSLETTER.minSources) return { ok: false, reason: `only ${validSources.length} source line(s) with a URL` };
   const lower = body.toLowerCase();
-  const named = validSources.filter((s) => lower.includes(s.outlet.toLowerCase()) || lower.includes(s.outlet.toLowerCase().replace(/^the /, ""))).length;
+  const named = validSources.filter((s) => outletNamed(lower, s)).length;
   if (named < NEWSLETTER.minSources) return { ok: false, reason: `only ${named} of the sources are named in the body` };
   const company = pick.companyName.toLowerCase().replace(/[,.]?\s*(inc|corp|corporation|co|ltd|plc|holdings|group)\.?$/i, "").trim();
   const firstWord = company.split(/\s+/)[0] ?? "";
@@ -212,6 +236,7 @@ export const claudeArticleWriter: ArticleWriter = {
     }
     if (!res) throw new Error("no response from the model");
     if (res.stop_reason === "refusal") throw new Error(`writer refused: ${res.stop_details?.explanation ?? "no explanation"}`);
+    if (res.stop_reason === "max_tokens") throw new Error(`writer hit max_tokens (${NEWSLETTER.writerMaxTokens}); output truncated`);
     const raw = res.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map((b) => b.text)

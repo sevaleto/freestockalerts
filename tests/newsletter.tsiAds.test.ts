@@ -122,6 +122,16 @@ test("empty placeholder wrappers and house snippets are flagged so the caller ca
   assert.equal(isHouseAd(AD2), false);
 });
 
+test("image-only ads count, and a stray table tag inside a comment does not hide later ads", () => {
+  const imageOnly = `<table style="border:1px solid #E5E0D5; background-color:#FAF8F3;"><tr><td><a href="https://s.example.com/x"><img src="https://s.example.com/banner.png" alt=""></a></td></tr></table>`;
+  const withComment = AD1.replace("<p style=\"margin:0;\">", "<!-- <table> stray --><p style=\"margin:0;\">");
+  const ads = extractTsiAds(issue(withComment, imageOnly));
+  assert.equal(ads.length, 2);
+  assert.equal(ads[0].empty, false);
+  assert.equal(ads[1].empty, false, "a linked banner with no copy is still an ad");
+  assert.doesNotMatch(ads[0].html, /stray/);
+});
+
 test("isTrackingWrapped spots Beehiiv redirect links", () => {
   assert.equal(isTrackingWrapped(`<a href="https://link.mail.beehiiv.com/ss/c/u001.abc">x</a>`), true);
   assert.equal(isTrackingWrapped(`<a href="https://mail.example.com/ss/c/abc">x</a>`), true);

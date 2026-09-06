@@ -10,8 +10,9 @@ export const NEWSLETTER = {
   model: "claude-sonnet-5",
   /** Sonnet 5 rejects `temperature`; thinking is adaptive and effort is set per call. */
   effort: "medium" as const,
-  pickerMaxTokens: 2500,
-  writerMaxTokens: 6000,
+  /** Adaptive thinking counts against max_tokens, so these leave room to think. */
+  pickerMaxTokens: 8000,
+  writerMaxTokens: 16000,
   /** Server-side web searches the writer may run per article. */
   webSearchMaxUses: 6,
   /** How many times a `pause_turn` is resumed before giving up. */

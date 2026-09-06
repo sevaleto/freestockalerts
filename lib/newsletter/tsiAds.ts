@@ -135,15 +135,20 @@ const textOf = (html: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-/** Every ad-slot wrapper table in an issue, in document order, sanitized. */
-export function extractTsiAds(html: string): TsiAd[] {
+/**
+ * Every ad-slot wrapper table in an issue, in document order, sanitized.
+ * Comments are dropped first so a stray tag inside one (MSO conditionals, the
+ * Hermes placeholder comments) cannot unbalance the table count.
+ */
+export function extractTsiAds(input: string): TsiAd[] {
+  const html = input.replace(/<!--[\s\S]*?-->/g, "");
   const ads: TsiAd[] = [];
   AD_WRAPPER_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = AD_WRAPPER_RE.exec(html))) {
     if (!isAdWrapper(m[0])) continue;
     const end = closingTableEnd(html, m.index + m[0].length);
-    if (end === null) break;
+    if (end === null) continue;
     const raw = html.slice(m.index, end);
     const clean = sanitizeAdHtml(raw);
     const text = textOf(raw);
@@ -152,7 +157,8 @@ export function extractTsiAds(html: string): TsiAd[] {
       html: clean,
       linkCount: (clean.match(/<a\b/gi) ?? []).length,
       isHouseAd: isHouseAd(clean),
-      empty: text.length === 0 || (/^[\s.]*$/.test(text) && clean.indexOf("<img") === -1),
+      // A linked banner image with no copy is still an ad.
+      empty: /^[\s.]*$/.test(text) && !/<img\b/i.test(clean),
     });
     AD_WRAPPER_RE.lastIndex = end;
   }
