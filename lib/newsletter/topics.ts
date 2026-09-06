@@ -172,7 +172,7 @@ Respond with JSON only, no prose, matching:
 
 export function renderPickerPrompt(input: PickInput, retryReason?: string): string {
   const lines: string[] = [];
-  lines.push(`Issue date: ${input.dateKey}. Slots to fill: ${input.slots.join(", ")}.`);
+  lines.push(`Issue date: ${input.dateKey}. Slots to fill: ${input.slots.join(", ")}. Use exactly these slot numbers in your answer${input.slots.length === 1 ? ` (one pick, "slot": ${input.slots[0]})` : ""}.`);
   if (input.exclusions.recentTickers.length) lines.push(`Tickers on cooldown (do not pick): ${input.exclusions.recentTickers.join(", ")}`);
   if (input.exclusions.recentEvents.length) {
     lines.push("Already covered (do not repeat these events):");
@@ -197,6 +197,18 @@ export function extractJson(text: string): unknown {
   const end = body.lastIndexOf("}");
   if (start === -1 || end <= start) throw new Error("no JSON object in reply");
   return JSON.parse(body.slice(start, end + 1));
+}
+
+/**
+ * When only slot 2 is being rebuilt the model tends to number its single pick
+ * "1". If it returned exactly one pick per requested slot but with the wrong
+ * numbers, assign the requested slot numbers in order instead of failing.
+ */
+export function normalizeSlots<T extends { slot: number }>(picks: T[], slots: readonly number[]): T[] {
+  const wanted = [...slots].sort((a, b) => a - b);
+  const got = picks.map((p) => p.slot).sort((a, b) => a - b);
+  if (picks.length !== wanted.length || got.every((s, i) => s === wanted[i])) return picks;
+  return [...picks].sort((a, b) => a.slot - b.slot).map((p, i) => ({ ...p, slot: wanted[i] }));
 }
 
 /** Deterministic re-check of the model's picks. */
@@ -242,7 +254,7 @@ export const claudeTopicPicker: TopicPicker = {
       .join("");
     const usage: ModelUsage = { ...EMPTY_USAGE, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens };
     const parsed = PickSchema.parse(extractJson(raw));
-    return { picks: parsed.picks.map((p) => ({ ...p, ticker: p.ticker.toUpperCase() })), usage, raw };
+    return { picks: normalizeSlots(parsed.picks, input.slots).map((p) => ({ ...p, ticker: p.ticker.toUpperCase() })), usage, raw };
   },
 };
 
