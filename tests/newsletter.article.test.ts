@@ -6,7 +6,7 @@ import { numberedItems, parseWriterOutput, renderIssuePrompt, sentenceCount, sta
 import { dateKeyWeekday, easternDateKey, easternMinutes, isDateKey, longDate, pacificDateKey, shiftDateKey, toMMDDYYYY, yesterdayPacific } from "../lib/newsletter/dates";
 import { renderFacts, type IssueFacts } from "../lib/newsletter/facts";
 import { windowReason } from "../lib/newsletter/build";
-import { NEWSLETTER } from "../lib/newsletter/config";
+import { NEWSLETTER, NYSE_HOLIDAYS_STATIC } from "../lib/newsletter/config";
 import { costUsd } from "../lib/newsletter/usage";
 import type { FmpMarketNewsItem } from "../lib/api/fmp";
 
@@ -42,6 +42,9 @@ test("windowReason: weekends, holidays, and each kind's Eastern window; force is
   assert.equal(windowReason("morning", new Date("2026-12-08T12:30:00Z"), holidays, "2026-12-08"), null);
   assert.match(windowReason("morning", NOW, holidays, "2026-09-07") ?? "", /NYSE holiday/);
   assert.match(windowReason("morning", NOW, holidays, "2026-09-06") ?? "", /weekends/);
+  assert.ok(NYSE_HOLIDAYS_STATIC.includes("2026-09-07"), "Labor Day 2026");
+  assert.ok(NYSE_HOLIDAYS_STATIC.includes("2026-11-26"), "Thanksgiving 2026");
+  assert.ok(NYSE_HOLIDAYS_STATIC.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && ![0, 6].includes(dateKeyWeekday(d))), "every listed holiday is a weekday");
 });
 
 test("groupCandidates keeps tickers with real coverage, drops opinion-only tickers and law-firm wires", () => {
