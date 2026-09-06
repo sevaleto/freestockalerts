@@ -14,7 +14,7 @@ export const NEWSLETTER = {
   pickerMaxTokens: 8000,
   writerMaxTokens: 16000,
   /** Server-side web searches the writer may run per article. */
-  webSearchMaxUses: 6,
+  webSearchMaxUses: 5,
   /** How many times a `pause_turn` is resumed before giving up. */
   pauseTurnResumes: 3,
 

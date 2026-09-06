@@ -278,8 +278,10 @@ that brought them with the click revenue credited to each cohort. Code lives in
 
 ## Daily newsletter drafts (Beehiiv)
 
-Every day at 11:00 UTC (4 AM PDT / 3 AM PST) `/api/newsletter/build` creates **two drafts** in
-the FreeStockAlerts.AI Beehiiv publication so the morning job is opening Beehiiv and clicking Send.
+Every day at 11:00 UTC (4 AM PDT / 3 AM PST) two crons, `/api/newsletter/build/1` and `/2`, create
+**two drafts** in the FreeStockAlerts.AI Beehiiv publication so the morning job is opening Beehiiv
+and clicking Send. One slot per function invocation: an article with web searches can take four
+minutes and the function limit is 300 seconds. The second slot emails the day's report.
 Code lives in `lib/newsletter/`; the log is the `NewsletterIssue` table, shown at `/admin/issues`.
 
 Each draft is one article plus copied ads:
@@ -318,11 +320,13 @@ npm run newsletter:build -- --spike          # inspect yesterday's Smart Investo
 npm run newsletter:build -- --dry            # full pipeline, no Beehiiv write and no NewsletterIssue rows; previews in .newsletter-out/<date>/
 npm run newsletter:build -- --live --force   # create today's drafts from a laptop
 curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build?dry=1"
-curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build?force=1&slot=2"
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.freestockalerts.ai/api/newsletter/build/2?force=1"
 ```
 
-A slot that already has a draft is skipped unless `force=1` (the old draft stays in Beehiiv; the
-report lists the new id). `/admin/issues` has Rebuild per row, Build today, and a pause toggle
+A slot that already has a draft is skipped unless `force=1` (the old draft stays in Beehiiv). A slot
+another run is writing (pending, touched in the last six minutes) is left alone; a pending row older
+than ten minutes shows as Stalled and Rebuild picks it up. When the writer finds the story is old news
+(`STALE:` reply, or an event/source date past the allowance) the slot picks another topic once. `/admin/issues` has Rebuild per row, Build today, and a pause toggle
 (`AppSetting.newsletterBuildPaused`). Needs `BEEHIIV_API_KEY` with posts read + write (Create Post
 is a Max/Enterprise feature), `ANTHROPIC_API_KEY` and `FMP_API_KEY`; the route returns 503
 otherwise. Typical cost is a few cents per draft (`costUsd` on each row).
