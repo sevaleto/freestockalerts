@@ -21,17 +21,20 @@ interface CompleteSignInInput {
  * of how they got it (magic link, one-time code, Google OAuth):
  *   1. Prisma User row exists and is marked emailVerified (emailStatus VALID)
  *   2. user is on the Resend audience
- *   3. Meta CAPI CompleteRegistration fires (server side), unless the visitor
- *      has opted out of marketing (explicit choice, GPC, or opt-in region
- *      without consent; see lib/cookies/serverConsent.ts)
- * Returns the CAPI event id so the browser pixel can dedupe against it.
+ *   3. Meta CAPI CompleteRegistration fires (server side) the first time this
+ *      account is verified (row created now, or emailVerified flipping to
+ *      true), unless the visitor has opted out of marketing (explicit choice,
+ *      GPC, or opt-in region without consent; see lib/cookies/serverConsent.ts).
+ *      Returning sign-ins send nothing, so Meta's count matches registrations.
+ * Returns the CAPI event id so the browser pixel can dedupe against it, or
+ * null when this sign-in is not a registration (the browser then stays quiet).
  *
  * The CAPI sends run inside Next's after(): the redirect goes out first, and
  * the function stays alive until Meta answers. A bare fire-and-forget promise
  * gets frozen with the instance the moment the response is returned, and the
  * socket to graph.facebook.com dies (ETIMEDOUT / TLS reset in the logs).
  */
-export async function completeSignIn({ user, request, origin, abVariant, sourceOverride, attribution }: CompleteSignInInput) {
+export async function completeSignIn({ user, request, origin, abVariant, sourceOverride, attribution }: CompleteSignInInput): Promise<string | null> {
   const provider = user.app_metadata?.provider;
   const source: SignupSource =
     sourceOverride && sourceOverride !== "unknown"
@@ -41,8 +44,9 @@ export async function completeSignIn({ user, request, origin, abVariant, sourceO
         : "unknown";
 
   let createdNow = false;
+  let registeredNow = false;
   try {
-    const { user: row, created } = await upsertUserForAuth({
+    const { user: row, created, firstVerification } = await upsertUserForAuth({
       attribution,
       authUser: user,
       abVariant,
@@ -50,10 +54,16 @@ export async function completeSignIn({ user, request, origin, abVariant, sourceO
       emailVerified: true,
     });
     createdNow = created;
+    registeredNow = firstVerification;
     const confirmed = await markEmailConfirmed(row.id, provider === "google" ? "google" : "magic-link");
     await ensureOnAudience(confirmed ?? row);
   } catch (e) {
     console.error("[auth] completeSignIn: failed to upsert user record:", e);
+  }
+
+  if (!registeredNow) {
+    console.log("[CAPI] CompleteRegistration skipped (returning user)");
+    return null;
   }
 
   const eventId = generateEventId();
