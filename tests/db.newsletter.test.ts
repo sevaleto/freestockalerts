@@ -153,6 +153,32 @@ test("a failing writer on one slot leaves the other drafted; twice-invalid text 
   }
 });
 
+test("a stale first pick is re-picked once and the slot still lands a draft", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
+  const prisma = new PrismaClient({ datasourceUrl: url });
+  const { buildDailyIssues } = await import("../lib/newsletter/build");
+  await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
+  try {
+    const bh = beehiiv();
+    const pickerCalls: number[][] = [];
+    const picker = { async pick(input: { slots: number[]; candidates: { ticker: string }[] }) { pickerCalls.push(input.slots); const first = input.candidates[0]?.ticker ?? "AMD"; return { picks: input.slots.map((slot, i) => ({ slot, ticker: input.slots.length === 2 ? ["NVDA", "LULU"][i] : first, companyName: first, eventSummary: `${first} event`, eventSlug: "event", eventDate: DATE, whyNow: "", seedUrls: [] })), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, raw: "" }; } };
+    const writer = { async write(pick: { ticker: string }) { if (pick.ticker === "NVDA") return { raw: "STALE: 2098-12-01 | old news", usage: { inputTokens: 1, outputTokens: 1, webSearches: 1 }, stopReason: "end_turn" }; return goodWriter.write(pick); } };
+    const r = await buildDailyIssues({ dateKey: DATE }, { db: prisma, fetchImpl: bh.fetchImpl, picker, writer, news: async () => news, tsiAds, profile, now: NOW });
+    const s1 = r.slots.find((s) => s.slot === 1)!;
+    assert.equal(s1.status, "drafted");
+    assert.notEqual(s1.ticker, "NVDA", "the stale ticker was replaced");
+    assert.equal(s1.ticker, "AMD", "the re-pick excluded NVDA and the other slot's LULU");
+    assert.equal(r.slots.find((s) => s.slot === 2)?.status, "drafted");
+    assert.deepEqual(pickerCalls, [[1, 2], [1]]);
+    assert.equal(bh.calls.length, 2);
+    const row = await prisma.newsletterIssue.findUnique({ where: { issueDate_slot: { issueDate: DATE, slot: 1 } } });
+    assert.equal(row?.ticker, "AMD");
+    assert.equal(row?.webSearches, 4, "usage of the stale attempt is kept");
+  } finally {
+    await prisma.newsletterIssue.deleteMany({ where: { issueDate: { startsWith: "2099-" } } });
+    await prisma.$disconnect();
+  }
+});
+
 test("the pause setting stops a plain run but not a forced one; dry runs write nothing to Beehiiv", { skip: !enabled && "TEST_DATABASE_URL not set" }, async () => {
   const prisma = new PrismaClient({ datasourceUrl: url });
   const { buildDailyIssues } = await import("../lib/newsletter/build");

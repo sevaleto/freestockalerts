@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { checkPicks, dropNonStocks, extractJson, groupCandidates, normalizeSlots, oldestEventDate, PickSchema, publisherKind, renderPickerPrompt, type Candidate, type PickInput, type TopicPick } from "../lib/newsletter/topics";
-import { parseWriterOutput, renderWriterPrompt, sentenceCount, stalenessReason, urlDate, validateArticle, type Article } from "../lib/newsletter/article";
+import { parseStale, parseWriterOutput, renderWriterPrompt, sentenceCount, stalenessReason, urlDate, validateArticle, writeArticle, type Article } from "../lib/newsletter/article";
 import { dateKeyWeekday, isDateKey, pacificDateKey, shiftDateKey, toMMDDYYYY, yesterdayPacific } from "../lib/newsletter/dates";
 import { NEWSLETTER } from "../lib/newsletter/config";
 import { costUsd } from "../lib/newsletter/usage";
@@ -216,6 +216,23 @@ test("validateArticle accepts the good article and rejects each rule", () => {
   assert.deepEqual(validateArticle({ ...good, headline: "Coca-Cola® Clears the Bar" }, nvda), { ok: true }, "® is not an emoji");
   assert.deepEqual(validateArticle({ ...good, paragraphs: good.paragraphs.map((p) => p.replace(/CNBC/g, "the Journal")), sources: [good.sources[0], { outlet: "The Wall Street Journal", url: "https://www.wsj.com/x" }] }, nvda), { ok: true }, "outlet shorthand counts");
   assert.match(reason({ ...good, paragraphs: [`Hello {{first_name}}. ${good.paragraphs[0]}`, ...good.paragraphs.slice(1)] }), /merge tag/);
+});
+
+test("a STALE reply is recognised and writeArticle reports it without retrying", async () => {
+  assert.deepEqual(parseStale("STALE: 2026-08-19 | coverage is a rehash of the August trial readout"), { eventDate: "2026-08-19", note: "coverage is a rehash of the August trial readout" });
+  assert.deepEqual(parseStale("**STALE:** the event was weeks ago"), { eventDate: null, note: "the event was weeks ago" });
+  assert.equal(parseStale(GOOD_RAW), null);
+  let calls = 0;
+  const writer = { async write() { calls++; return { raw: "STALE: 2026-08-19 | August news", usage: { inputTokens: 10, outputTokens: 5, webSearches: 2 }, stopReason: "end_turn" }; } };
+  const r = await writeArticle(nvda, "2026-09-08", writer);
+  assert.equal(r.status, "stale");
+  assert.match(r.reason ?? "", /2026-08-19/);
+  assert.equal(calls, 1, "no retry for a stale story");
+  // The validator's own staleness verdict is the same signal.
+  const old = { async write() { return { raw: GOOD_RAW.replace("EVENT_DATE: 2026-09-07", "EVENT_DATE: 2026-08-19"), usage: { inputTokens: 1, outputTokens: 1, webSearches: 0 }, stopReason: "end_turn" }; } };
+  assert.equal((await writeArticle(nvda, "2026-09-08", old)).status, "stale");
+  assert.match(renderWriterPrompt(nvda, "2026-09-08").user, /Oldest acceptable event date: 2026-09-06/);
+  assert.match(renderWriterPrompt(nvda, "2026-09-08").system, /STALE: <YYYY-MM-DD/);
 });
 
 test("sentenceCount tolerates decimals, closing quotes and abbreviations", () => {
