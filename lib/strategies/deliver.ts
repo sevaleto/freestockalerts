@@ -43,7 +43,7 @@ export async function deliverSignal(db: Db, signal: SignalLike & { id: string },
       throw err;
     }
     try {
-      const { error } = await sendSignalEmail({ to: user.email, strategyName, signal });
+      const { error } = await sendSignalEmail({ to: user.email, userId: user.id, strategyName, signal });
       if (error) throw new Error(JSON.stringify(error));
       await db.signalDelivery.update({ where: { id: delivery.id }, data: { emailSent: true, sentAt: new Date() } });
       result.sent++;

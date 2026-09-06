@@ -204,6 +204,7 @@ async function runAlertCheck(request: Request) {
           try {
             const { error } = await sendAlertEmail({
               to: user!.email,
+              userId: alert.userId,
               ticker: alert.ticker,
               alertType: humanAlertType(alert.alertType),
               currentPrice: `$${result.priceAtTrigger.toFixed(2)}`,

@@ -4,8 +4,10 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { completeSignIn, safeNext } from "@/lib/auth/completeSignIn";
 import { toSignupSource } from "@/lib/auth/users";
+import { parseAttribution } from "@/lib/tracking/attribution";
+import { marketingAllowed } from "@/lib/cookies/serverConsent";
 
-const HANDOFF_COOKIES = ["fsa_next", "fsa_src"] as const;
+const HANDOFF_COOKIES = ["fsa_next", "fsa_src", "fsa_attr"] as const;
 
 /** Clear the short-lived OAuth hand-off cookies on whatever response we return. */
 function clearHandoff(res: NextResponse) {
@@ -49,6 +51,13 @@ export async function GET(request: Request) {
   // stashes next/source in short-lived cookies before redirecting.
   const next = safeNext(searchParams.get("next") ?? jar.get("fsa_next")?.value ?? null);
   const sourceOverride = toSignupSource(jar.get("fsa_src")?.value);
+  let attribution = null;
+  try {
+    attribution = parseAttribution(JSON.parse(jar.get("fsa_attr")?.value ?? "null"));
+  } catch {
+    attribution = null;
+  }
+  if (attribution?.fbclid && !marketingAllowed(request).allowed) delete attribution.fbclid;
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const code = searchParams.get("code");
@@ -98,6 +107,7 @@ export async function GET(request: Request) {
     origin,
     abVariant: jar.get("ab_hero_headline")?.value ?? null,
     sourceOverride,
+    attribution,
   });
 
   const redirectUrl = new URL(next, origin);

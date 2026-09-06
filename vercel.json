@@ -11,6 +11,10 @@
     {
       "path": "/api/strategies/scan",
       "schedule": "40 21 * * 1-5"
+    },
+    {
+      "path": "/api/subscribers/sync",
+      "schedule": "23 * * * *"
     }
   ]
 }

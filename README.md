@@ -159,6 +159,82 @@ SELECT ts, "firstName", "lastName", email, "notifyStatus", "handledAt" FROM "Pri
 Recipients are env-overridable (`ADVERTISER_INQUIRY_TO`, `ADVERTISER_INQUIRY_BCC`,
 `PRIVACY_ALERT_EMAILS`); see `.env.example`. A privacy request has a 45-day statutory clock.
 
+## Email ads (sponsored snippet in every alert)
+
+Every alert and signal email ends with one sponsored snippet, styled like the Trading Tips Email
+Ops banners (lead-in line, headline with an "(Ad)" tag, body, underlined link, optional 230px
+image). Admins create and manage them at `/admin/ads`; the link shows in the dashboard sidebar for
+admins only. There is no admin password: a person signs in normally (magic link or Google) and the
+server checks the address against `ADMIN_EMAILS`. Defaults in `lib/auth/admin.ts` are Manny's two
+addresses plus chelsie@trading-tips.us and nicole@trading-tips.us; setting the variable replaces
+that list. Everyone else gets a 404 from `/admin` and a 403 from `/api/admin/ads`.
+
+- **Model:** `EmailAd` (copy, `status` active/paused, `weight`, optional `startAt`/`endAt`,
+  `impressions`, `clicks`, `lastShownAt`) and `EmailAdClick` (one row per click, hashed IP,
+  `counted` false for link scanners). Additive tables: `prisma db push` before deploy.
+- **Rotation:** `lib/ads/rotation.ts` picks the servable ad with the fewest impressions per unit of
+  weight (ties go to the least recently shown), so a weight-2 ad gets twice the share and nothing
+  is starved. `serveEmailAd()` in `lib/ads/serve.ts` picks, increments the impression, and returns
+  the HTML; `sendAlertEmail` and `sendSignalEmail` call it per recipient. It never throws: with no
+  active ad, or on a DB error, the email simply has no sponsored section.
+- **HTML:** `renderAdHtml()` in `lib/ads/template.ts` is the single source of the snippet (table
+  layout, inline styles, MSO ghost tables, stacks on phones). The admin editor's live preview and
+  the tests render through the same function. All advertiser text is escaped.
+- **Clicks:** every link in the snippet goes through `/api/ads/click/<id>`, which 302s to the CTA
+  URL and logs the click afterwards. Bot-looking user agents are logged but not counted.
+- **Preview:** `/dev/emails` shows an image ad, a text-only ad, and an email with no ad.
+- **Compliance:** the snippet is labeled "Sponsored" and "(Ad)". Ad copy is subject to the same
+  rules as the rest of the site: no guarantees, no "risk-free" or "secret", hedge performance
+  claims, and "Past performance does not guarantee future results" on any performance data.
+
+## Subscribers, ad clicks and cohorts
+
+The tracked population is everyone who signed up on the FreeStockAlerts website (the app's
+`User` rows). Each of them is looked up by email in both Beehiiv newsletters (FreeStockAlerts.AI
+and The Smart Investor); a click by one of them in either newsletter counts. `/admin/subscribers`
+lists them with their clicks, `/admin/cohorts` groups them by the UTM source, medium and campaign
+that brought them with the click revenue credited to each cohort. Code lives in
+`lib/subscribers/` and `lib/beehiiv/`.
+
+- **Sync.** `/api/subscribers/sync` runs hourly (vercel.json): mirror app users into
+  `Subscriber`, look each tracked subscriber up by email in both publications
+  (`findSubscriptionByEmail`, exact match confirmed client-side), and refresh the latest issues'
+  link stats. A few dozen API calls per run. `npm run sync:subscribers` does the same from a
+  laptop; `npm run sync:subscribers -- --full si` mirrors a whole list (`syncBeehiivPublication`,
+  cursor-based and resumable) if that is ever wanted. `BEEHIIV_API_KEY` is only read from the
+  environment.
+- **Tracking starts when a subscriber is first seen.** Beehiiv's click counts are lifetime
+  totals, so the first sync freezes them as a baseline (`beehiiv*ClicksBaseline`,
+  `trackingStartedAt`) and only the increase since then is credited. An old Smart Investor
+  reader who signs up for alerts today starts at zero.
+- **First-touch attribution.** Beehiiv provides UTM fields and the referring landing page per
+  subscription. For app signups, `lib/tracking/attribution.ts` reads the UTM parameters and
+  `fbclid` from the landing URL (kept in sessionStorage for the tab, no cookie) and the signup
+  request stores them on `User`. When one email exists in several sources, the earliest signup
+  that actually carries tags wins (`mergeAttribution` in `lib/subscribers/cohort.ts`). A cohort is
+  `source|medium|campaign`, lowercased.
+- **Newsletter clicks come from Beehiiv.** Every link in every issue is already tracked by
+  Beehiiv; the sync copies each subscription's lifetime `total_clicked` / `total_unique_clicked`
+  onto the subscriber (`beehiivSiUniqueClicks` etc.) and each sent issue's per-link stats into
+  `NewsletterPost` / `NewsletterLink` (`/admin/newsletters` shows which link in an issue earned
+  the clicks across all readers, with Beehiiv's human-verified subset next to the raw count).
+  Nothing has to be created in the app for a newsletter ad to count. Unique clicks above the
+  baseline are priced at the "newsletter value per unique click" setting on `/admin/cohorts`
+  (`AppSetting`, default $2.50, computed at report time so changing it re-prices everything).
+- **Alert-email clicks come from our redirect.** Every ad link in an alert email is
+  `/api/ads/click/<adId>?c=alert&s=u_<userId>`. A click is counted when it is not a bot and the
+  same subscriber (or IP, when unknown) has no counted click on that ad in the last 24 hours; it
+  is stamped with the ad's value per click (default $2.50, editable per ad) and credited to the
+  subscriber. The optional Beehiiv snippet buttons on the ad editor produce the same card with
+  `c=fsa|si&s={{api_subscription_id}}` links; those clicks count for the ad but are not credited
+  to the subscriber, because Beehiiv already counted them.
+- **Cohort cost.** On `/admin/cohorts`, pick a month and type the spend per cohort; the return
+  column is revenue ÷ cost. Costs are stored in `CohortCost` per cohort and month.
+- **Schema.** `Subscriber` (with Beehiiv click counts), `CohortCost`, `SubscriberSyncRun`,
+  `AppSetting`, `NewsletterPost`, `NewsletterLink`, new columns on `User` (utm*, fbclid,
+  landingPath, referrer), `EmailAd.valueCents`, and `EmailAdClick` identity columns. All
+  additive: `prisma db push` before deploy.
+
 ## How the alert loop works
 
 1. `vercel.json` schedules `GET /api/alerts/check` every 5 minutes, 13:00–21:59 UTC, Mon–Fri.

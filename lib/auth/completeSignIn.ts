@@ -1,5 +1,6 @@
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { upsertUserForAuth, type SignupSource } from "@/lib/auth/users";
+import type { Attribution } from "@/lib/tracking/attribution";
 import { ensureOnAudience, markEmailConfirmed } from "@/lib/email/verification";
 import { sendCAPIEvent, extractFbCookies, generateEventId } from "@/lib/tracking/meta-capi";
 import { marketingAllowed } from "@/lib/cookies/serverConsent";
@@ -11,6 +12,7 @@ interface CompleteSignInInput {
   abVariant?: string | null;
   /** Attribution override, e.g. "lp:radar" carried through Google OAuth via cookie. */
   sourceOverride?: SignupSource;
+  attribution?: Attribution | null;
 }
 
 /**
@@ -23,7 +25,7 @@ interface CompleteSignInInput {
  *      without consent; see lib/cookies/serverConsent.ts)
  * Returns the CAPI event id so the browser pixel can dedupe against it.
  */
-export async function completeSignIn({ user, request, origin, abVariant, sourceOverride }: CompleteSignInInput) {
+export async function completeSignIn({ user, request, origin, abVariant, sourceOverride, attribution }: CompleteSignInInput) {
   const provider = user.app_metadata?.provider;
   const source: SignupSource =
     sourceOverride && sourceOverride !== "unknown"
@@ -35,6 +37,7 @@ export async function completeSignIn({ user, request, origin, abVariant, sourceO
   let createdNow = false;
   try {
     const { user: row, created } = await upsertUserForAuth({
+      attribution,
       authUser: user,
       abVariant,
       source,

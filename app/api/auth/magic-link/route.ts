@@ -9,6 +9,8 @@ import { verifyTurnstile } from "@/lib/auth/turnstile";
 import { checkSignupRateLimit, clientIp } from "@/lib/auth/rateLimit";
 import { precheckEmail } from "@/lib/email/precheck";
 import { verifyUserEmail } from "@/lib/email/verification";
+import { parseAttribution } from "@/lib/tracking/attribution";
+import { marketingAllowed } from "@/lib/cookies/serverConsent";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +38,9 @@ export async function POST(request: Request) {
   const email = String(body?.email ?? "").trim().toLowerCase();
   const source = toSignupSource(body?.source);
   const next = safeNext(typeof body?.next === "string" ? body.next : null);
+  const attribution = parseAttribution(body?.attribution);
+  // The Facebook click id is a marketing identifier; keep it only with marketing consent (UTM tags are not personal data).
+  if (attribution?.fbclid && !marketingAllowed(request).allowed) delete attribution.fbclid;
 
   // Per-IP rate limit first (real client IP from Cloudflare) so junk floods count too.
   const ip = clientIp(request);
@@ -116,6 +121,7 @@ export async function POST(request: Request) {
       abVariant,
       source,
       lastLinkSentAt: now,
+      attribution,
     });
 
     // Send the branded email.
