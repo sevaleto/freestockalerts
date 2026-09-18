@@ -1,5 +1,11 @@
 # FreeStockAlerts.AI
 
+> **Market data provider retired (2026-09-18).** FMP is no longer called anywhere: every request is
+> blocked in `lib/api/fmp.ts` (`FMP_DISABLED`). Quotes fall back to Alpha Vantage where a key exists,
+> indicators (RSI/SMA/earnings/avg volume) evaluate as unavailable, the newsletter build and the
+> strategy scan return 503 and do nothing, and `npm run refresh:strategies` refuses to run.
+> References to FMP below describe the previous wiring until a replacement provider is chosen.
+
 Free stock alert platform with AI-written context. Users sign up (magic link or
 Google), create alerts on any ticker, and get an email when the alert fires.
 

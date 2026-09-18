@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { getAdminUser } from "@/lib/auth/admin";
-import { newsletterConfigured, NEWSLETTER, type Slot } from "@/lib/newsletter/config";
+import { newsletterConfigured, NEWSLETTER, NEWSLETTER_UNCONFIGURED_MESSAGE, type Slot } from "@/lib/newsletter/config";
 import { isDateKey } from "@/lib/newsletter/dates";
 import { triggerSlotBuilds } from "@/lib/newsletter/http";
 
@@ -15,7 +15,7 @@ export const maxDuration = 800;
  */
 export async function POST(request: Request) {
   if (!(await getAdminUser())) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (!newsletterConfigured()) return NextResponse.json({ error: "BEEHIIV_API_KEY, ANTHROPIC_API_KEY and FMP_API_KEY must all be set" }, { status: 503 });
+  if (!newsletterConfigured()) return NextResponse.json({ error: NEWSLETTER_UNCONFIGURED_MESSAGE }, { status: 503 });
   const body = ((await request.json().catch(() => null)) ?? {}) as { date?: unknown; slot?: unknown; force?: unknown };
   const date = typeof body.date === "string" ? body.date : undefined;
   if (date && !isDateKey(date)) return NextResponse.json({ error: "date must be YYYY-MM-DD" }, { status: 400 });

@@ -1,3 +1,15 @@
+/**
+ * FMP IS RETIRED (2026-09-18). Every request is blocked in fmpFetch below, so
+ * nothing in this module reaches financialmodelingprep.com. The functions and
+ * types stay exported so callers keep compiling and degrade gracefully (empty
+ * quotes, null indicators, skipped feeds) until a replacement provider is
+ * wired in. When it lands, reimplement these against it and delete the gate.
+ */
+export const FMP_DISABLED = true;
+
+/** True only when a market-data provider can actually serve requests. */
+export const marketDataAvailable = () => !FMP_DISABLED && !!process.env.FMP_API_KEY;
+
 const FMP_BASE_URL = "https://financialmodelingprep.com/stable";
 const CACHE_TTL_MS = 60_000; // 1 minute — FMP Premium has generous limits
 const MAX_CONCURRENCY = 5; // max parallel single-ticker fetches
@@ -108,6 +120,9 @@ const getApiKey = () => {
  * For endpoints that don't use `symbol` (like search), pass the full query string.
  */
 const fmpFetch = async (path: string) => {
+  if (FMP_DISABLED) {
+    throw new FmpError("Market data provider disabled: FMP is retired and no replacement is wired yet", undefined, "DISABLED");
+  }
   const separator = path.includes("?") ? "&" : "?";
   const url = `${FMP_BASE_URL}${path}${separator}apikey=${getApiKey()}`;
   const response = await fetch(url);
@@ -413,7 +428,7 @@ export const fmpFetchRetry = async <T>(path: string): Promise<T> => {
       return (await fmpFetch(path)) as T;
     } catch (err) {
       last = err;
-      const retryable = err instanceof FmpError && (err.code === "RATE_LIMIT" || (err.status ?? 0) >= 500);
+      const retryable = err instanceof FmpError && err.code !== "DISABLED" && (err.code === "RATE_LIMIT" || (err.status ?? 0) >= 500);
       if (!retryable || attempt === RETRY_ATTEMPTS - 1) throw err;
       const wait = (err instanceof FmpError && err.code === "RATE_LIMIT" ? 8000 : 1500) * (attempt + 1);
       console.warn(`[fmp] ${path.split("?")[0]} ${err instanceof FmpError ? err.status : ""} — retrying in ${wait}ms`);
