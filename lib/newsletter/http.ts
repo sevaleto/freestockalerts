@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma/client";
 import { isCronAuthorized } from "@/lib/auth/cronAuth";
 import { buildDailyIssues } from "./build";
-import { NEWSLETTER, newsletterConfigured, type Slot } from "./config";
+import { NEWSLETTER, NEWSLETTER_UNCONFIGURED_MESSAGE, newsletterConfigured, type Slot } from "./config";
 import { isDateKey, pacificDateKey } from "./dates";
 import { sendDayReport } from "./report";
 
@@ -23,7 +23,7 @@ export const parseSlot = (v: string | null | undefined): Slot | null | "invalid"
  */
 export async function handleBuildRequest(request: Request, slotFromPath?: string): Promise<Response> {
   if (!isCronAuthorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!newsletterConfigured()) return NextResponse.json({ ok: false, error: "BEEHIIV_API_KEY, ANTHROPIC_API_KEY and FMP_API_KEY must all be set" }, { status: 503 });
+  if (!newsletterConfigured()) return NextResponse.json({ ok: false, error: NEWSLETTER_UNCONFIGURED_MESSAGE }, { status: 503 });
   const url = new URL(request.url);
   const force = url.searchParams.get("force") === "1";
   const dry = url.searchParams.get("dry") === "1";

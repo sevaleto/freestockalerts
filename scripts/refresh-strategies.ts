@@ -29,6 +29,7 @@ import {
 } from "../lib/templates/screens";
 import type { ScreenedFile, ScreenedStrategy } from "../lib/templates/screened";
 
+throw new Error("FMP is retired (2026-09-18): do not run this script until it is rewritten against the replacement market-data provider.");
 const KEY = process.env.FMP_API_KEY;
 if (!KEY) throw new Error("FMP_API_KEY missing (set -a; source .env.local; set +a)");
 const BASE = "https://financialmodelingprep.com/stable";

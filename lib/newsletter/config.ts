@@ -4,6 +4,7 @@
  */
 import { anthropicConfigured } from "@/lib/ai/config";
 import { beehiivConfigured } from "@/lib/beehiiv/config";
+import { marketDataAvailable } from "@/lib/api/fmp";
 
 export type Slot = 1 | 2;
 export type IssueKind = "morning" | "closing";
@@ -82,8 +83,12 @@ export const NYSE_HOLIDAYS_STATIC: string[] = [
 
 export const NEWSLETTER_PAUSED_KEY = "newsletterBuildPaused";
 
-/** Everything the cron needs: Beehiiv (read + write), Anthropic, FMP. */
-export const newsletterConfigured = () => beehiivConfigured() && anthropicConfigured() && !!process.env.FMP_API_KEY;
+/** Everything the cron needs: Beehiiv (read + write), Anthropic, and a market-data provider. */
+export const newsletterConfigured = () => beehiivConfigured() && anthropicConfigured() && marketDataAvailable();
+
+/** Why a build request was refused with 503. */
+export const NEWSLETTER_UNCONFIGURED_MESSAGE =
+  "BEEHIIV_API_KEY, ANTHROPIC_API_KEY and a market-data provider must all be configured (FMP is retired; newsletter builds are paused until a replacement is wired)";
 
 /** Who gets the run report. */
 export const reportRecipients = (): string[] =>
