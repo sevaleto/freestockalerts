@@ -26,4 +26,6 @@ export const isOneShotAlertType = (alertType?: string | null) =>
 export const notificationFrequencyCopy = (alertType?: string | null) =>
   isOneShotAlertType(alertType)
     ? "You'll get one email when this triggers, then the alert pauses. Edit the trigger any time to re-arm it."
-    : "You'll get at most one email per trading day while this condition holds.";
+    : alertType === "VOLUME_SPIKE"
+      ? "Checked once after each close on the full day's volume. You'll get at most one email per trading day."
+      : "You'll get at most one email per trading day while this condition holds.";

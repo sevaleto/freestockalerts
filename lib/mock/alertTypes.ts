@@ -77,7 +77,7 @@ export const alertTypeOptions: AlertTypeOption[] = [
   {
     id: "VOLUME_SPIKE",
     name: "Volume Spike",
-    description: "Volume exceeds X times average.",
+    description: "Full-day volume reaches X times its 30-day average. Checked after the close.",
     icon: Waves,
     category: "Volume",
   },

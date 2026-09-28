@@ -6,7 +6,7 @@
  *
  * Everything here is descriptive. No line predicts what happens next.
  */
-import { getAvgVolume, getHistoricalCloses } from "@/lib/marketData/technicals";
+import { getAvgVolume, getHistoricalCloses, getSma } from "@/lib/marketData/technicals";
 
 export interface ContextQuote {
   ticker: string;
@@ -100,6 +100,15 @@ export async function buildAlertContext(quote: ContextQuote): Promise<AlertConte
   let avgVolume: number | null = null;
   let etfReturn: number | null = null;
   let spyReturn: number | null = null;
+  // Twelve Data quotes carry no moving averages; compute them from the cached daily bars.
+  if (!quote.sma50 || !quote.sma200) {
+    try {
+      const [s50, s200] = await Promise.all([getSma(ticker, 50), getSma(ticker, 200)]);
+      quote = { ...quote, sma50: quote.sma50 || s50?.sma, sma200: quote.sma200 || s200?.sma };
+    } catch (err) {
+      console.warn(`[context] moving averages failed for ${ticker}:`, err instanceof Error ? err.message : err);
+    }
+  }
   try {
     if (!quote.avgVolume && quote.volume) avgVolume = await getAvgVolume(ticker);
   } catch (err) {

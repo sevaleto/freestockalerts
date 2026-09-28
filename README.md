@@ -4,7 +4,8 @@
 > blocked in `lib/api/fmp.ts` (`FMP_DISABLED`). Quotes fall back to Alpha Vantage where a key exists,
 > indicators (RSI/SMA/earnings/avg volume) evaluate as unavailable, the newsletter build and the
 > strategy scan return 503 and do nothing, and `npm run refresh:strategies` refuses to run.
-> References to FMP below describe the previous wiring until a replacement provider is chosen.
+> Twelve Data now serves quotes, daily bars and search for alerts and landing pages (`lib/api/twelveData.ts`,
+> `lib/marketData/`). Other references to FMP below describe the previous wiring.
 
 Free stock alert platform with AI-written context. Users sign up (magic link or
 Google), create alerts on any ticker, and get an email when the alert fires.
@@ -391,13 +392,13 @@ and can be removed.
 
 | Type | Data source | Semantics |
 |---|---|---|
-| PRICE_ABOVE / PRICE_BELOW / PRICE_RECOVERY | FMP quote | price vs threshold |
-| PERCENT_CHANGE_DAY / _CUSTOM | FMP quote | abs(day change %) ≥ threshold |
-| VOLUME_SPIKE | FMP quote + 30-session average from `historical-price-eod/light` | volume / avgVolume ≥ multiplier |
-| FIFTY_TWO_WEEK_HIGH / _LOW | FMP quote | price ≥ yearHigh / ≤ yearLow |
-| RSI_OVERBOUGHT / RSI_OVERSOLD | FMP `technical-indicators/rsi` (14, 1day) | RSI ≥ / ≤ threshold |
-| SMA_CROSS_ABOVE / _BELOW | FMP `technical-indicators/sma` (period = triggerValue) | prior close on the other side of SMA and price now across it |
-| EARNINGS_REMINDER | FMP `earnings` | next earnings date within `triggerValue` days |
+| PRICE_ABOVE / PRICE_BELOW / PRICE_RECOVERY | Twelve Data `/quote` | price vs threshold |
+| PERCENT_CHANGE_DAY / _CUSTOM | Twelve Data `/quote` | abs(day change %) ≥ threshold |
+| VOLUME_SPIKE | Twelve Data daily bars, **after the close** (`/api/alerts/check-close`: 22:15 and 23:45 UTC, 12:30 UTC catch-up) | completed session volume / prior 30-session average ≥ multiplier; once per session. Intraday quote volume is a venue sample and is never used |
+| FIFTY_TWO_WEEK_HIGH / _LOW | Twelve Data `/quote` (`fifty_two_week`) | price ≥ yearHigh / ≤ yearLow |
+| RSI_OVERBOUGHT / RSI_OVERSOLD | Wilder RSI(14) computed from Twelve Data daily bars | RSI ≥ / ≤ threshold |
+| SMA_CROSS_ABOVE / _BELOW | SMA computed from Twelve Data daily bars (period = triggerValue) | prior close on the other side of SMA and price now across it |
+| EARNINGS_REMINDER | none yet (FMP retired; Twelve Data `/earnings` needs Venture) | next earnings date within `triggerValue` days |
 
 ## Local development
 

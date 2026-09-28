@@ -5,7 +5,7 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma/client";
 import { getStrategy } from "@/lib/templates/catalog";
 import { getBatchQuotes } from "@/lib/api/quotes";
-import { getAvgVolume, getRsi } from "@/lib/marketData/technicals";
+import { getLastSessionVolume, getRsi, getSma } from "@/lib/marketData/technicals";
 import { watchlistMetric, type WatchlistQuote } from "@/lib/lp/watchlistMetric";
 import { getLandingPageView } from "@/lib/lp/store";
 import { BUCKET_COOKIE, bucketFromCookie, isPageSlug } from "@/lib/cookies/bucket";
@@ -118,8 +118,17 @@ async function loadWatchlistRows(items: ProofItem[]): Promise<WatchlistRow[]> {
         if (item.alertType.startsWith("RSI_")) {
           const rsi = await getRsi(item.ticker);
           if (rsi) q.rsi = rsi.rsi;
-        } else if (item.alertType === "VOLUME_SPIKE" && !q.avgVolume) {
-          q.avgVolume = (await getAvgVolume(item.ticker)) ?? undefined;
+        } else if (item.alertType.startsWith("SMA_CROSS_")) {
+          const period = Math.round(item.triggerValue);
+          const snap = await getSma(item.ticker, period);
+          if (snap && period === 50) q.sma50 = snap.sma;
+          if (snap && period === 200) q.sma200 = snap.sma;
+        } else if (item.alertType === "VOLUME_SPIKE") {
+          // Intraday quote volume is a venue sample; show the last completed session instead.
+          const s = await getLastSessionVolume(item.ticker);
+          q.volume = s?.finalized ? s.volume : undefined;
+          q.avgVolume = s?.finalized ? s.avgVolume : undefined;
+          q.volumeFromLastSession = true;
         }
       } catch (err) {
         console.error(`[lp] indicator failed for ${item.ticker}:`, err);

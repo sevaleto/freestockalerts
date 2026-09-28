@@ -33,7 +33,7 @@ export function describeTrigger(item: DescribableItem): string {
     case "PERCENT_CHANGE_CUSTOM":
       return `moves ${v}% from today's price`;
     case "VOLUME_SPIKE":
-      return `trades at ${v}x its average volume`;
+      return `finishes the day at ${v}x its average volume`;
     case "RSI_OVERBOUGHT":
       return `RSI rises above ${v}`;
     case "RSI_OVERSOLD":

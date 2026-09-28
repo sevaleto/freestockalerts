@@ -110,6 +110,11 @@ export interface AppQuote {
   nextEarningsDate?: string;
   exchange?: string;
   isMarketOpen?: boolean;
+  /**
+   * False for Twelve Data quotes: intraday volume is a minority-venue sample,
+   * not full-market volume. Never compare it with an average or show it.
+   */
+  volumeIsConsolidated: boolean;
   source: "twelvedata";
 }
 
@@ -137,6 +142,7 @@ export function mapTdQuote(q: TdQuoteRaw): AppQuote | null {
     previousClose: num(q.previous_close) ?? 0,
     exchange: q.exchange,
     isMarketOpen: q.is_market_open,
+    volumeIsConsolidated: false,
     source: "twelvedata",
   };
 }

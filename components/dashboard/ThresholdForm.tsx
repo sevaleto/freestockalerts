@@ -50,7 +50,7 @@ export function ThresholdForm({ alertType, currentPrice, value, onChange }: Thre
           onChange={(e) => onChange(Number(e.target.value))}
           step={0.1}
         />
-        <p className="text-xs text-text-muted">Alert when volume exceeds this multiple of the average.</p>
+        <p className="text-xs text-text-muted">Alert when a full day’s volume reaches this multiple of its 30-day average. Checked once after the close, so the email arrives in the evening.</p>
       </div>
     );
   }

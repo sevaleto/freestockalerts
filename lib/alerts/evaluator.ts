@@ -1,6 +1,6 @@
 import { getBatchQuotes } from "@/lib/api/quotes";
 import { fetchFmpNextEarningsDate } from "@/lib/api/fmp";
-import { getAvgVolume, getRsi, getSma, type RsiSnapshot, type SmaSnapshot } from "@/lib/marketData/technicals";
+import { getLastSessionVolume, getRsi, getSma, type RsiSnapshot, type SessionVolume, type SmaSnapshot } from "@/lib/marketData/technicals";
 
 export interface AlertToEvaluate {
   id: string;
@@ -39,8 +39,6 @@ export interface IndicatorData {
   rsi?: RsiSnapshot | null;
   sma: Map<number, SmaSnapshot | null>;
   nextEarningsDate?: string | null;
-  /** 30-session average volume, fetched only for tickers with VOLUME_SPIKE alerts. */
-  avgVolume?: number | null;
 }
 
 export { ONE_SHOT_ALERT_TYPES } from "@/lib/alerts/frequency";
@@ -48,7 +46,6 @@ export { ONE_SHOT_ALERT_TYPES } from "@/lib/alerts/frequency";
 const RSI_TYPES = new Set(["RSI_OVERBOUGHT", "RSI_OVERSOLD"]);
 const SMA_TYPES = new Set(["SMA_CROSS_ABOVE", "SMA_CROSS_BELOW"]);
 const EARNINGS_TYPES = new Set(["EARNINGS_REMINDER"]);
-const VOLUME_TYPES = new Set(["VOLUME_SPIKE"]);
 
 const RSI_PERIOD = 14;
 const INDICATOR_CONCURRENCY = 5;
@@ -128,29 +125,16 @@ function evaluateSingleAlert(
       };
     }
 
-    case "VOLUME_SPIKE": {
-      const volume = quote.volume ?? 0;
-      // The quote feed has no average volume; use the fetched 30-session average.
-      const avgVolume = quote.avgVolume || indicators.avgVolume || 0;
-      if (avgVolume === 0) {
-        return {
-          alertId: alert.id,
-          triggered: false,
-          priceAtTrigger: price,
-          reason: "Average volume data unavailable",
-        };
-      }
-      const ratio = volume / avgVolume;
-      const triggered = ratio >= triggerValue;
+    case "VOLUME_SPIKE":
+      // Intraday volume from the quote feed is a venue sample, not the whole
+      // market. Volume spikes are judged after the close on the completed
+      // daily bar (see evaluateVolumeSpikesAtClose).
       return {
         alertId: alert.id,
-        triggered,
+        triggered: false,
         priceAtTrigger: price,
-        reason: triggered
-          ? `Volume spike ${ratio.toFixed(1)}x (threshold: ${triggerValue}x)`
-          : "No trigger",
+        reason: "Checked after the close on full-market volume",
       };
-    }
 
     case "FIFTY_TWO_WEEK_HIGH": {
       const yearHigh = quote.fiftyTwoWeekHigh ?? 0;
@@ -359,7 +343,6 @@ export async function loadIndicators(
   const rsiTickers = new Set<string>();
   const smaNeeds = new Map<string, Set<number>>();
   const earningsTickers = new Set<string>();
-  const volumeTickers = new Set<string>();
 
   for (const alert of alerts) {
     const ticker = alert.ticker.trim().toUpperCase();
@@ -372,7 +355,6 @@ export async function loadIndicators(
       }
     }
     if (EARNINGS_TYPES.has(alert.alertType)) earningsTickers.add(ticker);
-    if (VOLUME_TYPES.has(alert.alertType)) volumeTickers.add(ticker);
   }
 
   const rsiList = Array.from(rsiTickers);
@@ -402,14 +384,6 @@ export async function loadIndicators(
   );
   earningsList.forEach((t, i) => {
     get(t).nextEarningsDate = earningsResults[i] ?? null;
-  });
-
-  const volumeList = Array.from(volumeTickers);
-  const volumeResults = await mapWithConcurrency(volumeList, INDICATOR_CONCURRENCY, (t) =>
-    getAvgVolume(t)
-  );
-  volumeList.forEach((t, i) => {
-    get(t).avgVolume = volumeResults[i] ?? null;
   });
 
   return indicators;
@@ -445,3 +419,40 @@ export const evaluateAlerts = async (
     );
   });
 };
+
+/* ------------------------- post-close volume spikes ------------------------ */
+
+export interface CloseVolumeResult extends AlertEvaluationResult {
+  /** Session the decision was made on; the check route dedupes per session. */
+  sessionDate?: string;
+  session?: SessionVolume;
+}
+
+/** Pure decision for one VOLUME_SPIKE alert against a completed session. */
+export function volumeSpikeFromSession(alert: Pick<AlertToEvaluate, "id" | "triggerValue">, session: SessionVolume | null): CloseVolumeResult {
+  if (!session) return { alertId: alert.id, triggered: false, reason: "Daily bars unavailable" };
+  const base = { alertId: alert.id, priceAtTrigger: session.close, sessionDate: session.date, session };
+  if (!session.finalized) {
+    return { ...base, triggered: false, reason: `Full-market volume for ${session.date} not published yet` };
+  }
+  const triggered = session.ratio >= alert.triggerValue;
+  return {
+    ...base,
+    triggered,
+    reason: triggered
+      ? `Volume ${session.ratio.toFixed(1)}x its 30-session average on ${session.date} (threshold: ${alert.triggerValue}x)`
+      : "No trigger",
+  };
+}
+
+/**
+ * Evaluate VOLUME_SPIKE alerts on the latest completed session's full-market
+ * volume. One cached bars call per ticker. Other alert types are ignored.
+ */
+export async function evaluateVolumeSpikesAtClose(alerts: AlertToEvaluate[], now = new Date()): Promise<CloseVolumeResult[]> {
+  const spikes = alerts.filter((a) => a.alertType === "VOLUME_SPIKE");
+  const tickers = Array.from(new Set(spikes.map((a) => a.ticker.trim().toUpperCase())));
+  const sessions = await mapWithConcurrency(tickers, INDICATOR_CONCURRENCY, (t) => getLastSessionVolume(t, now));
+  const byTicker = new Map(tickers.map((t, i) => [t, sessions[i] ?? null]));
+  return spikes.map((a) => volumeSpikeFromSession(a, byTicker.get(a.ticker.trim().toUpperCase()) ?? null));
+}
