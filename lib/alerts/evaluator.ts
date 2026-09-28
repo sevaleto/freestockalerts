@@ -1,12 +1,6 @@
 import { getBatchQuotes } from "@/lib/api/quotes";
-import {
-  fetchFmpAvgVolume,
-  fetchFmpNextEarningsDate,
-  fetchFmpRsi,
-  fetchFmpSma,
-  type RsiSnapshot,
-  type SmaSnapshot,
-} from "@/lib/api/fmp";
+import { fetchFmpNextEarningsDate } from "@/lib/api/fmp";
+import { getAvgVolume, getRsi, getSma, type RsiSnapshot, type SmaSnapshot } from "@/lib/marketData/technicals";
 
 export interface AlertToEvaluate {
   id: string;
@@ -383,7 +377,7 @@ export async function loadIndicators(
 
   const rsiList = Array.from(rsiTickers);
   const rsiResults = await mapWithConcurrency(rsiList, INDICATOR_CONCURRENCY, (t) =>
-    fetchFmpRsi(t, RSI_PERIOD)
+    getRsi(t, RSI_PERIOD)
   );
   rsiList.forEach((t, i) => {
     get(t).rsi = rsiResults[i] ?? null;
@@ -394,7 +388,7 @@ export async function loadIndicators(
     for (const period of periods) smaList.push({ ticker, period });
   }
   const smaResults = await mapWithConcurrency(smaList, INDICATOR_CONCURRENCY, (item) =>
-    fetchFmpSma(item.ticker, item.period)
+    getSma(item.ticker, item.period)
   );
   smaList.forEach((item, i) => {
     get(item.ticker).sma.set(item.period, smaResults[i] ?? null);
@@ -412,7 +406,7 @@ export async function loadIndicators(
 
   const volumeList = Array.from(volumeTickers);
   const volumeResults = await mapWithConcurrency(volumeList, INDICATOR_CONCURRENCY, (t) =>
-    fetchFmpAvgVolume(t)
+    getAvgVolume(t)
   );
   volumeList.forEach((t, i) => {
     get(t).avgVolume = volumeResults[i] ?? null;

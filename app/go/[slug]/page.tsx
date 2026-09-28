@@ -5,7 +5,7 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma/client";
 import { getStrategy } from "@/lib/templates/catalog";
 import { getBatchQuotes } from "@/lib/api/quotes";
-import { fetchFmpAvgVolume, fetchFmpRsi } from "@/lib/api/fmp";
+import { getAvgVolume, getRsi } from "@/lib/marketData/technicals";
 import { watchlistMetric, type WatchlistQuote } from "@/lib/lp/watchlistMetric";
 import { getLandingPageView } from "@/lib/lp/store";
 import { BUCKET_COOKIE, bucketFromCookie, isPageSlug } from "@/lib/cookies/bucket";
@@ -116,10 +116,10 @@ async function loadWatchlistRows(items: ProofItem[]): Promise<WatchlistRow[]> {
       if (!q) return;
       try {
         if (item.alertType.startsWith("RSI_")) {
-          const rsi = await fetchFmpRsi(item.ticker);
+          const rsi = await getRsi(item.ticker);
           if (rsi) q.rsi = rsi.rsi;
         } else if (item.alertType === "VOLUME_SPIKE" && !q.avgVolume) {
-          q.avgVolume = (await fetchFmpAvgVolume(item.ticker)) ?? undefined;
+          q.avgVolume = (await getAvgVolume(item.ticker)) ?? undefined;
         }
       } catch (err) {
         console.error(`[lp] indicator failed for ${item.ticker}:`, err);
@@ -135,7 +135,7 @@ async function loadWatchlistRows(items: ProofItem[]): Promise<WatchlistRow[]> {
 
 /**
  * Template + watchlist quotes, cached per strategy for an hour. This is what
- * keeps per-visitor rendering from turning every ad click into FMP calls.
+ * keeps per-visitor rendering from turning every ad click into data-provider calls.
  */
 const loadProofCached = (templateSlug: string): Promise<Proof | null> =>
   unstable_cache(

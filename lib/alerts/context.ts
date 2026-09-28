@@ -6,7 +6,7 @@
  *
  * Everything here is descriptive. No line predicts what happens next.
  */
-import { fetchFmpAvgVolume, fetchFmpHistoricalCloses } from "@/lib/api/fmp";
+import { getAvgVolume, getHistoricalCloses } from "@/lib/marketData/technicals";
 
 export interface ContextQuote {
   ticker: string;
@@ -101,13 +101,13 @@ export async function buildAlertContext(quote: ContextQuote): Promise<AlertConte
   let etfReturn: number | null = null;
   let spyReturn: number | null = null;
   try {
-    if (!quote.avgVolume && quote.volume) avgVolume = await fetchFmpAvgVolume(ticker);
+    if (!quote.avgVolume && quote.volume) avgVolume = await getAvgVolume(ticker);
   } catch (err) {
     console.warn(`[context] avg volume failed for ${ticker}:`, err instanceof Error ? err.message : err);
   }
   if (SECTOR_ETFS.has(ticker)) {
     try {
-      const [etf, spy] = await Promise.all([fetchFmpHistoricalCloses(ticker), fetchFmpHistoricalCloses("SPY")]);
+      const [etf, spy] = await Promise.all([getHistoricalCloses(ticker), getHistoricalCloses("SPY")]);
       etfReturn = trailingReturn(etf);
       spyReturn = trailingReturn(spy);
     } catch (err) {
