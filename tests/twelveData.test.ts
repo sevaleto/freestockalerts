@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mapTdQuote, parseTdQuoteResponse, parseTdSymbolSearch, parseTdTimeSeries, fetchTdBatchQuotes, TwelveDataError } from "../lib/api/twelveData";
 
-// Shapes follow https://twelvedata.com/docs (numbers as strings). Re-check against a live payload once the key works.
+// Shapes follow https://twelvedata.com/docs and were checked against live /quote, /time_series and /symbol_search responses on 2026-09-28.
 const AAPL = {
   symbol: "AAPL",
   name: "Apple Inc.",
