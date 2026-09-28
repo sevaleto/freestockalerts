@@ -11,7 +11,6 @@ import {
   fetchFmpLatestStockNews,
   fetchFmpMovers,
   fetchFmpSectorSnapshot,
-  fetchFmpTreasuryRates,
   type FmpEconomicEvent,
   type FmpGradeNews,
   type FmpMarketNewsItem,
@@ -20,6 +19,7 @@ import {
   type FmpSectorChange,
   type FmpTreasuryDay,
 } from "@/lib/api/fmp";
+import { fetchTreasuryYields } from "@/lib/api/treasury";
 import { NEWSLETTER, type IssueKind } from "./config";
 import { longDate, shiftDateKey, type DateKey } from "./dates";
 import { dropNonStocks, groupCandidates, renderNewsBlock, type Candidate } from "./topics";
@@ -101,7 +101,7 @@ export async function gatherFacts(kind: IssueKind, dateKey: DateKey, deps: Facts
     attempt("economic calendar", missing, () => (deps.economic ?? fetchFmpEconomicCalendar)(kind === "morning" ? dateKey : dateKey, dateKey), [] as FmpEconomicEvent[]),
     kind === "morning" ? attempt("earnings calendar", missing, () => (deps.earnings ?? fetchFmpEarningsCalendar)(dateKey, dateKey), [] as { symbol: string }[]) : Promise.resolve([] as { symbol: string }[]),
     attempt("analyst grades", missing, () => (deps.grades ?? fetchFmpGradesNews)(), [] as FmpGradeNews[]),
-    attempt("treasury rates", missing, () => (deps.treasury ?? fetchFmpTreasuryRates)(shiftDateKey(dateKey, -5), dateKey), [] as FmpTreasuryDay[]),
+    attempt("treasury rates", missing, () => (deps.treasury ?? fetchTreasuryYields)(shiftDateKey(dateKey, -5), dateKey), [] as FmpTreasuryDay[]),
   ]);
 
   const lookback = NEWSLETTER[kind].newsLookbackHours;

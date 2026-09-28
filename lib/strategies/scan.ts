@@ -6,12 +6,16 @@
  *   GET /api/strategies/scan?strategy=insider|analyst|all&dryRun=1
  */
 import type { PrismaClient, StrategySignal } from "@prisma/client";
-import { fetchFmpDailyBars, fetchFmpGrades, fetchFmpGradesLatest, fetchFmpInsiderPurchases, fetchFmpQuote } from "@/lib/api/fmp";
+import { fetchFmpDailyBars, fetchFmpGrades, fetchFmpGradesLatest, fetchFmpQuote } from "@/lib/api/fmp";
+import { fetchTdDailyBars } from "@/lib/api/twelveData";
+import { fetchSharesOutstanding } from "@/lib/sec/edgar";
+import { sma } from "@/lib/marketData/indicators";
+import { MIN_FULL_MARKET_SHARE } from "@/lib/marketData/technicals";
 import { getStrategy } from "@/lib/templates/catalog";
 import { gatherAlertFacts, writeAlertContext } from "@/lib/ai/alertContext";
-import { ANALYST, ANALYST_SLUG, INSIDER, INSIDER_SLUG } from "./config";
+import { ANALYST, ANALYST_SLUG, INSIDER, INSIDER_SLUG, UNIVERSE } from "./config";
 import { deliverSignal } from "./deliver";
-import { daysAgo, isoDay, type DailyBar, type QuoteSnapshot } from "./market";
+import { averageVolume, daysAgo, isoDay, type DailyBar, type QuoteSnapshot } from "./market";
 import { normalizeInsiderTransaction, type NormalizedInsiderTransaction, type RawInsiderTransaction } from "./insider/normalize";
 import { dedupeTransactions, evaluateInsiderSymbol, groupBySymbol, isQualifyingPurchase, type InsiderEvaluation } from "./insider/evaluate";
 import { normalizeAnalystAction, firmKey, type NormalizedAnalystAction, type RawAnalystAction } from "./analyst/normalize";
@@ -80,6 +84,44 @@ async function quoteSnapshot(symbol: string, now: Date): Promise<QuoteSnapshot |
     sma50: typeof q.sma50 === "number" && q.sma50 > 0 ? q.sma50 : null,
     changePercent: q.changePercent ?? 0,
     asOf: now.toISOString(),
+  };
+}
+
+/**
+ * Insider-scan inputs from daily bars (Twelve Data) plus SEC share counts, run
+ * after the close. The newest bar is today's completed session, which carries
+ * full-market volume; the intraday quote's volume is a venue sample and is not
+ * used. A bar still showing the venue sample is treated as zero volume, so the
+ * volume confirmation fails safe rather than firing on bad data.
+ */
+export async function insiderSnapshot(symbol: string, issuerCik: string | null, companyName: string | null, now: Date): Promise<{ quote: QuoteSnapshot; bars: DailyBar[] } | null> {
+  const bars: DailyBar[] = await fetchTdDailyBars(symbol, 260);
+  const last = bars[bars.length - 1];
+  if (!last || !(last.close > 0)) return null;
+  const today = isoDay(now);
+  const avg = averageVolume(bars, UNIVERSE.avgVolumeSessions, today);
+  const volume = last.date === today && avg && last.volume < MIN_FULL_MARKET_SHARE * avg ? 0 : last.volume;
+  const prev = bars[bars.length - 2]?.close;
+  let shares: number | null = null;
+  if (issuerCik) {
+    try {
+      shares = await fetchSharesOutstanding(issuerCik);
+    } catch {
+      shares = null;
+    }
+  }
+  return {
+    bars,
+    quote: {
+      symbol,
+      companyName: companyName ?? symbol,
+      price: last.close,
+      marketCap: shares ? shares * last.close : 0,
+      volume,
+      sma50: sma(bars.map((b) => b.close), 50),
+      changePercent: prev ? ((last.close - prev) / prev) * 100 : 0,
+      asOf: now.toISOString(),
+    },
   };
 }
 
@@ -171,23 +213,23 @@ async function finishRun(db: PrismaClient, runId: string | null, summary: ScanSu
 /* ------------------------------- insider --------------------------------- */
 
 export async function runInsiderScan(opts: ScanOptions): Promise<ScanSummary> {
-  const { db, now = new Date(), dryRun = false, deliver = !dryRun, log = () => {}, maxPages = DEFAULTS.maxPages, concurrency = DEFAULTS.concurrency } = opts;
+  const { db, now = new Date(), dryRun = false, deliver = !dryRun, log = () => {}, concurrency = DEFAULTS.concurrency } = opts;
   const strategy = getStrategy(INSIDER_SLUG);
   const summary: ScanSummary = { strategySlug: INSIDER_SLUG, dryRun, startedAt: now.toISOString(), finishedAt: "", sourceRows: 0, candidates: 0, qualified: 0, signalsCreated: 0, emailsSent: 0, created: [], wouldCreate: [], skipped: [], rejected: [] };
   const run = dryRun ? null : await db.strategyScanRun.create({ data: { strategySlug: INSIDER_SLUG, dryRun } });
 
   try {
     const start = isoDay(daysAgo(INSIDER.lookbackDays, now));
+    // Open-market purchases read from SEC EDGAR by /api/insiders/ingest, newest filing first.
+    const rows = await db.secInsiderPurchase.findMany({
+      where: { transactionDate: { gte: new Date(`${start}T00:00:00Z`) } },
+      orderBy: [{ filingDate: "desc" }, { accession: "asc" }, { seq: "asc" }],
+      select: { raw: true },
+    });
     const raw: NormalizedInsiderTransaction[] = [];
-    for (let page = 0; page < maxPages; page++) {
-      const rows = (await fetchFmpInsiderPurchases(page)) as RawInsiderTransaction[];
-      if (!rows.length) break;
-      for (const r of rows) {
-        const n = normalizeInsiderTransaction(r);
-        if (n) raw.push(n);
-      }
-      const oldest = rows[rows.length - 1]?.filingDate ?? "";
-      if (oldest && oldest < start) break;
+    for (const r of rows) {
+      const n = normalizeInsiderTransaction(r.raw as RawInsiderTransaction);
+      if (n) raw.push(n);
     }
     const deduped = dedupeTransactions(raw);
     const qualifying = deduped.filter((t) => isQualifyingPurchase(t, now).ok);
@@ -225,11 +267,10 @@ export async function runInsiderScan(opts: ScanOptions): Promise<ScanSummary> {
     const bySymbol = groupBySymbol(qualifying);
     summary.candidates = bySymbol.size;
     const evaluations = await mapPool([...bySymbol.entries()], concurrency, async ([symbol, purchases]): Promise<InsiderEvaluation | null> => {
-      const quote = await quoteSnapshot(symbol, now);
-      if (!quote) return null;
-      const earliest = [...purchases].sort((a, b) => (a.transactionDate < b.transactionDate ? -1 : 1))[0].transactionDate;
-      const bars: DailyBar[] = await fetchFmpDailyBars(symbol, isoDay(daysAgo(45, new Date(earliest + "T00:00:00Z"))));
-      return evaluateInsiderSymbol({ symbol, purchases, quote, bars, now });
+      const first = purchases[0].raw;
+      const snap = await insiderSnapshot(symbol, typeof first.companyCik === "string" ? first.companyCik : null, typeof first.companyName === "string" ? first.companyName : null, now);
+      if (!snap) return null;
+      return evaluateInsiderSymbol({ symbol, purchases, quote: snap.quote, bars: snap.bars, now });
     });
 
     for (const [i, ev] of evaluations.entries()) {

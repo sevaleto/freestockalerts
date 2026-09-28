@@ -6,6 +6,15 @@
 > strategy scan return 503 and do nothing, and `npm run refresh:strategies` refuses to run.
 > Twelve Data now serves quotes, daily bars and search for alerts and landing pages (`lib/api/twelveData.ts`,
 > `lib/marketData/`). Other references to FMP below describe the previous wiring.
+>
+> **Insider purchases come from SEC EDGAR** (`lib/sec/`). `/api/insiders/ingest` (every 20 minutes) reads each
+> business day's Form 4 filings from EDGAR's daily index (published the evening of that day), parses the
+> ownership XML and stores open-market purchases (code P, non-derivative; amendments skipped) in
+> `SecInsiderPurchase`. Runs are time-boxed and resume from `SecForm4Filing`; finished days are recorded in
+> `SecIndexDay`. About 320 filings per day at 8 requests/second (SEC limit 10). The insider scan (23:10 UTC)
+> reads that table, takes price, full-market volume and the 50-day average from Twelve Data's completed daily
+> bar, and market cap from SEC XBRL shares outstanding. **Treasury yields** come from Treasury.gov's daily CSV
+> (`lib/api/treasury.ts`).
 
 Free stock alert platform with AI-written context. Users sign up (magic link or
 Google), create alerts on any ticker, and get an email when the alert fires.
