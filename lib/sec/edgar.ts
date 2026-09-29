@@ -5,7 +5,7 @@
  */
 import { latestSharesOutstanding, parseFormIndex, type FormIndexEntry } from "./form4";
 
-const USER_AGENT = process.env.SEC_USER_AGENT || "Trading Tips manuel@tradingtips.com";
+const USER_AGENT = process.env.SEC_USER_AGENT || "Manuel Jesus sevaleto@gmail.com";
 const MIN_GAP_MS = 125; // 8 requests per second across this process
 
 export class EdgarError extends Error {
