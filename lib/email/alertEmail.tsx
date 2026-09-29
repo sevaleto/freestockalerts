@@ -1,3 +1,4 @@
+import { MARKET_DATA_CREDIT_PREFIX, MARKET_DATA_PROVIDER, TWELVE_DATA_URL } from "@/lib/marketData/attribution";
 import {
   Body,
   Container,
@@ -65,6 +66,12 @@ export function AlertEmail({
             </Text>
             <Text style={{ margin: 0, color: "#0F172A" }}>
               Volume: {volume}
+            </Text>
+            <Text style={{ margin: "6px 0 0", fontSize: "11px", color: "#94A3B8" }}>
+              {MARKET_DATA_CREDIT_PREFIX}{" "}
+              <Link href={TWELVE_DATA_URL} style={{ color: "#64748B" }}>
+                {MARKET_DATA_PROVIDER}
+              </Link>
             </Text>
           </Section>
           {contextLines.length > 0 ? (

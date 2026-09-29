@@ -194,7 +194,7 @@ export function evaluateInsiderSymbol({ symbol, purchases, quote, bars, now = ne
       marketCap: quote.marketCap,
       scoreBreakdown: breakdown,
       dataAsOf: quote.asOf,
-      source: "SEC Form 4 filings via Financial Modeling Prep",
+      source: "SEC Form 4 filings (EDGAR)",
     },
   };
 }

@@ -1,4 +1,5 @@
 import { Body, Container, Head, Heading, Hr, Html, Link, Preview, Section, Text } from "@react-email/components";
+import { MARKET_DATA_CREDIT_PREFIX, MARKET_DATA_PROVIDER, TWELVE_DATA_URL } from "@/lib/marketData/attribution";
 import type { SignalRow } from "@/lib/strategies/present";
 
 interface SignalEmailProps {
@@ -78,6 +79,12 @@ export function SignalEmail({ strategyName, strategySlug, symbol, subject, expla
           </Section>
 
           <Text style={{ fontSize: "12px", color: "#64748B", marginTop: "16px" }}>Source: {sourceLine}</Text>
+          <Text style={{ fontSize: "12px", color: "#64748B", marginTop: "4px" }}>
+            {MARKET_DATA_CREDIT_PREFIX}{" "}
+            <Link href={TWELVE_DATA_URL} style={{ color: "#64748B" }}>
+              {MARKET_DATA_PROVIDER}
+            </Link>
+          </Text>
 
           {adHtml ? <div style={{ marginTop: "28px" }} dangerouslySetInnerHTML={{ __html: adHtml }} /> : null}
           <Hr style={{ marginTop: "24px", borderColor: "#E2E8F0" }} />

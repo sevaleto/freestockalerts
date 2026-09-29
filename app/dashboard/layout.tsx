@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { getAdminUser } from "@/lib/auth/admin";
+import { DataAttribution } from "@/components/shared/DataAttribution";
 
 export default async function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default async function DashboardLayout({
       <Sidebar showAdmin={!!admin} />
       <main className="flex-1 px-6 py-8 md:px-10">
         {children}
+        <DataAttribution className="mt-10" />
       </main>
     </div>
   );
