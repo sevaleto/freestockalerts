@@ -1,38 +1,17 @@
-import { mockQuotes, mockQuoteMap } from "@/lib/mock/quotes";
+import { mockQuoteMap } from "@/lib/mock/quotes";
 import { mockTickers } from "@/lib/mock/tickers";
 import { fetchAlphaVantageQuote } from "@/lib/api/alphaVantage";
-import { fetchFmpBatchQuotes, fetchFmpQuote, FmpError, searchFmpTickers } from "@/lib/api/fmp";
-import { Resend } from "resend";
+import { fetchTdBatchQuotes, fetchTdQuote, searchTdSymbols } from "@/lib/api/twelveData";
 
-// Rate limit alert — only send once per hour to avoid spam
-let lastRateLimitAlert = 0;
-const RATE_LIMIT_ALERT_COOLDOWN = 60 * 60 * 1000; // 1 hour
-
-async function sendRateLimitAlert() {
-  const now = Date.now();
-  if (now - lastRateLimitAlert < RATE_LIMIT_ALERT_COOLDOWN) return;
-  lastRateLimitAlert = now;
-
-  try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
-      from: process.env.RESEND_FROM || "FreeStockAlerts <alerts@freestockalerts.ai>",
-      to: "manuel@tradingtips.com",
-      subject: "⚠️ FreeStockAlerts — FMP API Rate Limit Hit",
-      html: `
-        <h2>FMP API Rate Limit Reached</h2>
-        <p>The FMP Basic plan (250 calls/day) rate limit was hit at <strong>${new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" })}</strong>.</p>
-        <p>Falling back to Alpha Vantage, but quote data may be delayed or incomplete.</p>
-        <p><strong>Action needed:</strong> Consider upgrading to FMP Starter ($29/mo) at <a href="https://site.financialmodelingprep.com/datasets/market-data-real-time">FMP Pricing</a>.</p>
-      `,
-    });
-  } catch {
-    console.error("Failed to send FMP rate limit alert email");
-  }
-}
+/**
+ * Quote access for the app. Twelve Data is the primary source (FMP was retired
+ * 2026-09-18); Alpha Vantage's free GLOBAL_QUOTE is the fallback when Twelve
+ * Data is unconfigured or returns nothing. Without TWELVE_DATA_API_KEY the
+ * Twelve Data calls throw immediately and the fallback runs.
+ */
 
 const cache = new Map<string, { data: any; expiresAt: number }>();
-const CACHE_TTL_MS = 60_000; // 1 minute — FMP Premium has generous limits
+const CACHE_TTL_MS = 60_000;
 
 const cacheGet = (key: string) => {
   const entry = cache.get(key);
@@ -54,13 +33,11 @@ export const getQuote = async (ticker: string) => {
 
   let quote = null;
   try {
-    quote = await fetchFmpQuote(ticker);
+    quote = await fetchTdQuote(ticker);
   } catch (error) {
-    if (error instanceof FmpError && error.code === "RATE_LIMIT") {
-      sendRateLimitAlert(); // fire-and-forget, don't await
-    }
-    quote = await fetchAlphaVantageQuote(ticker);
+    console.warn(`[getQuote] Twelve Data failed for ${ticker}:`, error instanceof Error ? error.message : error);
   }
+  if (!quote) quote = await fetchAlphaVantageQuote(ticker);
 
   if (!quote) {
     console.warn(`[getQuote] No real quote available for ${ticker} — returning null (no mock fallback)`);
@@ -72,30 +49,26 @@ export const getQuote = async (ticker: string) => {
 };
 
 export const getBatchQuotes = async (tickers: string[], options?: { skipMock?: boolean }) => {
-  const cacheKey = `batch:${tickers.sort().join(",")}`;
+  const cacheKey = `batch:${[...tickers].sort().join(",")}`;
   const cached = cacheGet(cacheKey);
   if (cached) return cached;
 
   let quotes = [] as any[];
   try {
-    quotes = await fetchFmpBatchQuotes(tickers);
+    quotes = await fetchTdBatchQuotes(tickers);
   } catch (error) {
-    if (error instanceof FmpError && error.code === "RATE_LIMIT") {
-      sendRateLimitAlert(); // fire-and-forget
-    }
+    console.warn(`[getBatchQuotes] Twelve Data failed:`, error instanceof Error ? error.message : error);
     quotes = [];
   }
 
-  // Fallback: if FMP batch returned nothing, try Alpha Vantage individually
+  // Fallback: if Twelve Data returned nothing, try Alpha Vantage individually
   if (quotes.length === 0) {
-    console.warn(`[getBatchQuotes] FMP batch empty — falling back to Alpha Vantage for ${tickers.length} tickers`);
+    console.warn(`[getBatchQuotes] Twelve Data empty — falling back to Alpha Vantage for ${tickers.length} tickers`);
     const AV_CONCURRENCY = 5;
     const avResults: any[] = [];
     for (let i = 0; i < tickers.length; i += AV_CONCURRENCY) {
       const batch = tickers.slice(i, i + AV_CONCURRENCY);
-      const settled = await Promise.allSettled(
-        batch.map((t) => fetchAlphaVantageQuote(t))
-      );
+      const settled = await Promise.allSettled(batch.map((t) => fetchAlphaVantageQuote(t)));
       for (const r of settled) {
         if (r.status === "fulfilled" && r.value) avResults.push(r.value);
       }
@@ -104,9 +77,7 @@ export const getBatchQuotes = async (tickers: string[], options?: { skipMock?: b
   }
 
   if (quotes.length === 0 && !options?.skipMock) {
-    quotes = tickers
-      .map((ticker) => mockQuoteMap.get(ticker))
-      .filter(Boolean) as any[];
+    quotes = tickers.map((ticker) => mockQuoteMap.get(ticker)).filter(Boolean) as any[];
   }
   cacheSet(cacheKey, quotes);
   return quotes;
@@ -116,10 +87,10 @@ export const searchTickers = async (query: string) => {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return [];
   try {
-    const results = await searchFmpTickers(query);
+    const results = await searchTdSymbols(query);
     if (results.length > 0) return results;
   } catch (error) {
-    // fall through to mock fallback
+    // fall through to the built-in list
   }
 
   return mockTickers

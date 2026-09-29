@@ -2,6 +2,7 @@ import { CheckCircle2 } from "lucide-react";
 import type { DescribableItem } from "@/lib/alerts/describe";
 import type { WatchlistMetric } from "@/lib/lp/watchlistMetric";
 import { formatPrice } from "@/lib/utils/formatters";
+import { DataAttribution } from "@/components/shared/DataAttribution";
 
 export interface WatchlistRow {
   item: DescribableItem;
@@ -64,6 +65,9 @@ export function WatchlistPreview({ rows, title = "Watchlist preview" }: Watchlis
           </li>
         ))}
       </ul>
+      <div className="border-t border-lp-border px-4 py-2.5 sm:px-5">
+        <DataAttribution />
+      </div>
     </div>
   );
 }

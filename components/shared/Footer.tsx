@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 import { useCookieConsent } from "@/lib/cookies/CookieConsentContext";
+import { DataAttribution } from "@/components/shared/DataAttribution";
 
 export function Footer() {
   const { openBanner } = useCookieConsent();
@@ -26,6 +27,7 @@ export function Footer() {
       </div>
       <div className="mx-auto mt-6 w-full max-w-[1440px] space-y-1 px-5 text-xs text-text-muted sm:px-8 lg:px-12">
         <p>© 2026 FreeStockAlerts.AI, a Wealthpire, Inc. property. Educational information only. Not investment advice.</p>
+        <DataAttribution />
       </div>
     </footer>
   );

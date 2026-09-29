@@ -1,5 +1,6 @@
 import { ExternalLink, Inbox } from "lucide-react";
 import { formatDataTimestamp, maxScoreFor, signalAiContext, signalRows, type SignalLike } from "@/lib/strategies/present";
+import { DataAttribution } from "@/components/shared/DataAttribution";
 
 interface SignalListProps {
   signals: SignalLike[];
@@ -88,7 +89,8 @@ export function SignalList({ signals, lastScanAt, strategyName, title = "Recent 
           })}
         </ol>
       )}
-      <p className="mt-4 text-xs text-lp-muted">Source: SEC filings and analyst rating data via Financial Modeling Prep. Educational information only, not investment advice.</p>
+      <p className="mt-4 text-xs text-lp-muted">Source: SEC Form 4 filings (EDGAR); signals before October 2026 used Financial Modeling Prep data. Educational information only, not investment advice.</p>
+      <DataAttribution className="mt-1" />
     </div>
   );
 }

@@ -682,3 +682,44 @@ model NewsletterIssue {
   @@index([ticker, issueDate])
   @@index([createdAt])
 }
+
+/// One EDGAR Form 4 filing the insider ingest has read, whether or not it held a purchase.
+/// Lets a time-boxed run resume without re-fetching filings already processed.
+model SecForm4Filing {
+  accession   String   @id
+  filedDate   DateTime
+  issuerCik   String?
+  symbol      String?
+  purchases   Int      @default(0)
+  /// Set when the filing could not be parsed (kept so it is not retried forever).
+  error       String?
+  processedAt DateTime @default(now())
+
+  @@index([filedDate])
+}
+
+/// Open-market purchases (Form 4, non-derivative, code P) in the provider-neutral
+/// raw shape the insider scan normalizes. Source: SEC EDGAR.
+model SecInsiderPurchase {
+  id              String   @id @default(cuid())
+  accession       String
+  /// Row position in the filing's non-derivative table.
+  seq             Int
+  symbol          String
+  filingDate      DateTime
+  transactionDate DateTime
+  raw             Json
+  createdAt       DateTime @default(now())
+
+  @@unique([accession, seq])
+  @@index([filingDate])
+  @@index([transactionDate])
+  @@index([symbol, transactionDate])
+}
+
+/// Daily-index days (YYYY-MM-DD) whose Form 4 filings have all been read.
+model SecIndexDay {
+  date        String   @id
+  filings     Int
+  completedAt DateTime @default(now())
+}

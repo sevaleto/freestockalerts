@@ -5,12 +5,24 @@
       "schedule": "*/5 13-21 * * 1-5"
     },
     {
+      "path": "/api/alerts/check-close",
+      "schedule": "15 22 * * 1-5"
+    },
+    {
+      "path": "/api/alerts/check-close",
+      "schedule": "45 23 * * 1-5"
+    },
+    {
+      "path": "/api/alerts/check-close",
+      "schedule": "30 12 * * 1-5"
+    },
+    {
       "path": "/api/email/verify-pending",
       "schedule": "17 * * * *"
     },
     {
       "path": "/api/strategies/scan",
-      "schedule": "40 21 * * 1-5"
+      "schedule": "10 23 * * 1-5"
     },
     {
       "path": "/api/subscribers/sync",
@@ -31,6 +43,10 @@
     {
       "path": "/api/newsletter/build/2",
       "schedule": "35 21 * * 1-5"
+    },
+    {
+      "path": "/api/insiders/ingest",
+      "schedule": "*/20 * * * *"
     }
   ]
 }

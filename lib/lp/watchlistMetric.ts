@@ -15,6 +15,8 @@ export interface WatchlistQuote {
   sma50?: number;
   sma200?: number;
   rsi?: number;
+  /** Volume and average describe the last completed session, not today so far. */
+  volumeFromLastSession?: boolean;
 }
 
 export interface WatchlistMetric {
@@ -63,7 +65,7 @@ export function watchlistMetric(item: DescribableItem, q: WatchlistQuote): Watch
     case "VOLUME_SPIKE": {
       if (!q.volume || !q.avgVolume) return null;
       const ratio = q.volume / q.avgVolume;
-      return { label: `${ratio.toFixed(1)}x avg volume`, met: ratio >= v };
+      return { label: `${ratio.toFixed(1)}x avg volume${q.volumeFromLastSession ? " last session" : ""}`, met: ratio >= v };
     }
     case "PERCENT_CHANGE_DAY":
     case "PERCENT_CHANGE_CUSTOM": {

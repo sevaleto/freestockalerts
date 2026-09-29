@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCookieConsent } from "@/lib/cookies/CookieConsentContext";
+import { DataAttribution } from "@/components/shared/DataAttribution";
 
 /** Legal-only footer for ad landing pages. No navigation, no exits. */
 export function LpFooter() {
@@ -10,6 +11,7 @@ export function LpFooter() {
     <footer className="border-t border-lp-border/70 bg-white py-8">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-5 text-xs sm:px-8 lg:px-12 text-text-muted md:flex-row md:items-center md:justify-between">
         <p>© 2026 FreeStockAlerts.AI · Wealthpire, Inc. Not investment advice.</p>
+        <DataAttribution />
         <div className="flex flex-wrap gap-5">
           <Link href="/privacy" className="hover:text-text-primary">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-text-primary">Terms of Use</Link>

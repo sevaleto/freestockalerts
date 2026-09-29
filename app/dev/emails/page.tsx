@@ -74,7 +74,7 @@ const insiderSignal: SignalLike = {
     marketCap: 9.9e9,
     scoreBreakdown: { breakout: 2, multipleInsiders: 2, largePurchase: 1 },
     dataAsOf: "2026-09-05T21:40:00Z",
-    source: "SEC Form 4 filings via Financial Modeling Prep",
+    source: "SEC Form 4 filings (EDGAR)",
     aiContext: {
       text: "",
       paragraphs: [
