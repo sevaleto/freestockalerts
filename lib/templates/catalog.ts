@@ -175,7 +175,7 @@ const rulesFor = (slug: ScreenedSlug) => SCREENS[slug].rules.map((r) => r.label)
 const universeFor = (slug: ScreenedSlug) => SCREENS[slug].universe.label;
 
 const SCREEN_METHOD =
-  "The list is rebuilt by a script against Financial Modeling Prep data: it pulls the universe from the company screener, applies the price rules to each quote, fetches fundamentals only for the names that survive, keeps the ones that pass every rule, ranks them, and stores the top 10 with the data it saw. The page and the alerts come from that stored list, so what you see is what was screened, as of the refresh date.";
+  "The list is rebuilt by a script: it takes US common stocks listed on the NYSE and Nasdaq, applies the price rules to Twelve Data quotes and daily bars, computes fundamentals from each survivor's SEC filings (trailing twelve months where the filings allow), keeps the ones that pass every rule, ranks them, and stores the top 10 with the data it saw. The page and the alerts come from that stored list, so what you see is what was screened, as of the refresh date.";
 
 const NO_GUIDANCE = "Company guidance (raised, maintained, cut) is not available from the data provider, so it is not part of the screen. The most recent EPS surprise is used as a limited proxy for obvious impairment where noted.";
 
@@ -259,7 +259,7 @@ export const STRATEGIES: StrategyDefinition[] = [
     ],
     triggerSummary: "Break above the earnings-day high, or a fresh 52-week high",
     disqualifiers: [
-      "Missed on either EPS or revenue, or the estimate was not available.",
+      "Missed the EPS estimate, revenue fell from the same quarter a year earlier, or either figure was not available.",
       "Fell, or rose less than 3%, on the reaction day.",
       "Reaction-day volume under 1.5× the prior average.",
       "Gave the move back: trading below the pre-report close.",
@@ -277,10 +277,10 @@ export const STRATEGIES: StrategyDefinition[] = [
       "Guidance is not in the data, so a company that beat the quarter but cut its outlook could still qualify.",
       "Broad-market selling can pull a strong report back below its pre-report close regardless of the results.",
     ],
-    methodology: `${SCREEN_METHOD} Reports are pulled from the earnings calendar for the last 45 days; the reaction day is the report date or the following session, whichever carried more volume, so after-the-close reporters are measured on the right day.`,
+    methodology: `${SCREEN_METHOD} Reports are identified from earnings releases filed with the SEC (Form 8-K, Item 2.02) in the last 45 days; the reaction day is the report date or the following session, whichever carried more volume, so after-the-close reporters are measured on the right day.`,
     dataLimitations: [
       NO_GUIDANCE,
-      "EPS and revenue estimates are consensus figures from the provider; companies without an estimate on file cannot qualify.",
+      "EPS estimates are consensus figures from the provider. Revenue estimates are not in the data, so revenue is compared with the same quarter a year earlier, from SEC filings; a company whose quarterly filing is not yet available cannot qualify.",
     ],
     riskSummary:
       "A positive report can still reverse, and the earnings-day high is a reference level, not a forecast. Treat an alert as a prompt to read the report and the reaction, not as a signal to buy.",
@@ -300,7 +300,7 @@ export const STRATEGIES: StrategyDefinition[] = [
       whyTitle: "Why it triggered",
       why: "Cleared the $83.50 high set on the reaction day",
       context:
-        "XYZ reported on Aug 6, beat on EPS and revenue, and rose 7.2% on 2.6x volume. It has now traded above the $83.50 earnings-day high on 1.8x average volume, above both its 50- and 200-day averages. Investors often watch whether a break like this holds into the close and over the next few sessions.",
+        "XYZ reported on Aug 6, beat the EPS estimate with revenue up 9% from a year earlier, and rose 7.2% on 2.6x volume. It has now traded above the $83.50 earnings-day high on 1.8x average volume, above both its 50- and 200-day averages. Investors often watch whether a break like this holds into the close and over the next few sessions.",
     },
     related: ["quality-breakout-radar", "earnings-calendar-alerts", "under-the-radar-breakouts"],
     seo: {
