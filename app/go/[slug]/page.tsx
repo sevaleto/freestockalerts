@@ -210,7 +210,7 @@ export default async function LandingPage(props: LpPageProps) {
           <div className="flex flex-col gap-6">
             <PhoneEmailPreview alert={lp.sampleAlert} />
             {isSignal && strategy ? (
-              <SignalList signals={recent?.signals ?? []} lastScanAt={recent?.lastScan?.finishedAt ?? recent?.lastScan?.startedAt ?? null} strategyName={strategy.name} title="Latest confirmed signals" compact />
+              <SignalList signals={recent?.signals ?? []} lastScanAt={recent?.lastScan?.finishedAt ?? recent?.lastScan?.startedAt ?? null} strategyName={strategy.name} strategySlug={strategy.slug} title="Latest confirmed signals" compact />
             ) : (
               <WatchlistPreview rows={rows} title={lp.proofTitle} />
             )}
