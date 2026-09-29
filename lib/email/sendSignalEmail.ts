@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { sendWithRateLimitRetry } from "@/lib/email/resendRetry";
 import { SignalEmail } from "@/lib/email/signalEmail";
 import { serveEmailAd } from "@/lib/ads/serve";
 import { maxScoreFor, signalAiContext, signalRows, signalSource, signalSubject, type SignalLike } from "@/lib/strategies/present";
@@ -18,7 +19,7 @@ export async function sendSignalEmail({ to, userId, strategyName, signal }: Send
     (process.env.NODE_ENV === "production" ? "FreeStockAlerts <alerts@freestockalerts.ai>" : "FreeStockAlerts <onboarding@resend.dev>");
   const subject = signalSubject(signal);
   const ad = await serveEmailAd({ userId });
-  return resend.emails.send({
+  return sendWithRateLimitRetry(() => resend.emails.send({
     from,
     to,
     subject: `🔔 ${subject}`,
@@ -36,5 +37,5 @@ export async function sendSignalEmail({ to, userId, strategyName, signal }: Send
       contextParagraphs: signalAiContext(signal)?.paragraphs ?? [],
       adHtml: ad?.html ?? null,
     }),
-  });
+  }));
 }
