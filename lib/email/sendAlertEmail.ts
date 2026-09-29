@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { sendWithRateLimitRetry } from "@/lib/email/resendRetry";
 import { AlertEmail } from "@/lib/email/alertEmail";
 import { serveEmailAd } from "@/lib/ads/serve";
 
@@ -32,7 +33,7 @@ export async function sendAlertEmail(input: SendAlertEmailInput) {
 
   const { userId: _userId, ...emailProps } = input;
   void _userId;
-  return resend.emails.send({
+  return sendWithRateLimitRetry(() => resend.emails.send({
     from,
     to: input.to,
     subject: `🔔 ${input.ticker} Alert: ${input.alertType}`,
@@ -41,5 +42,5 @@ export async function sendAlertEmail(input: SendAlertEmailInput) {
       appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
       adHtml: ad?.html ?? null,
     }),
-  });
+  }));
 }

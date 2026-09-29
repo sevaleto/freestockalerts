@@ -1,12 +1,15 @@
 import { ExternalLink, Inbox } from "lucide-react";
 import { formatDataTimestamp, maxScoreFor, signalAiContext, signalRows, type SignalLike } from "@/lib/strategies/present";
 import { DataAttribution } from "@/components/shared/DataAttribution";
+import { ANALYST_SLUG } from "@/lib/strategies/config";
 
 interface SignalListProps {
   signals: SignalLike[];
   /** When the scan last completed, if ever. */
   lastScanAt?: Date | string | null;
   strategyName: string;
+  /** Picks the source line; analyst clusters are not built from Form 4 filings. */
+  strategySlug?: string;
   title?: string;
   className?: string;
   /** Rows to show per signal on compact layouts. */
@@ -17,7 +20,7 @@ interface SignalListProps {
  * Real output of an event strategy: the most recent confirmed signals, each
  * with the facts the email carried. When there are none, says so plainly.
  */
-export function SignalList({ signals, lastScanAt, strategyName, title = "Recent confirmed signals", className = "", compact = false }: SignalListProps) {
+export function SignalList({ signals, lastScanAt, strategyName, strategySlug, title = "Recent confirmed signals", className = "", compact = false }: SignalListProps) {
   const scanned = lastScanAt ? formatDataTimestamp(lastScanAt) : null;
   return (
     <div className={`rounded-[20px] border border-lp-border bg-white p-6 shadow-sm ${className}`}>
@@ -89,7 +92,12 @@ export function SignalList({ signals, lastScanAt, strategyName, title = "Recent 
           })}
         </ol>
       )}
-      <p className="mt-4 text-xs text-lp-muted">Source: SEC Form 4 filings (EDGAR); signals before October 2026 used Financial Modeling Prep data. Educational information only, not investment advice.</p>
+      <p className="mt-4 text-xs text-lp-muted">
+        {strategySlug === ANALYST_SLUG
+          ? "Source: analyst rating changes reported by Financial Modeling Prep."
+          : "Source: SEC Form 4 filings (EDGAR); signals before October 2026 used Financial Modeling Prep data."}{" "}
+        Educational information only, not investment advice.
+      </p>
       <DataAttribution className="mt-1" />
     </div>
   );

@@ -180,7 +180,7 @@ export function StrategyDetail({ strategy, items, lastRefreshedAt, signals = nul
               There is no fixed list. These are the most recent alerts the scan produced; activating the strategy sends you the next ones.
               {signals?.lastScan ? ` The last scan checked ${signals.lastScan.candidates} candidates and ${signals.lastScan.qualified} qualified.` : ""}
             </p>
-            <SignalList signals={signals?.signals ?? []} lastScanAt={lastScanAt} strategyName={strategy.name} className="mt-4" />
+            <SignalList signals={signals?.signals ?? []} lastScanAt={lastScanAt} strategyName={strategy.name} strategySlug={strategy.slug} className="mt-4" />
           </>
         ) : null}
         <div className={`flex flex-wrap items-end justify-between gap-3 ${isSignal ? "hidden" : ""}`}>
