@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-29T03:56:46.993Z",
+  "generatedAt": "2026-09-29T04:18:14.942Z",
   "strategies": {
     "post-earnings-strength-radar": {
       "refreshedAt": "2026-09-29T03:56:42.708Z",
@@ -654,40 +654,10 @@
       ]
     },
     "under-the-radar-breakouts": {
-      "refreshedAt": "2026-09-29T03:56:43.473Z",
-      "universeSize": 492,
-      "qualifiedCount": 17,
+      "refreshedAt": "2026-09-29T04:18:14.736Z",
+      "universeSize": 491,
+      "qualifiedCount": 16,
       "constituents": [
-        {
-          "ticker": "DBRG",
-          "companyName": "DigitalBridge Group Inc.",
-          "alertType": "FIFTY_TWO_WEEK_HIGH",
-          "triggerValue": 0,
-          "triggerDirection": "ABOVE",
-          "rationale": "$3.0B financial-services company, 0.1% below its 52-week high and 79% above its low. FCF yield 6.0%, net margin 27.6%.",
-          "sortOrder": 1,
-          "snapshot": {
-            "symbol": "DBRG",
-            "companyName": "DigitalBridge Group Inc.",
-            "sector": "Financial Services",
-            "marketCap": 2996174590.38,
-            "avgVolume": 7634400,
-            "price": 15.98,
-            "sma50": 15.911400000000004,
-            "sma200": 15.522200000000005,
-            "yearHigh": 16,
-            "yearLow": 8.94,
-            "fundamentals": {
-              "fcfYield": 0.059638714170303836,
-              "revenueGrowth": -0.8452147182667027,
-              "netIncomeGrowth": -1.183673469387755,
-              "growthFiscalYear": "2025",
-              "netProfitMargin": 0.27646474897017864,
-              "payoutRatio": 0.04166356967655988,
-              "positiveNetIncomeYears": 2
-            }
-          }
-        },
         {
           "ticker": "OGN",
           "companyName": "Organon & Co.",
@@ -695,7 +665,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$3.6B healthcare company, 0.4% below its 52-week high and 141% above its low. FCF yield 15.7%, net margin 3.4%.",
-          "sortOrder": 2,
+          "sortOrder": 1,
           "snapshot": {
             "symbol": "OGN",
             "companyName": "Organon & Co.",
@@ -725,7 +695,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$2.4B technology company, 0.7% below its 52-week high and 75% above its low. FCF yield 7.5%, net margin 5.9%.",
-          "sortOrder": 3,
+          "sortOrder": 2,
           "snapshot": {
             "symbol": "PAYO",
             "companyName": "Payoneer Global Inc.",
@@ -754,7 +724,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$2.1B communication services company, 1.8% below its 52-week high and 75% above its low. FCF yield 7.7%, net margin 7.7%.",
-          "sortOrder": 4,
+          "sortOrder": 3,
           "snapshot": {
             "symbol": "DV",
             "companyName": "DoubleVerify Holdings, Inc.",
@@ -783,7 +753,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$14.5B healthcare company, 2.3% below its 52-week high and 73% above its low. FCF yield 8.1%, net margin 35.3%.",
-          "sortOrder": 5,
+          "sortOrder": 4,
           "snapshot": {
             "symbol": "EXEL",
             "companyName": "Exelixis Inc.",
@@ -812,7 +782,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$16.7B technology company, 2.6% below its 52-week high and 83% above its low. FCF yield 3.4%, net margin 7.2%.",
-          "sortOrder": 6,
+          "sortOrder": 5,
           "snapshot": {
             "symbol": "DT",
             "companyName": "Dynatrace Inc.",
@@ -841,7 +811,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$10.3B technology company, 4.0% below its 52-week high and 55% above its low. FCF yield 6.6%, net margin 9.2%, net debt 0.6× EBITDA.",
-          "sortOrder": 7,
+          "sortOrder": 6,
           "snapshot": {
             "symbol": "QRVO",
             "companyName": "Qorvo Inc.",
@@ -871,7 +841,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$7.7B healthcare company, 4.4% below its 52-week high and 207% above its low. FCF yield 3.8%, net margin 15.1%.",
-          "sortOrder": 8,
+          "sortOrder": 7,
           "snapshot": {
             "symbol": "HNGE",
             "companyName": "Hinge Health, Inc.",
@@ -900,7 +870,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$14.3B financial-services company, 5.0% below its 52-week high and 49% above its low. FCF yield 9.5%, net margin 4.3%.",
-          "sortOrder": 9,
+          "sortOrder": 8,
           "snapshot": {
             "symbol": "EQH",
             "companyName": "Equitable Holdings Inc.",
@@ -930,7 +900,7 @@
           "triggerValue": 0,
           "triggerDirection": "ABOVE",
           "rationale": "$15.1B financial-services company, 5.2% below its 52-week high and 52% above its low. FCF yield 12.3%, net margin 4.5%.",
-          "sortOrder": 10,
+          "sortOrder": 9,
           "snapshot": {
             "symbol": "CRBG",
             "companyName": "Corebridge Financial Inc.",
@@ -952,107 +922,44 @@
               "positiveNetIncomeYears": 2
             }
           }
+        },
+        {
+          "ticker": "TGTX",
+          "companyName": "TG Therapeutics Inc.",
+          "alertType": "FIFTY_TWO_WEEK_HIGH",
+          "triggerValue": 0,
+          "triggerDirection": "ABOVE",
+          "rationale": "$8.6B healthcare company, 5.2% below its 52-week high and 110% above its low. FCF yield 0.2%, net margin 55.2%, net debt 1.4× EBITDA.",
+          "sortOrder": 10,
+          "snapshot": {
+            "symbol": "TGTX",
+            "companyName": "TG Therapeutics Inc.",
+            "sector": "Healthcare",
+            "marketCap": 8600950088.07,
+            "avgVolume": 2098080,
+            "price": 56.19,
+            "sma50": 53.63179996599999,
+            "sma200": 40.84334998800001,
+            "yearHigh": 59.3,
+            "yearLow": 26.76,
+            "fundamentals": {
+              "fcfYield": 0.00202128832535768,
+              "revenueGrowth": 0.8731899916110443,
+              "netIncomeGrowth": 18.11111111111111,
+              "growthFiscalYear": "2025",
+              "netDebtToEbitda": 1.4154458376999801,
+              "netProfitMargin": 0.5522090312381182,
+              "positiveNetIncomeYears": 3
+            }
+          }
         }
       ]
     },
     "quality-compounders-on-pullback": {
-      "refreshedAt": "2026-09-29T03:56:43.853Z",
+      "refreshedAt": "2026-09-29T04:18:14.941Z",
       "universeSize": 366,
-      "qualifiedCount": 62,
+      "qualifiedCount": 43,
       "constituents": [
-        {
-          "ticker": "COF",
-          "companyName": "Capital One Financial Corp.",
-          "alertType": "SMA_CROSS_ABOVE",
-          "triggerValue": 50,
-          "triggerDirection": "ABOVE",
-          "rationale": "24.3% below its 52-week high and 7.2% under its 50-day average. FCF yield 24.6%, revenue +36.3% in FY2025, profitable three straight years.",
-          "sortOrder": 1,
-          "snapshot": {
-            "symbol": "COF",
-            "companyName": "Capital One Financial Corp.",
-            "sector": "Financial Services",
-            "marketCap": 120525237015.40837,
-            "avgVolume": 4071610,
-            "price": 196.46001,
-            "sma50": 211.80180061000002,
-            "sma200": 206.53199966499994,
-            "yearHigh": 259.64001,
-            "yearLow": 174.24001,
-            "fundamentals": {
-              "fcfYield": 0.24642971659290674,
-              "revenueGrowth": 0.36297548605240915,
-              "netIncomeGrowth": -0.48357894736842105,
-              "growthFiscalYear": "2025",
-              "netProfitMargin": 1.0625189374810624,
-              "payoutRatio": 0.18022813688212927,
-              "positiveNetIncomeYears": 3
-            },
-            "lastQuarterEpsSurprise": 0.23880597014925353
-          }
-        },
-        {
-          "ticker": "HIG",
-          "companyName": "The Hartford Insurance Group, Inc.",
-          "alertType": "SMA_CROSS_ABOVE",
-          "triggerValue": 50,
-          "triggerDirection": "ABOVE",
-          "rationale": "13.7% below its 52-week high and 8.4% under its 50-day average. FCF yield 17.2%, revenue +3.3% in FY2025, profitable three straight years.",
-          "sortOrder": 2,
-          "snapshot": {
-            "symbol": "HIG",
-            "companyName": "The Hartford Insurance Group, Inc.",
-            "sector": "Financial Services",
-            "marketCap": 34140707402.952003,
-            "avgVolume": 2055660,
-            "price": 126.040001,
-            "sma50": 137.61940024,
-            "sma200": 136.09409972249995,
-            "yearHigh": 146.070007,
-            "yearLow": 120.33,
-            "fundamentals": {
-              "fcfYield": 0.17202338342562246,
-              "revenueGrowth": 0.03292181069958848,
-              "netIncomeGrowth": 0.23304403728704598,
-              "growthFiscalYear": "2025",
-              "netProfitMargin": 2.890728476821192,
-              "payoutRatio": 0.143184421534937,
-              "positiveNetIncomeYears": 3
-            },
-            "lastQuarterEpsSurprise": 0.08917197452229293
-          }
-        },
-        {
-          "ticker": "WRB",
-          "companyName": "W. R. Berkley Corporation",
-          "alertType": "SMA_CROSS_ABOVE",
-          "triggerValue": 50,
-          "triggerDirection": "ABOVE",
-          "rationale": "14.3% below its 52-week high and 3.9% under its 50-day average. FCF yield 14.3%, revenue +7.8% in FY2025, profitable three straight years.",
-          "sortOrder": 3,
-          "snapshot": {
-            "symbol": "WRB",
-            "companyName": "W. R. Berkley Corporation",
-            "sector": "Financial Services",
-            "marketCap": 25117254612.14,
-            "avgVolume": 4984490,
-            "price": 67.66,
-            "sma50": 70.43379989999998,
-            "sma200": 68.90249997000005,
-            "yearHigh": 78.96,
-            "yearLow": 62.87,
-            "fundamentals": {
-              "fcfYield": 0.14344306555934666,
-              "revenueGrowth": 0.07838723073782704,
-              "netIncomeGrowth": 0.013097949886104784,
-              "growthFiscalYear": "2025",
-              "netProfitMargin": 0.12940418909591248,
-              "payoutRatio": 0.24890720049304374,
-              "positiveNetIncomeYears": 3
-            },
-            "lastQuarterEpsSurprise": 0.04382470119521926
-          }
-        },
         {
           "ticker": "CI",
           "companyName": "The Cigna Group",
@@ -1060,7 +967,7 @@
           "triggerValue": 50,
           "triggerDirection": "ABOVE",
           "rationale": "13.8% below its 52-week high and 3.0% under its 50-day average. FCF yield 14.3%, revenue +11.2% in FY2025, profitable three straight years, net debt 1.8× EBITDA.",
-          "sortOrder": 4,
+          "sortOrder": 1,
           "snapshot": {
             "symbol": "CI",
             "companyName": "The Cigna Group",
@@ -1092,7 +999,7 @@
           "triggerValue": 50,
           "triggerDirection": "ABOVE",
           "rationale": "14.6% below its 52-week high and 6.9% under its 50-day average. FCF yield 14.1%, revenue +35.8% in FY2025, profitable three straight years, net debt 1.7× EBITDA.",
-          "sortOrder": 5,
+          "sortOrder": 2,
           "snapshot": {
             "symbol": "FANG",
             "companyName": "Diamondback Energy Inc.",
@@ -1124,7 +1031,7 @@
           "triggerValue": 50,
           "triggerDirection": "ABOVE",
           "rationale": "22.7% below its 52-week high and 11.3% under its 50-day average. FCF yield 13.8%, revenue +7.6% in FY2025, profitable three straight years, net cash.",
-          "sortOrder": 6,
+          "sortOrder": 3,
           "snapshot": {
             "symbol": "EXPE",
             "companyName": "Expedia Group Inc.",
@@ -1150,127 +1057,223 @@
           }
         },
         {
-          "ticker": "APO",
-          "companyName": "Apollo Global Management Inc.",
+          "ticker": "CAH",
+          "companyName": "Cardinal Health Inc.",
           "alertType": "SMA_CROSS_ABOVE",
           "triggerValue": 50,
           "triggerDirection": "ABOVE",
-          "rationale": "22.4% below its 52-week high and 7.7% under its 50-day average. FCF yield 13.5%, revenue +22.7% in FY2025, profitable three straight years.",
+          "rationale": "14.7% below its 52-week high and 5.3% under its 50-day average. FCF yield 8.8%, revenue +14.2% in FY2026, profitable three straight years, net debt 1.1× EBITDA.",
+          "sortOrder": 4,
+          "snapshot": {
+            "symbol": "CAH",
+            "companyName": "Cardinal Health Inc.",
+            "sector": "Healthcare",
+            "marketCap": 51234104795.36272,
+            "avgVolume": 2234640,
+            "price": 220.28999,
+            "sma50": 232.56139955999996,
+            "sma200": 217.48280011750012,
+            "yearHigh": 258.29999,
+            "yearLow": 150.78,
+            "fundamentals": {
+              "fcfYield": 0.08832007542775619,
+              "revenueGrowth": 0.1422871981956887,
+              "netIncomeGrowth": 0.0980140935297886,
+              "growthFiscalYear": "2026",
+              "netDebtToEbitda": 1.1291678341272064,
+              "netProfitMargin": 0.006741449293603096,
+              "payoutRatio": 0.2864644107351225,
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.07438016528925627
+          }
+        },
+        {
+          "ticker": "XYZ",
+          "companyName": "Block Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "15.7% below its 52-week high and 8.4% under its 50-day average. FCF yield 8.7%, revenue +0.3% in FY2025, profitable three straight years, net cash.",
+          "sortOrder": 5,
+          "snapshot": {
+            "symbol": "XYZ",
+            "companyName": "Block Inc.",
+            "sector": "Technology",
+            "marketCap": 44634573570,
+            "avgVolume": 4167960,
+            "price": 73.31,
+            "sma50": 80.01659964000001,
+            "sma200": 69.93374986649997,
+            "yearHigh": 86.92,
+            "yearLow": 48.21,
+            "fundamentals": {
+              "fcfYield": 0.086969353340234,
+              "revenueGrowth": 0.003011062576745717,
+              "netIncomeGrowth": -0.54932177489699,
+              "growthFiscalYear": "2025",
+              "netDebtToEbitda": -0.4562984254017198,
+              "netProfitMargin": 0.014261740812342036,
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.17241379310344832
+          }
+        },
+        {
+          "ticker": "FDX",
+          "companyName": "FedEx Corp.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "16.1% below its 52-week high and 8.2% under its 50-day average. FCF yield 7.5%, revenue +7.7% in FY2026, profitable three straight years, net debt 1.2× EBITDA.",
+          "sortOrder": 6,
+          "snapshot": {
+            "symbol": "FDX",
+            "companyName": "FedEx Corp.",
+            "sector": "Industrials",
+            "marketCap": 68525738738.38812,
+            "avgVolume": 1862640,
+            "price": 289.64999,
+            "sma50": 315.51059819999995,
+            "sma200": 297.8617723686,
+            "yearHigh": 345.37,
+            "yearLow": 180.99113,
+            "fundamentals": {
+              "fcfYield": 0.07465807876265938,
+              "revenueGrowth": 0.07726952209812797,
+              "netIncomeGrowth": 0.08333333333333333,
+              "growthFiscalYear": "2026",
+              "netDebtToEbitda": 1.183787632221318,
+              "netProfitMargin": 4.6801097972972973e-8,
+              "payoutRatio": 309948.1163997293,
+              "positiveNetIncomeYears": 3
+            },
+            "lastQuarterEpsSurprise": 0.027491408934707928
+          }
+        },
+        {
+          "ticker": "ZM",
+          "companyName": "Zoom Communications, Inc.",
+          "alertType": "SMA_CROSS_ABOVE",
+          "triggerValue": 50,
+          "triggerDirection": "ABOVE",
+          "rationale": "23.9% below its 52-week high and 9.9% under its 50-day average. FCF yield 7.4%, revenue +4.4% in FY2026, profitable three straight years.",
           "sortOrder": 7,
           "snapshot": {
-            "symbol": "APO",
-            "companyName": "Apollo Global Management Inc.",
-            "sector": "Financial Services",
-            "marketCap": 70274635921,
-            "avgVolume": 3134130,
-            "price": 119,
-            "sma50": 128.91259956,
-            "sma200": 127.2870498400001,
-            "yearHigh": 153.28999,
-            "yearLow": 99.56,
+            "symbol": "ZM",
+            "companyName": "Zoom Communications, Inc.",
+            "sector": "Technology",
+            "marketCap": 26167855656.6,
+            "avgVolume": 3194070,
+            "price": 87.3,
+            "sma50": 96.91619996,
+            "sma200": 91.06337491499993,
+            "yearHigh": 114.74,
+            "yearLow": 70.7,
             "fundamentals": {
-              "fcfYield": 0.13479970228019647,
-              "revenueGrowth": 0.22727272727272727,
-              "netIncomeGrowth": -0.2421875,
-              "growthFiscalYear": "2025",
-              "netProfitMargin": 0.04952784200116995,
-              "payoutRatio": 0.7148481439820022,
+              "fcfYield": 0.07358864345899566,
+              "revenueGrowth": 0.04358352161524986,
+              "netIncomeGrowth": 0.8808914335037882,
+              "growthFiscalYear": "2026",
+              "netProfitMargin": 0.6519211704268933,
               "positiveNetIncomeYears": 3
             },
-            "lastQuarterEpsSurprise": -0.02314814814814827
+            "lastQuarterEpsSurprise": 0.04729729729729734
           }
         },
         {
-          "ticker": "PGR",
-          "companyName": "The Progressive Corporation",
+          "ticker": "LMT",
+          "companyName": "Lockheed Martin Corporation",
           "alertType": "SMA_CROSS_ABOVE",
           "triggerValue": 50,
           "triggerDirection": "ABOVE",
-          "rationale": "15.6% below its 52-week high and 2.2% under its 50-day average. FCF yield 13.1%, revenue +16.3% in FY2025, profitable three straight years.",
+          "rationale": "25.1% below its 52-week high and 7.1% under its 50-day average. FCF yield 7.3%, revenue +5.6% in FY2025, profitable three straight years, net debt 1.5× EBITDA.",
           "sortOrder": 8,
           "snapshot": {
-            "symbol": "PGR",
-            "companyName": "The Progressive Corporation",
-            "sector": "Financial Services",
-            "marketCap": 121779944661.9,
-            "avgVolume": 3648460,
-            "price": 209.47,
-            "sma50": 214.1731995799999,
-            "sma200": 209.59799991499997,
-            "yearHigh": 248.17,
-            "yearLow": 189.2,
+            "symbol": "LMT",
+            "companyName": "Lockheed Martin Corporation",
+            "sector": "Industrials",
+            "marketCap": 119572683590.32191,
+            "avgVolume": 1259210,
+            "price": 518.099976,
+            "sma50": 557.4960009800001,
+            "sma200": 562.26225121,
+            "yearHigh": 692,
+            "yearLow": 437.25,
             "fundamentals": {
-              "fcfYield": 0.1309821583864656,
-              "revenueGrowth": 0.16317730722284138,
-              "netIncomeGrowth": 0.33349056603773586,
+              "fcfYield": 0.07300162326294495,
+              "revenueGrowth": 0.0563743085173768,
+              "netIncomeGrowth": -0.059782608695652176,
               "growthFiscalYear": "2025",
-              "netProfitMargin": 0.1284388556367031,
-              "payoutRatio": 0.6966224882428388,
+              "netDebtToEbitda": 1.544641210108836,
+              "netProfitMargin": 0.08163450801153037,
+              "payoutRatio": 0.505169397168761,
               "positiveNetIncomeYears": 3
             },
-            "lastQuarterEpsSurprise": 0.0020661157024792947
+            "lastQuarterEpsSurprise": 0.1027777777777778
           }
         },
         {
-          "ticker": "MTB",
-          "companyName": "M&T Bank Corporation",
+          "ticker": "UAL",
+          "companyName": "United Airlines Holdings, Inc.",
           "alertType": "SMA_CROSS_ABOVE",
           "triggerValue": 50,
           "triggerDirection": "ABOVE",
-          "rationale": "13.9% below its 52-week high and 8.6% under its 50-day average. FCF yield 11.9%, revenue +7.5% in FY2025, profitable three straight years.",
+          "rationale": "19.6% below its 52-week high and 4.1% under its 50-day average. FCF yield 7.0%, revenue +3.5% in FY2025, profitable three straight years, net debt 1.2× EBITDA.",
           "sortOrder": 9,
           "snapshot": {
-            "symbol": "MTB",
-            "companyName": "M&T Bank Corporation",
-            "sector": "Financial Services",
-            "marketCap": 31835120795.28,
-            "avgVolume": 1141840,
-            "price": 220.44,
-            "sma50": 241.10239949000004,
-            "sma200": 223.6476501825001,
-            "yearHigh": 255.95,
-            "yearLow": 174.75999,
+            "symbol": "UAL",
+            "companyName": "United Airlines Holdings, Inc.",
+            "sector": "Industrials",
+            "marketCap": 36194336415.72,
+            "avgVolume": 4098260,
+            "price": 111.51,
+            "sma50": 116.25479979999999,
+            "sma200": 109.03664993999992,
+            "yearHigh": 138.77,
+            "yearLow": 84.64,
             "fundamentals": {
-              "fcfYield": 0.11949067272155588,
-              "revenueGrowth": 0.07527579493835172,
-              "netIncomeGrowth": 0.10162287480680061,
+              "fcfYield": 0.07028723971563365,
+              "revenueGrowth": 0.03517165238420693,
+              "netIncomeGrowth": 0.06478247062559543,
               "growthFiscalYear": "2025",
-              "netProfitMargin": 1.7809747504403992,
-              "payoutRatio": 0.2987141444114738,
+              "netDebtToEbitda": 1.2486658195679796,
+              "netProfitMargin": 0.05557851896601062,
               "positiveNetIncomeYears": 3
             },
-            "lastQuarterEpsSurprise": 0.14163090128755368
+            "lastQuarterEpsSurprise": 0.07567567567567562
           }
         },
         {
-          "ticker": "CFG",
-          "companyName": "Citizens Financial Group Inc.",
+          "ticker": "COR",
+          "companyName": "Cencora Inc.",
           "alertType": "SMA_CROSS_ABOVE",
           "triggerValue": 50,
           "triggerDirection": "ABOVE",
-          "rationale": "14.0% below its 52-week high and 8.0% under its 50-day average. FCF yield 9.2%, revenue +6.7% in FY2025, profitable three straight years.",
+          "rationale": "19.5% below its 52-week high and 4.3% under its 50-day average. FCF yield 7.0%, revenue +9.3% in FY2025, profitable three straight years, net debt 2.2× EBITDA.",
           "sortOrder": 10,
           "snapshot": {
-            "symbol": "CFG",
-            "companyName": "Citizens Financial Group Inc.",
-            "sector": "Financial Services",
-            "marketCap": 27292255862.399998,
-            "avgVolume": 4156930,
-            "price": 64.8,
-            "sma50": 70.45679998,
-            "sma200": 65.03655001499996,
-            "yearHigh": 75.33,
-            "yearLow": 47.955,
+            "symbol": "COR",
+            "companyName": "Cencora Inc.",
+            "sector": "Healthcare",
+            "marketCap": 57975200998.65,
+            "avgVolume": 1278010,
+            "price": 303.81,
+            "sma50": 317.41420142000004,
+            "sma200": 318.961949925,
+            "yearHigh": 377.54001,
+            "yearLow": 244.82001,
             "fundamentals": {
-              "fcfYield": 0.09163771630345802,
-              "revenueGrowth": 0.06653620352250489,
-              "netIncomeGrowth": 0.21338634857521538,
+              "fcfYield": 0.07003170200469926,
+              "revenueGrowth": 0.09312270535076268,
+              "netIncomeGrowth": 0.029851171543681086,
               "growthFiscalYear": "2025",
-              "netProfitMargin": 1.2141633352370074,
-              "payoutRatio": 0.36688617121354655,
+              "netDebtToEbitda": 2.183468783672621,
+              "netProfitMargin": 0.007887677869405833,
+              "payoutRatio": 0.17832758621346523,
               "positiveNetIncomeYears": 3
             },
-            "lastQuarterEpsSurprise": 0.040000000000000036
+            "lastQuarterEpsSurprise": 0.02988505747126455
           }
         }
       ]

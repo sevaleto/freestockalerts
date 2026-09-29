@@ -372,6 +372,12 @@ export const SCREENS: Record<ScreenedSlug, ScreenDefinition> = {
     },
     needs: { fundamentals: true, growth: true, incomeHistory: true, lastQuarter: true },
     rules: [
+      {
+        id: "not-financial",
+        label: "Not a bank, insurer or other financial company (their operating cash flow is not free cash flow, so the ranking would not compare like with like)",
+        whenUnavailable: "fail",
+        test: (s) => (s.sector ? !isFinancial(s) : "n/a"),
+      },
       positiveFcf,
       {
         id: "durable-record",
@@ -583,6 +589,16 @@ export const SCREENS: Record<ScreenedSlug, ScreenDefinition> = {
 };
 
 export const SCREENED_SLUGS = Object.keys(SCREENS) as ScreenedSlug[];
+
+/**
+ * Symbols kept off every screened list by hand, with the reason. For cases the
+ * rules cannot see, such as a pending acquisition that pins the price near the
+ * deal price, so a "breakout" alert cannot mean anything. Remove an entry once
+ * the reason no longer holds.
+ */
+export const EXCLUDED_SYMBOLS: Record<string, string> = {
+  DBRG: "Pending acquisition (merger agreement Dec 2025, approved by shareholders Apr 2026); the price is pinned near the deal price.",
+};
 export const isScreenedSlug = (slug: string): slug is ScreenedSlug => slug in SCREENS;
 
 function round2(v: number) {

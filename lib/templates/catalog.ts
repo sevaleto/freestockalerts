@@ -175,7 +175,7 @@ const rulesFor = (slug: ScreenedSlug) => SCREENS[slug].rules.map((r) => r.label)
 const universeFor = (slug: ScreenedSlug) => SCREENS[slug].universe.label;
 
 const SCREEN_METHOD =
-  "The list is rebuilt by a script: it takes US common stocks listed on the NYSE and Nasdaq, applies the price rules to Twelve Data quotes and daily bars, computes fundamentals from each survivor's SEC filings (trailing twelve months where the filings allow), keeps the ones that pass every rule, ranks them, and stores the top 10 with the data it saw. The page and the alerts come from that stored list, so what you see is what was screened, as of the refresh date.";
+  "The list is rebuilt by a script: it takes US common stocks listed on the NYSE and Nasdaq, applies the price rules to Twelve Data quotes and daily bars, computes fundamentals from each survivor's SEC filings (trailing twelve months where the filings allow), keeps the ones that pass every rule, ranks them, and stores the top 10 with the data it saw. The page and the alerts come from that stored list, so what you see is what was screened, as of the refresh date. A company whose price is pinned by a pending acquisition is left off by hand, since a breakout or reclaim alert means nothing there.";
 
 const NO_GUIDANCE = "Company guidance (raised, maintained, cut) is not available from the data provider, so it is not part of the screen. The most recent EPS surprise is used as a limited proxy for obvious impairment where noted.";
 
@@ -674,8 +674,9 @@ export const STRATEGIES: StrategyDefinition[] = [
     ],
     triggerSummary: "Reclaims the 50-day moving average",
     disqualifiers: [
+      "Banks, insurers and other financial companies: operating cash flow is not free cash flow for them.",
       "Negative free cash flow, a loss in any of the last three fiscal years, or falling revenue.",
-      "Net debt above 3× EBITDA (not applied to banks and insurers).",
+      "Net debt above 3× EBITDA.",
       "Less than 12% or more than 30% below the 52-week high.",
       "More than 8% below the 200-day average, which suggests the longer trend has broken.",
       "Already above the 50-day average (the reclaim has happened).",
