@@ -159,14 +159,14 @@ export const LANDING_PAGES: Record<LpSlug, LandingPage> = {
     subheadline:
       "Free alerts when established companies that have spent months below their 200-day average cross back above it, the trend line many investors use to define an uptrend.",
     logicLine:
-      "A stock that closed below its 200-day average on most of the last 60 sessions and crosses back above it is a visible change in character. These 10 names are screened weekly for a sound balance sheet and improving price behavior.",
+      "A stock that closed below its 200-day average on most of the last 60 sessions and crosses back above it is a visible change in character. The list is screened weekly for a sound balance sheet and improving price behavior.",
     bullets: [
-      "10 liquid large caps at least 20% off their highs, below their 200-day for months",
+      "Liquid large caps at least 20% off their highs, below their 200-day for months",
       "Alert fires only on the actual cross back above, not before",
       "Volume vs. average and distance from the 50-day in every email",
     ],
     ctaLabel: "Send me the free alerts",
-    proofTitle: "The 10 comebacks we're watching for",
+    proofTitle: "The comebacks we're watching for",
     eyebrow: EYEBROW,
     googleLabel: GOOGLE,
     disclosure: DISCLOSURE,

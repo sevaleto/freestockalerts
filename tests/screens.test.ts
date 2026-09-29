@@ -8,7 +8,8 @@ test("every stored constituent still passes its strategy's rules on the snapshot
     const def = SCREENS[slug];
     const data = screened.strategies[slug];
     assert.ok(data, `${slug} missing from screened.json`);
-    assert.equal(data!.constituents.length, def.pick, slug);
+    // A list holds up to `pick` names; fewer when fewer qualify (never padded with names that fail).
+    assert.ok(data!.constituents.length >= 5 && data!.constituents.length <= def.pick, `${slug}: ${data!.constituents.length} names`);
     for (const c of data!.constituents) {
       const result = evaluateScreen(def, c.snapshot);
       assert.ok(result.qualifies, `${slug}: ${c.ticker} fails ${result.failed.join(", ")}`);
