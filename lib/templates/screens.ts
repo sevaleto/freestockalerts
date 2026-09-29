@@ -2,7 +2,8 @@
  * Qualification screens for the data-driven strategies.
  *
  * One source of truth for the numbers: `scripts/refresh-strategies.ts` applies
- * these rules to live FMP data to build each strategy's constituent list, the
+ * these rules to live data (Twelve Data prices, SEC filings) to build each
+ * strategy's constituent list, the
  * strategy pages render the same rules as "How companies qualify", and the
  * tests re-check every stored constituent against them using the point-in-time
  * snapshot saved with it. Change a threshold here and all three move together.
@@ -47,7 +48,10 @@ export interface EarningsSnapshot {
   epsActual: number | null;
   epsEstimated: number | null;
   revenueActual: number | null;
+  /** Consensus revenue estimate; null since the move off FMP (not in the Twelve Data plan). */
   revenueEstimated: number | null;
+  /** Revenue for the same quarter a year earlier, from SEC filings. */
+  revenueYearAgo?: number | null;
   /** Session whose move is treated as the reaction (the report date, or the next session for after-close reports). */
   reactionDate: string;
   /** Close-to-close move on the reaction day, fraction. */
@@ -225,13 +229,13 @@ export const SCREENS: Record<ScreenedSlug, ScreenDefinition> = {
         test: (s) => (s.earnings ? true : "n/a"),
       },
       {
-        id: "beat-both",
-        label: "Reported EPS and revenue both above the consensus estimate",
+        id: "beat-eps-revenue-up",
+        label: "Reported EPS above the consensus estimate, with quarterly revenue above the same quarter a year earlier",
         whenUnavailable: "fail",
         test: (s) => {
           const e = s.earnings;
-          if (!e || !num(e.epsActual) || !num(e.epsEstimated) || !num(e.revenueActual) || !num(e.revenueEstimated)) return "n/a";
-          return e.epsActual > e.epsEstimated && e.revenueActual > e.revenueEstimated;
+          if (!e || !num(e.epsActual) || !num(e.epsEstimated) || !num(e.revenueActual) || !num(e.revenueYearAgo)) return "n/a";
+          return e.epsActual > e.epsEstimated && e.revenueActual > e.revenueYearAgo;
         },
       },
       {
@@ -266,7 +270,12 @@ export const SCREENS: Record<ScreenedSlug, ScreenDefinition> = {
     rationale: (s) => {
       const e = s.earnings!;
       const eps = num(e.epsActual) && num(e.epsEstimated) ? `EPS ${usd(e.epsActual)} vs ${usd(e.epsEstimated)} estimate` : "beat on EPS";
-      const rev = num(e.revenueActual) && num(e.revenueEstimated) ? `revenue ${pct(e.revenueActual / e.revenueEstimated - 1)} vs estimate` : "beat on revenue";
+      const rev =
+        num(e.revenueActual) && num(e.revenueYearAgo) && e.revenueYearAgo > 0
+          ? `revenue ${pct(e.revenueActual / e.revenueYearAgo - 1)} year over year`
+          : num(e.revenueActual) && num(e.revenueEstimated)
+            ? `revenue ${pct(e.revenueActual / e.revenueEstimated - 1)} vs estimate`
+            : "revenue up";
       return `Reported ${shortDate(e.date)}: ${eps}, ${rev}. ${pct(e.reactionPct)} on ${mult(e.reactionVolumeRatio)} volume on the reaction day; earnings-day high ${usd(e.reactionHigh)}.`;
     },
     pick: 10,
