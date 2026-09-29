@@ -30,6 +30,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  EXCLUDED_SYMBOLS,
   SCREENS,
   SCREENED_SLUGS,
   evaluateScreen,
@@ -488,13 +489,13 @@ async function dividendSnapshot(c: Candidate, fcfPayout: number | null): Promise
 /* --------------------------------- build --------------------------------- */
 
 /** Rules that need data costing Twelve Data credits (or the sector, for the bank exemption). Checked last, on survivors only. */
-const PAID_RULES = new Set(["leverage", "balance-sheet", "no-big-miss", "beat-eps-revenue-up", "growth-record", "no-cut", "covered", "min-yield", "zone-pending"]);
+const PAID_RULES = new Set(["not-financial", "leverage", "balance-sheet", "no-big-miss", "beat-eps-revenue-up", "growth-record", "no-cut", "covered", "min-yield", "zone-pending"]);
 const freeRulesOf = (def: ScreenDefinition): ScreenDefinition => ({ ...def, rules: def.rules.filter((r) => !PAID_RULES.has(r.id)) });
 
 async function buildStrategy(def: ScreenDefinition, pool0: Candidate[], exclude: Set<string>): Promise<ScreenedStrategy> {
   console.log(`\n=== ${def.slug}`);
   const u = def.universe;
-  const inUniverse = pool0.filter((c) => c.marketCap >= u.marketCapMin && (!u.marketCapMax || c.marketCap <= u.marketCapMax) && c.avgVolume >= u.avgVolumeMin);
+  const inUniverse = pool0.filter((c) => !(c.symbol in EXCLUDED_SYMBOLS) && c.marketCap >= u.marketCapMin && (!u.marketCapMax || c.marketCap <= u.marketCapMax) && c.avgVolume >= u.avgVolumeMin);
   const byCandidate = new Map<Snapshot, Candidate>();
   const snapshots: Snapshot[] = inUniverse.map((c) => {
     const s: Snapshot = {

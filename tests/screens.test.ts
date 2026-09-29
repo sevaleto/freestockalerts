@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SCREENS, SCREENED_SLUGS, evaluateScreen, type Snapshot } from "../lib/templates/screens";
+import { EXCLUDED_SYMBOLS, SCREENS, SCREENED_SLUGS, evaluateScreen, type Snapshot } from "../lib/templates/screens";
 import { screened } from "../lib/templates/screened";
 
 test("every stored constituent still passes its strategy's rules on the snapshot it was built from", () => {
@@ -60,4 +60,22 @@ test("RSI oversold is never the final trigger on the leader pullback list", () =
   assert.equal(def.trigger(s)!.alertType, "SMA_CROSS_ABOVE");
   assert.equal(def.trigger(s)!.triggerValue, 50);
   assert.equal(evaluateScreen(def, { ...s, rsi: 28 }).qualifies, false, "washed-out RSI does not qualify");
+});
+
+test("quality compounders leave out financial companies, and fail closed without a sector", () => {
+  const def = SCREENS["quality-compounders-on-pullback"];
+  const s: Snapshot = {
+    symbol: "IND", companyName: "Industrial Co", sector: "Industrials", marketCap: 5e10, avgVolume: 3e6, price: 80, sma50: 85, sma200: 82, yearHigh: 100, yearLow: 60,
+    lastQuarterEpsSurprise: 0.03,
+    fundamentals: { fcfYield: 0.06, revenueGrowth: 0.05, positiveNetIncomeYears: 3, netDebtToEbitda: 1.2 },
+  };
+  assert.equal(evaluateScreen(def, s).qualifies, true);
+  assert.ok(evaluateScreen(def, { ...s, sector: "Financial Services" }).failed.includes("not-financial"));
+  assert.ok(evaluateScreen(def, { ...s, sector: null }).failed.includes("not-financial"));
+});
+
+test("hand-excluded symbols appear in no stored list", () => {
+  for (const slug of SCREENED_SLUGS) {
+    for (const c of screened.strategies[slug]!.constituents) assert.ok(!(c.ticker in EXCLUDED_SYMBOLS), `${slug} lists excluded ${c.ticker}`);
+  }
 });
